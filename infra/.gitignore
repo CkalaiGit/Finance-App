@@ -1,0 +1,9 @@
+# Données locales de la DB (ignorées car spécifiques à ta machine)
+keycloak_data/
+
+# Variables d'environnement contenant des secrets
+.env
+
+# Fichiers système
+.DS_Store
+node_modules/

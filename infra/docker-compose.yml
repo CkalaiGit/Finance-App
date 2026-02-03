@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  # Base de données pour Keycloak
+  keycloak-db:
+    image: postgres:17
+    container_name: keycloak-db
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-keycloak}
+      POSTGRES_USER: ${POSTGRES_USER:-keycloak}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-keycloak}
+    volumes:
+      - keycloak_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432" # Port décalé pour éviter les conflits locaux
+    networks:
+      - keycloak-net
+
+  # Service Keycloak
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    container_name: keycloak
+    depends_on:
+      - keycloak-db
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: keycloak-db
+      KC_DB_URL_DATABASE: ${POSTGRES_DB:-keycloak}
+      KC_DB_USERNAME: ${POSTGRES_USER:-keycloak}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-keycloak}
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      # Configuration DEV
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_LOG_LEVEL: info
+    command: start-dev --import-realm
+    volumes:
+      # Montage du fichier realm pour import au démarrage
+      - ./keycloak/realm-dev.json:/opt/keycloak/data/import/realm-dev.json
+    ports:
+      - "8080:8080"
+    networks:
+      - keycloak-net
+
+volumes:
+  keycloak_data:
+
+networks:
+  keycloak-net:
