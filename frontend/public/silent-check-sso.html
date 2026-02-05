@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Vérification de session</title>
+</head>
+<body>
+    <script>
+        // On prévient Angular que Keycloak a vérifié le cookie
+        parent.postMessage(location.href, location.origin);
+    </script>
+</body>
+</html>
