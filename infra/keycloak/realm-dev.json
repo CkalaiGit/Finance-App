@@ -3,12 +3,12 @@
   "enabled": true,
   "users": [
     {
-      "username": "alice",
-      "email": "alice@example.com",
+      "username": "warren",
       "enabled": true,
+      "firstName": "Warren",
+      "lastName": "Buffett",
+      "email": "warren@berkshire.com",
       "emailVerified": true,
-      "firstName": "Alice",
-      "lastName": "Dev",
       "credentials": [
         {
           "type": "password",
@@ -16,20 +16,34 @@
           "temporary": false
         }
       ],
-      "realmRoles": [
-        "USER"
-      ]
+      "realmRoles": ["PREMIUM"]
+    },
+    {
+      "username": "michael",
+      "enabled": true,
+      "firstName": "Michael",
+      "lastName": "Invest",
+      "email": "michael@invest.com",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["FREEIUM"]
     }
   ],
   "roles": {
     "realm": [
       {
-        "name": "USER",
-        "description": "Utilisateur standard"
+        "name": "PREMIUM",
+        "description": "Accès complet aux analyses financières"
       },
       {
-        "name": "ADMIN",
-        "description": "Administrateur"
+        "name": "FREEMIUM",
+        "description": "Accès limité aux données publiques"
       }
     ]
   },
