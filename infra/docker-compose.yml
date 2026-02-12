@@ -19,7 +19,7 @@ services:
 
   # Service Keycloak
   keycloak:
-    image: quay.io/keycloak/keycloak:24.0
+    image: quay.io/keycloak/keycloak:26.0 # Utilisation d'une version plus récente et stable
     container_name: keycloak
     depends_on:
       - keycloak-db
@@ -31,15 +31,28 @@ services:
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-keycloak}
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
-      # Configuration DEV
+
+      # Configuration DEV & Accessibilité
       KC_HTTP_ENABLED: "true"
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
       KC_LOG_LEVEL: info
+
+      # OPTIMISATION THEME (Désactive le cache pour le développement)
+      KC_CACHE_THEME_RESOURCES: "false"
+      KC_CACHE_THEME_TEMPLATES: "false"
+
+    # Commande pour démarrer en mode dev et importer le realm
     command: start-dev --import-realm
+
     volumes:
       # Montage du fichier realm pour import au démarrage
-      - ./keycloak/realm-dev.json:/opt/keycloak/data/import/realm-dev.json
+      - ./keycloak/realm-dev.json:/opt/keycloak/data/import/realm.json:ro
+
+      # MONTAGE DU THÈME (Indispensable pour vos fichiers FTL/CSS)
+      # On monte le dossier parent 'themes' pour que Keycloak trouve 'financeapp'
+      - ./keycloak/themes:/opt/keycloak/themes:rw
+
     ports:
       - "8080:8080"
     networks:
