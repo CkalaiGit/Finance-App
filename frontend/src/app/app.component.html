@@ -1,14 +1,23 @@
-<div style="padding: 20px; font-family: sans-serif;">
-  <h1>Finance App - Module 1</h1>
+<div class="main-container">
+  <div class="background-elements" aria-hidden="true">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+  </div>
 
-  @if (!auth.isLoggedIn) {
-    <div>
-      <button (click)="auth.login()">Se connecter avec Keycloak</button>
-    </div>
-  }
+  <app-header></app-header>
 
-  @if (auth.isLoggedIn) {
-    <p>Bonjour <strong>{{ auth.username }}</strong> !</p>
-    <button (click)="auth.logout()">Déconnexion</button>
-  }
+  <main class="container mt-4">
+    <!-- <router-outlet></router-outlet> -->
+    
+    @if (false) { 
+      <div class="text-center p-5">
+         <h1 class="company-name-large">Prêt à analyser le marché ?</h1>
+         <p class="text-secondary">Sélectionnez une option dans le menu ci-dessus.</p>
+      </div>
+    }
+  </main>
+
+  <footer>
+    <p class="footer-text">© 2026 FinanceApp • Dashboard Premium</p>
+  </footer>
 </div>

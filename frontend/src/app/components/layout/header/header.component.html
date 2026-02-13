@@ -1,0 +1,101 @@
+<!-- ========================================
+     NAVBAR - FinanceApp
+     Navigation principale avec authentification
+======================================== -->
+<nav class="navbar-fintech" role="navigation" aria-label="Navigation principale">
+  <div class="container">
+    <div class="navbar-content">
+      
+      <!-- Logo & Brand -->
+      <a class="navbar-brand" routerLink="/" aria-label="FinanceApp - Accueil">
+        <div class="logo-icon" aria-hidden="true">Ƒ</div>
+        <span class="brand-text">Finance<span class="brand-accent">App</span></span>
+      </a>
+
+      <!-- Menu Navigation (si besoin de navigation) -->
+      <ul class="nav-menu" role="menubar">
+        <li role="none">
+          <a routerLink="/home" 
+             routerLinkActive="active" 
+             class="nav-link" 
+             role="menuitem"
+             aria-label="Accueil">
+            <i class="bi bi-house-door-fill" aria-hidden="true"></i>
+            <span class="nav-text">Accueil</span>
+          </a>
+        </li>
+        <li role="none">
+          <a routerLink="/watchlist" 
+             routerLinkActive="active" 
+             class="nav-link" 
+             role="menuitem"
+             aria-label="Watchlist">
+            <i class="bi bi-star-fill" aria-hidden="true"></i>
+            <span class="nav-text">Watchlist</span>
+          </a>
+        </li>
+        <li role="none">
+          <a routerLink="/search" 
+             routerLinkActive="active" 
+             class="nav-link" 
+             role="menuitem"
+             aria-label="Rechercher">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <span class="nav-text">Rechercher</span>
+          </a>
+        </li>
+      </ul>
+
+      <!-- User Section -->
+      <div class="user-section-container">
+        @if (authStore.user$ | async; as user) {
+          <!-- User connecté -->
+          <div class="user-section">
+            
+              <div class="avatar">
+                {{ user.username?.charAt(0)?.toUpperCase() }}
+              </div>
+              <div class="user-details">
+                <span class="username">{{ user.username }}</span>
+                @if (user.roles.includes('PREMIUM')) {
+                  <span class="badge-premium">
+                    <i class="bi bi-star-fill"></i>
+                    Premium
+                  </span>
+                } @else {
+                  <span class="badge-free">
+                    Free
+                  </span>
+                }
+              
+            </div>
+            <button class="btn-logout" 
+                    (click)="authStore.logout()" 
+                    aria-label="Déconnexion"
+                    title="Se déconnecter">
+              <i class="bi bi-box-arrow-right"></i>
+            </button>
+          </div>
+        } @else {
+          <!-- User non connecté -->
+          <button class="btn-login" 
+                  (click)="authStore.login()"
+                  aria-label="Se connecter">
+            <i class="bi bi-person-circle"></i>
+            <span>Se connecter</span>
+          </button>
+        }
+      </div>
+
+      <!-- Mobile Menu Toggle (optionnel) -->
+      <button class="mobile-menu-toggle" 
+              type="button" 
+              aria-label="Toggle navigation"
+              aria-expanded="false"
+              (click)="toggleMobileMenu()">
+        <i class="bi bi-list"></i>
+      </button>
+
+    </div>
+  </div>
+</nav>

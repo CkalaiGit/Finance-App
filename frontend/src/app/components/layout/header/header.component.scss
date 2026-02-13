@@ -1,0 +1,243 @@
+/* ========================================
+   LAYOUT & HOST
+======================================== */
+:host {
+  display: block;
+  width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.navbar-fintech {
+  background: var(--bg-card); // Utilise ton bleu sombre
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-color);
+  padding: 12px 0;
+  box-shadow: var(--shadow-sm);
+
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+}
+
+.navbar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+/* ========================================
+   LOGO & BRAND
+======================================== */
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: var(--transition-smooth);
+
+  .logo-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 100px;
+    color: white;
+    box-shadow: var(--shadow-glow);
+  }
+
+  .brand-text {
+    font-size: 24px;
+    font-weight: 700;
+    font-family: 'Crimson Text', serif;
+    
+    .brand-accent {
+      background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+  }
+}
+
+/* ========================================
+   NAVIGATION MENU (Desktop)
+======================================== */
+.nav-menu {
+  display: flex;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 15px;
+    border-radius: 8px;
+    transition: var(--transition-smooth);
+
+    i { font-size: 18px; }
+
+    &:hover {
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+    }
+
+    &.active {
+      background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+      color: white;
+      box-shadow: var(--shadow-glow);
+    }
+  }
+
+  @media (max-width: 768px) {
+    display: none; // Cache le menu complet sur mobile (on utilise le burger)
+  }
+}
+
+/* ========================================
+   USER SECTION & AUTH
+======================================== */
+.user-section-container {
+  display: flex;
+  align-items: center;
+}
+
+.user-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.username {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* BADGES */
+.badge-premium {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #fbbf24;
+  text-transform: uppercase;
+  font-weight: 700;
+  i { font-size: 10px; }
+}
+
+.badge-free {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+/* ========================================
+   BOUTONS (Login & Logout)
+======================================== */
+
+/* Bouton Login (Fini le gris !) */
+.btn-login {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%) !important;
+  border: none !important;
+  border-radius: 10px;
+  color: white !important;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  box-shadow: var(--shadow-glow);
+
+  i { font-size: 20px; }
+
+  &:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+  }
+}
+
+/* Bouton Logout */
+.btn-logout {
+  width: 36px;
+  height: 36px;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  background: rgba(239, 68, 68, 0.1) !important;
+  border: 1px solid rgba(239, 68, 68, 0.2) !important;
+  border-radius: 8px;
+  color: #ef4444 !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #ef4444 !important;
+    color: white !important;
+    transform: scale(1.05);
+  }
+}
+
+/* ========================================
+   MOBILE MENU TOGGLE
+======================================== */
+.mobile-menu-toggle {
+  display: none; // CACHÉ SUR DESKTOP
+  width: 40px;
+  height: 40px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 24px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+
+  @media (max-width: 768px) {
+    display: flex; // VISIBLE UNIQUEMENT SUR MOBILE
+  }
+}

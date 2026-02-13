@@ -13,7 +13,7 @@ const keycloak = new Keycloak({
 // 2. Lancement du processus d'authentification
 keycloak.init({
   onLoad: 'check-sso', // Vérifie si l'utilisateur est déjà loggé au chargement
-  silentCheckSsoRedirectUri: window.location.origin + '/assets/silent-check-sso.html',
+  silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
   pkceMethod: 'S256' // Utilisation du PKCE (Expert standard)
 }).then((authenticated) => {
   console.log(`[Keycloak] Statut : ${authenticated ? 'Authentifié' : 'Public'}`);
