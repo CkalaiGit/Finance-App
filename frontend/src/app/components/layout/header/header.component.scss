@@ -29,6 +29,16 @@
   align-items: center;
   justify-content: space-between;
   gap: 24px;
+  flex-wrap: wrap;
+
+  @media (max-width: 1024px) {
+    gap: 16px;
+  }
+
+  @media (max-width: 768px) {
+    gap: 12px;
+    justify-content: flex-start;
+  }
 }
 
 /* ========================================
@@ -41,6 +51,7 @@
   text-decoration: none;
   color: var(--text-primary);
   transition: var(--transition-smooth);
+  flex-shrink: 0;
 
   .logo-icon {
     width: 40px;
@@ -67,6 +78,10 @@
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
+
+    @media (max-width: 640px) {
+      font-size: 18px;
+    }
   }
 }
 
@@ -79,6 +94,8 @@
   list-style: none;
   margin: 0;
   padding: 0;
+  flex: 1;
+  justify-content: center;
 
   .nav-link {
     display: flex;
@@ -92,6 +109,7 @@
     font-size: 15px;
     border-radius: 8px;
     transition: var(--transition-smooth);
+    white-space: nowrap;
 
     i { font-size: 18px; }
 
@@ -107,6 +125,15 @@
     }
   }
 
+  @media (max-width: 1024px) {
+    gap: 4px;
+
+    .nav-link {
+      padding: 8px 12px;
+      font-size: 14px;
+    }
+  }
+
   @media (max-width: 768px) {
     display: none; // Cache le menu complet sur mobile (on utilise le burger)
   }
@@ -118,6 +145,14 @@
 .user-section-container {
   display: flex;
   align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: auto;
+
+  @media (max-width: 768px) {
+    margin-left: 0;
+    gap: 8px;
+  }
 }
 
 .user-section {
@@ -128,12 +163,23 @@
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border-color);
   border-radius: 12px;
+
+  @media (max-width: 640px) {
+    gap: 12px;
+    padding: 6px 8px;
+  }
 }
 
 .user-info {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .avatar {
@@ -153,6 +199,10 @@
   font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
+
+  @media (max-width: 640px) {
+    font-size: 12px;
+  }
 }
 
 /* BADGES */
@@ -226,18 +276,88 @@
 ======================================== */
 .mobile-menu-toggle {
   display: none; // CACHÉ SUR DESKTOP
-  width: 40px;
-  height: 40px;
-  background: var(--bg-card);
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   color: var(--text-primary);
-  font-size: 24px;
+  font-size: 22px;
   cursor: pointer;
   align-items: center;
   justify-content: center;
+  transition: var(--transition-smooth);
+  flex-shrink: 0;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
 
   @media (max-width: 768px) {
     display: flex; // VISIBLE UNIQUEMENT SUR MOBILE
+  }
+}
+
+/* ========================================
+   MOBILE NAVIGATION MENU
+======================================== */
+.mobile-nav-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-sm);
+  z-index: 999;
+
+  @media (max-width: 768px) {
+    display: block;
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 12px 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  li {
+    margin: 0;
+  }
+}
+
+.mobile-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 24px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 15px;
+  transition: var(--transition-smooth);
+  border-left: 3px solid transparent;
+
+  i {
+    font-size: 18px;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    border-left-color: var(--accent-blue);
+  }
+
+  &.active {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
+    color: var(--accent-blue);
+    border-left-color: var(--accent-blue);
   }
 }

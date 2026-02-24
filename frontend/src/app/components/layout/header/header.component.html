@@ -35,13 +35,13 @@
           </a>
         </li>
         <li role="none">
-          <a routerLink="/search" 
+          <a routerLink="/about" 
              routerLinkActive="active" 
              class="nav-link" 
              role="menuitem"
-             aria-label="Rechercher">
-            <i class="bi bi-search" aria-hidden="true"></i>
-            <span class="nav-text">Rechercher</span>
+             aria-label="À propos">
+            <i class="bi bi-info-circle" aria-hidden="true"></i>
+            <span class="nav-text">À propos</span>
           </a>
         </li>
       </ul>
@@ -53,7 +53,7 @@
           <div class="user-section">
             
               <div class="avatar">
-                {{ user.username?.charAt(0)?.toUpperCase() }}
+               {{ user.username.charAt(0).toUpperCase() }}
               </div>
               <div class="user-details">
                 <span class="username">{{ user.username }}</span>
@@ -91,11 +91,52 @@
       <button class="mobile-menu-toggle" 
               type="button" 
               aria-label="Toggle navigation"
-              aria-expanded="false"
+              [attr.aria-expanded]="mobileMenuOpen"
               (click)="toggleMobileMenu()">
         <i class="bi bi-list"></i>
       </button>
 
     </div>
+
+    <!-- Mobile Navigation Menu (visible seulement sur mobile) -->
+    @if (mobileMenuOpen) {
+      <div class="mobile-nav-menu">
+        <ul role="menubar">
+          <li role="none">
+            <a routerLink="/home" 
+               routerLinkActive="active"
+               class="mobile-nav-link"
+               role="menuitem"
+               (click)="closeMobileMenu()"
+               aria-label="Accueil">
+              <i class="bi bi-house-door-fill" aria-hidden="true"></i>
+              <span>Accueil</span>
+            </a>
+          </li>
+          <li role="none">
+            <a routerLink="/watchlist" 
+               routerLinkActive="active"
+               class="mobile-nav-link"
+               role="menuitem"
+               (click)="closeMobileMenu()"
+               aria-label="Watchlist">
+              <i class="bi bi-star-fill" aria-hidden="true"></i>
+              <span>Watchlist</span>
+            </a>
+          </li>
+          <li role="none">
+            <a routerLink="/about" 
+               routerLinkActive="active"
+               class="mobile-nav-link"
+               role="menuitem"
+               (click)="closeMobileMenu()"
+               aria-label="À propos">
+              <i class="bi bi-info-circle" aria-hidden="true"></i>
+              <span>À propos</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    }
   </div>
 </nav>

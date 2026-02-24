@@ -12,13 +12,8 @@ import { AuthStoreService } from '../../../auth/auth-store.service'; // Point 1 
   changeDetection: ChangeDetectionStrategy.OnPush // Point 3 : Performance max
 })
 export class HeaderComponent {
-  // Point 2.1 : Injection par constructeur obligatoire
   constructor(public readonly authStore: AuthStoreService) {}
 
- // Injectez votre service d'authentification
-  // authStore = inject(AuthStore);
-
-  // État du menu mobile
   mobileMenuOpen = false;
 
   /**
