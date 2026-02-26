@@ -1,0 +1,106 @@
+<main class="landing-page" role="main" aria-labelledby="landing-title">
+  <div class="container">
+    
+    <section class="hero-section">
+      <header class="hero-header">
+        <h1 id="landing-title" class="hero-title">
+          Analysez les entreprises cotées
+        </h1>
+        <p class="hero-subtitle">
+          Recherchez et comparez les métriques financières clés
+        </p>
+      </header>
+
+      <form class="search-form" role="search" aria-label="Recherche d'entreprises" (submit)="onSearch($event)">
+        <div class="search-wrapper">
+          <label for="company-search" class="sr-only">Rechercher une entreprise</label>
+          <input 
+            type="search" 
+            id="company-search"
+            name="search"
+            class="search-input" 
+            placeholder="Rechercher une entreprise (ex: Apple, AAPL...)"
+            autocomplete="off"
+            [disabled]="(companies$ | async) === null && !(error$ | async)"
+          />
+          <button 
+            type="submit" 
+            class="search-button" 
+            aria-label="Lancer la recherche"
+            [disabled]="(companies$ | async) === null && !(error$ | async)">
+            <i class="bi bi-search" aria-hidden="true"></i>
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section class="companies-section" aria-labelledby="companies-title">
+      <h2 id="companies-title" class="sr-only">Entreprises en vedette</h2>
+
+      @if (error$ | async; as errorMsg) {
+        <div class="error-state" role="alert" aria-live="assertive">
+          <div class="error-icon" aria-hidden="true">
+            <i class="bi bi-exclamation-triangle"></i>
+          </div>
+          <p class="error-text">{{ errorMsg }}</p>
+          <button class="btn-retry" (click)="load()" aria-label="Réessayer de charger les entreprises">
+            <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Réessayer
+          </button>
+        </div>
+      }
+
+      @else if (companies$ | async; as list) {
+        
+        @if (list.length > 0) {
+          <div class="companies-grid">
+            @for (company of list; track company.ticker) {
+              <article 
+                class="company-card"
+                [ngClass]="'company-card-' + company.colorVariant"
+                role="button"
+                tabindex="0"
+                (click)="onCompanyClick(company)"
+                (keypress.enter)="onCompanyClick(company)">
+                
+                <div class="company-ticker" aria-hidden="true">
+                  {{ company.ticker }}
+                </div>
+                
+                <div class="company-info">
+                  <h3 class="company-name">{{ company.name }}</h3>
+                  <p class="company-industry">{{ company.industry }}</p>
+                  
+                  @if (company.currentPrice) {
+                    <p class="company-price">
+                      {{ company.currentPrice | currency:'USD':'symbol':'1.2-2' }}
+                    </p>
+                  }
+                </div>
+                
+                <div class="company-arrow" aria-hidden="true">
+                  <i class="bi bi-arrow-right"></i>
+                </div>
+              </article>
+            }
+          </div>
+        } 
+        @else {
+          <div class="empty-state" role="status">
+            <div class="empty-icon" aria-hidden="true">
+              <i class="bi bi-inbox"></i>
+            </div>
+            <p class="empty-text">Aucune entreprise à afficher</p>
+          </div>
+        }
+      }
+
+      @else {
+        <div class="loading-state" role="status" aria-live="polite">
+          <div class="spinner" aria-hidden="true"></div>
+          <p class="loading-text">Chargement des entreprises...</p>
+        </div>
+      }
+
+    </section>
+  </div>
+</main>
