@@ -9,7 +9,7 @@ import { AuthStoreService } from '../../../auth/auth-store.service'; // Point 1 
   imports: [CommonModule, RouterLink, RouterLinkActive],
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush // Point 3 : Performance max
+  changeDetection: ChangeDetectionStrategy.OnPush 
 })
 export class HeaderComponent {
   constructor(public readonly authStore: AuthStoreService) {}

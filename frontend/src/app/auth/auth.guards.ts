@@ -1,24 +1,21 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthStoreService } from './auth-store.service';
+import { AuthService } from './auth.service'; // On injecte le service pour le login
 import { map, take } from 'rxjs';
 
 export const authGuard: CanActivateFn = () => {
   const store = inject(AuthStoreService);
+  const authService = inject(AuthService);
   const router = inject(Router);
 
   return store.isLoggedIn$.pipe(
-    take(1), // On prend la valeur actuelle et on complète
+    take(1), 
     map(isLoggedIn => {
       if (isLoggedIn) {
         return true;
       }
-      
-      // Optionnel : rediriger vers l'accueil si non connecté
-      // return router.parseUrl('/'); 
-      
-      // Pour ton projet, Keycloak gère souvent la redirection lui-même
-      // via authService.login() si le Guard retourne false.
+      authService.login(); 
       return false;
     })
   );
