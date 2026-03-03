@@ -1,3 +1,6 @@
+server:
+  port: 8081
+
 spring:
   application:
     name: finance-app
@@ -44,7 +47,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8080/realms/finance-app
+          issuer-uri: http://localhost:8080/dev-realm/finance-app
 
   # ─────────────────────────────────────────────────────────────
   # DOCKER COMPOSE — Spring Boot détecte docker-compose.yml
