@@ -1,0 +1,86 @@
+spring:
+  application:
+    name: finance-app
+
+  # ─────────────────────────────────────────────────────────────
+  # VIRTUAL THREADS
+  # ─────────────────────────────────────────────────────────────
+  threads:
+    virtual:
+      enabled: true
+
+  # ─────────────────────────────────────────────────────────────
+  # DATASOURCE — PostgreSQL applicatif (app-db)
+  # ─────────────────────────────────────────────────────────────
+  datasource:
+    url: jdbc:postgresql://localhost:5432/financeapp
+    username: financeapp
+    password: financeapp
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  # ─────────────────────────────────────────────────────────────
+  # JPA / HIBERNATE
+  # ─────────────────────────────────────────────────────────────
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        default_schema: public
+
+  # ─────────────────────────────────────────────────────────────
+  # SÉCURITÉ — OAuth2 Resource Server (Keycloak)
+  # ─────────────────────────────────────────────────────────────
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/finance-app
+
+  # ─────────────────────────────────────────────────────────────
+  # DOCKER COMPOSE — Spring Boot détecte docker-compose.yml
+  # ─────────────────────────────────────────────────────────────
+  docker:
+    compose:
+      enabled: false
+      lifecycle-management: start-only
+
+# ─────────────────────────────────────────────────────────────
+# ACTUATOR
+# ─────────────────────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# ─────────────────────────────────────────────────────────────
+# OPENAPI / SWAGGER
+# ─────────────────────────────────────────────────────────────
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    oauth2-redirect-url: http://localhost:8080/realms/finance-app
+
+# ─────────────────────────────────────────────────────────────
+# LOGGING
+# ─────────────────────────────────────────────────────────────
+logging:
+  level:
+    com.cairedine: DEBUG
+    org.springframework.security: INFO
+    org.hibernate.SQL: DEBUG
