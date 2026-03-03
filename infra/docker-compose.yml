@@ -1,7 +1,10 @@
 version: '3.8'
 
 services:
-  # Base de données pour Keycloak
+
+  # ─────────────────────────────────────────────────────────────
+  # BASE DE DONNÉES KEYCLOAK
+  # ─────────────────────────────────────────────────────────────
   keycloak-db:
     image: postgres:17
     container_name: keycloak-db
@@ -13,16 +16,24 @@ services:
     volumes:
       - keycloak_data:/var/lib/postgresql/data
     ports:
-      - "5433:5432" # Port décalé pour éviter les conflits locaux
+      - "5433:5432"
     networks:
-      - keycloak-net
+      - finance-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-keycloak}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Service Keycloak
+  # ─────────────────────────────────────────────────────────────
+  # KEYCLOAK
+  # ─────────────────────────────────────────────────────────────
   keycloak:
-    image: quay.io/keycloak/keycloak:26.0 # Utilisation d'une version plus récente et stable
+    image: quay.io/keycloak/keycloak:26.0
     container_name: keycloak
     depends_on:
-      - keycloak-db
+      keycloak-db:
+        condition: service_healthy
     environment:
       KC_DB: postgres
       KC_DB_URL_HOST: keycloak-db
@@ -31,35 +42,52 @@ services:
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-keycloak}
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
-
-      # Configuration DEV & Accessibilité
       KC_HTTP_ENABLED: "true"
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
       KC_LOG_LEVEL: info
-
-      # OPTIMISATION THEME (Désactive le cache pour le développement)
       KC_CACHE_THEME_RESOURCES: "false"
       KC_CACHE_THEME_TEMPLATES: "false"
-
-    # Commande pour démarrer en mode dev et importer le realm
     command: start-dev --import-realm
-
     volumes:
-      # Montage du fichier realm pour import au démarrage
       - ./keycloak/realm-dev.json:/opt/keycloak/data/import/realm.json:ro
-
-      # MONTAGE DU THÈME (Indispensable pour vos fichiers FTL/CSS)
-      # On monte le dossier parent 'themes' pour que Keycloak trouve 'financeapp'
       - ./keycloak/themes:/opt/keycloak/themes:rw
-
     ports:
       - "8080:8080"
     networks:
-      - keycloak-net
+      - finance-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  # ─────────────────────────────────────────────────────────────
+  # BASE DE DONNÉES APPLICATIVE
+  # ─────────────────────────────────────────────────────────────
+  app-db:
+    image: postgres:17
+    container_name: app-db
+    restart: always
+    environment:
+      POSTGRES_DB: ${APP_DB:-financeapp}
+      POSTGRES_USER: ${APP_DB_USER:-financeapp}
+      POSTGRES_PASSWORD: ${APP_DB_PASSWORD:-financeapp}
+    volumes:
+      - app_db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - finance-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${APP_DB_USER:-financeapp}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   keycloak_data:
+  app_db_data:
 
 networks:
-  keycloak-net:
+  finance-net:
