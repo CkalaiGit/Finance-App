@@ -64,8 +64,9 @@ class KeycloakJwtConverterTest {
             var ctx = new UserContext("uuid-alice", "alice@finance.com", "alice", Set.of("PREMIUM"));
             when(userSyncService.syncAndBuildContext(jwt)).thenReturn(ctx);
 
-            var result = (JwtAuthenticationToken) keycloakJwtConverter.convert(jwt);
+            var result = keycloakJwtConverter.convert(jwt);
 
+            assert result != null;
             assertThat(result.getDetails()).isEqualTo(ctx);
         }
 
@@ -75,8 +76,9 @@ class KeycloakJwtConverterTest {
             var ctx = new UserContext("uuid-alice", "alice@finance.com", "alice", Set.of("PREMIUM", "FREEMIUM"));
             when(userSyncService.syncAndBuildContext(jwt)).thenReturn(ctx);
 
-            var result = (JwtAuthenticationToken) keycloakJwtConverter.convert(jwt);
+            var result = keycloakJwtConverter.convert(jwt);
 
+            assert result != null;
             assertThat(result.getAuthorities())
                     .extracting("authority")
                     .containsExactlyInAnyOrder("ROLE_PREMIUM", "ROLE_FREEMIUM");
@@ -88,8 +90,9 @@ class KeycloakJwtConverterTest {
             var ctx = new UserContext("uuid-alice", "alice@finance.com", "alice", Set.of());
             when(userSyncService.syncAndBuildContext(jwt)).thenReturn(ctx);
 
-            var result = (JwtAuthenticationToken) keycloakJwtConverter.convert(jwt);
+            var result = keycloakJwtConverter.convert(jwt);
 
+            assert result != null;
             assertThat(result.getAuthorities()).isEmpty();
         }
     }
