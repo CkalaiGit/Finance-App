@@ -1,6 +1,11 @@
 server:
   port: 8081
 
+app:
+  cors:
+    allowed-origins:
+      - http://localhost:4200
+
 spring:
   application:
     name: finance-app
@@ -47,7 +52,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8080/dev-realm/finance-app
+          issuer-uri: http://localhost:8080/realms/dev-realm
 
   # ─────────────────────────────────────────────────────────────
   # DOCKER COMPOSE — Spring Boot détecte docker-compose.yml
@@ -85,5 +90,13 @@ springdoc:
 logging:
   level:
     com.cairedine: DEBUG
-    org.springframework.security: INFO
+    org.springframework.security: DEBUG
     org.hibernate.SQL: DEBUG
+
+# ─────────────────────────────────────────────────────────────
+# LOGGING
+# ─────────────────────────────────────────────────────────────
+
+fmp:
+  api-key: ***REMOVED-FMP-KEY***
+  base-url: https://financialmodelingprep.com
