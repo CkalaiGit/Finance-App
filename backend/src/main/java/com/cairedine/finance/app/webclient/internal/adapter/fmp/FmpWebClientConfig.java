@@ -1,12 +1,14 @@
 package com.cairedine.finance.app.webclient.internal.adapter.fmp;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
 
 @Configuration
 @RequiredArgsConstructor
+@EnableConfigurationProperties(FmpProperties.class)
 class FmpWebClientConfig {
 
     private final FmpProperties fmpProperties;

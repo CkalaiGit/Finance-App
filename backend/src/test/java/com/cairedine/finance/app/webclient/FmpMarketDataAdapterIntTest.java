@@ -11,7 +11,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @SpringBootTest
 @ActiveProfiles("test")
-class FmpMarketDataAdapterIT {
+class FmpMarketDataAdapterIntTest {
 
     @Autowired
     private IMarketDataPort marketDataPort;

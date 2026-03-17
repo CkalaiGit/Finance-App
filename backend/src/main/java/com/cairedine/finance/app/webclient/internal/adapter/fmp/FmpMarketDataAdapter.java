@@ -23,7 +23,6 @@ class FmpMarketDataAdapter implements IMarketDataPort {
                 .uri("/stable/profile?symbol={symbol}", symbol)
                 .retrieve()
                 .body(FmpCompanyProfileDto[].class);
-        log.info("FMP response : {}", dtos[0]);
         return companyProfileMapper.toRecord(dtos[0]);
     }
 }

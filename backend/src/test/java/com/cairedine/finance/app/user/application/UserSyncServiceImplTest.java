@@ -1,9 +1,8 @@
 package com.cairedine.finance.app.user.application;
 
 import com.cairedine.finance.app.user.UserContext;
-import com.cairedine.finance.app.user.domain.entity.DBUser;
 import com.cairedine.finance.app.user.domain.service.IUserSyncService;
-import com.cairedine.finance.app.user.infrastructure.repository.IUserRepository;
+import com.cairedine.finance.app.user.infrastructure.persistence.repository.IUserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -17,7 +16,6 @@ import org.springframework.test.context.ActiveProfiles;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -54,6 +52,8 @@ class UserSyncServiceImplTest {
     @BeforeEach
     void setUp() {
         userRepository.deleteAll();
+        var jwt = buildJwt("uuid-alice", "old@finance.com", "old_alice", List.of("FREEMIUM"));
+        userSyncService.syncAndBuildContext(jwt);
     }
 
     @Nested
@@ -93,7 +93,8 @@ class UserSyncServiceImplTest {
 
         @BeforeEach
         void setUp() {
-            userRepository.save(new DBUser("uuid-alice", "old@finance.com", "old_alice", Set.of("FREEMIUM")));
+            var jwt = buildJwt("uuid-alice", "old@finance.com", "old_alice", List.of("FREEMIUM"));
+            userSyncService.syncAndBuildContext(jwt);
         }
 
         @Test

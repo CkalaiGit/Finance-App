@@ -12,6 +12,9 @@ public class CompanyProfileMapper {
     public CompanyProfileRecord toRecord(FmpCompanyProfileDto dto) {
         return new CompanyProfileRecord(
                 dto.symbol(),
+                dto.companyName(),
+                dto.industry(),
+                dto.image(),
                 toBigDecimal(dto.beta()),
                 toBigDecimal(dto.marketCap())
         );

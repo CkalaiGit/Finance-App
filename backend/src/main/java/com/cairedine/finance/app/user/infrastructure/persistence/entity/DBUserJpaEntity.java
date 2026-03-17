@@ -1,4 +1,4 @@
-package com.cairedine.finance.app.user.domain.entity;
+package com.cairedine.finance.app.user.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -15,7 +15,7 @@ import java.util.Set;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class DBUser {
+public class DBUserJpaEntity {
 
     @Id
     @EqualsAndHashCode.Include
@@ -43,7 +43,7 @@ public class DBUser {
     @Column(nullable = false)
     private Instant updatedAt;
 
-    public DBUser(String keycloakId, String email, String username, Set<String> roles) {
+    public DBUserJpaEntity(String keycloakId, String email, String username, Set<String> roles) {
         this.keycloakId = keycloakId;
         this.email      = email;
         this.username   = username;

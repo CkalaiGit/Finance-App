@@ -1,9 +1,9 @@
 package com.cairedine.finance.app.user.application;
 
 import com.cairedine.finance.app.user.UserContext;
-import com.cairedine.finance.app.user.domain.entity.DBUser;
+import com.cairedine.finance.app.user.infrastructure.persistence.entity.DBUserJpaEntity;
 import com.cairedine.finance.app.user.domain.service.IUserSyncService;
-import com.cairedine.finance.app.user.infrastructure.repository.IUserRepository;
+import com.cairedine.finance.app.user.infrastructure.persistence.repository.IUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -31,7 +31,7 @@ public class UserSyncServiceImpl implements IUserSyncService {
         String username   = jwt.getClaimAsString("preferred_username");
         Set<String> roles = extractRoles(jwt);
 
-        DBUser user = userRepository.findById(keycloakId)
+        DBUserJpaEntity user = userRepository.findById(keycloakId)
                 .map(existing -> {
                     existing.updateFrom(email, username, roles);
                     log.debug("Utilisateur mis à jour : {}", keycloakId);
@@ -39,7 +39,7 @@ public class UserSyncServiceImpl implements IUserSyncService {
                 })
                 .orElseGet(() -> {
                     log.info("Nouvel utilisateur : {}", keycloakId);
-                    return new DBUser(keycloakId, email, username, roles);
+                    return new DBUserJpaEntity(keycloakId, email, username, roles);
                 });
 
         userRepository.save(user);
