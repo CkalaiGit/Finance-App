@@ -98,5 +98,5 @@ logging:
 # ─────────────────────────────────────────────────────────────
 
 fmp:
-  api-key: ***REMOVED-FMP-KEY***
+  api-key:
   base-url: https://financialmodelingprep.com
