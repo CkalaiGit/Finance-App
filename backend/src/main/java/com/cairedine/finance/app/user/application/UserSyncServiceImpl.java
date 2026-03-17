@@ -1,9 +1,9 @@
 package com.cairedine.finance.app.user.application;
 
 import com.cairedine.finance.app.user.UserContext;
-import com.cairedine.finance.app.user.infrastructure.persistence.entity.DBUserJpaEntity;
+import com.cairedine.finance.app.user.domain.model.User;
+import com.cairedine.finance.app.user.domain.port.IUserRepositoryPort;
 import com.cairedine.finance.app.user.domain.service.IUserSyncService;
-import com.cairedine.finance.app.user.infrastructure.persistence.repository.IUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -21,7 +21,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserSyncServiceImpl implements IUserSyncService {
 
-    private final IUserRepository userRepository;
+
+    private final IUserRepositoryPort userRepository;
 
     @Override
     @Transactional
@@ -31,20 +32,24 @@ public class UserSyncServiceImpl implements IUserSyncService {
         String username   = jwt.getClaimAsString("preferred_username");
         Set<String> roles = extractRoles(jwt);
 
-        DBUserJpaEntity user = userRepository.findById(keycloakId)
+        User user = userRepository.findById(keycloakId)
                 .map(existing -> {
-                    existing.updateFrom(email, username, roles);
                     log.debug("Utilisateur mis à jour : {}", keycloakId);
-                    return existing;
+                    return existing.updateFrom(email, username, roles);
                 })
                 .orElseGet(() -> {
                     log.info("Nouvel utilisateur : {}", keycloakId);
-                    return new DBUserJpaEntity(keycloakId, email, username, roles);
+                    return new User(keycloakId, email, username, roles);
                 });
 
         userRepository.save(user);
 
-        return new UserContext(keycloakId, email, username, roles);
+        return new UserContext(
+                user.keycloakId(),
+                user.email(),
+                user.username(),
+                user.roles()
+        );
     }
 
     @SuppressWarnings("unchecked")

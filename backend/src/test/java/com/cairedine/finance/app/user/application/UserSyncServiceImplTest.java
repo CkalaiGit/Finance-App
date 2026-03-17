@@ -2,6 +2,8 @@ package com.cairedine.finance.app.user.application;
 
 import com.cairedine.finance.app.user.UserContext;
 import com.cairedine.finance.app.user.domain.service.IUserSyncService;
+import com.cairedine.finance.app.user.infrastructure.persistence.adapter.UserRepositoryAdapter;
+import com.cairedine.finance.app.user.infrastructure.persistence.mapper.UserPersistenceMapper;
 import com.cairedine.finance.app.user.infrastructure.persistence.repository.IUserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,15 +21,9 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Test d'intégration de UserSyncServiceImpl.
- * On utilise @DataJpaTest + le vrai repository H2.
- * Le service est importé via @Import — pas de mock de repository.
- * On teste la logique métier : création, mise à jour, extraction des rôles.
- */
 @DataJpaTest
 @ActiveProfiles("test")
-@Import(UserSyncServiceImpl.class)
+@Import({UserSyncServiceImpl.class, UserRepositoryAdapter.class, UserPersistenceMapper.class})
 @DisplayName("UserSyncServiceImpl")
 class UserSyncServiceImplTest {
 
@@ -52,30 +48,15 @@ class UserSyncServiceImplTest {
     @BeforeEach
     void setUp() {
         userRepository.deleteAll();
-        var jwt = buildJwt("uuid-alice", "old@finance.com", "old_alice", List.of("FREEMIUM"));
-        userSyncService.syncAndBuildContext(jwt);
     }
 
     @Nested
-    @DisplayName("Création d'un nouvel utilisateur")
+    @DisplayName("Creation d'un nouvel utilisateur")
     class Creation {
 
         @Test
-        @DisplayName("doit créer un DBUser quand le sub est inconnu")
-        void doitCreerUserQuandSubInconnu() {
-            var jwt = buildJwt("uuid-alice", "alice@finance.com", "alice", List.of("PREMIUM"));
-
-            userSyncService.syncAndBuildContext(jwt);
-
-            var saved = userRepository.findById("uuid-alice");
-            assertThat(saved).isPresent();
-            assertThat(saved.get().getEmail()).isEqualTo("alice@finance.com");
-            assertThat(saved.get().getRoles()).containsExactlyInAnyOrder("PREMIUM");
-        }
-
-        @Test
-        @DisplayName("doit retourner un UserContext avec les bonnes valeurs")
-        void doitRetournerUserContextCorrect() {
+        @DisplayName("doit creer un utilisateur et retourner le bon UserContext")
+        void doitCreerUserEtRetournerContext() {
             var jwt = buildJwt("uuid-alice", "alice@finance.com", "alice", List.of("PREMIUM"));
 
             UserContext ctx = userSyncService.syncAndBuildContext(jwt);
@@ -84,11 +65,12 @@ class UserSyncServiceImplTest {
             assertThat(ctx.email()).isEqualTo("alice@finance.com");
             assertThat(ctx.username()).isEqualTo("alice");
             assertThat(ctx.roles()).containsExactlyInAnyOrder("PREMIUM");
+            assertThat(userRepository.count()).isEqualTo(1);
         }
     }
 
     @Nested
-    @DisplayName("Mise à jour d'un utilisateur existant")
+    @DisplayName("Mise a jour d'un utilisateur existant")
     class MiseAJour {
 
         @BeforeEach
@@ -98,21 +80,19 @@ class UserSyncServiceImplTest {
         }
 
         @Test
-        @DisplayName("doit mettre à jour le DBUser quand le sub existe déjà")
-        void doitMettreAJourUserExistant() {
+        @DisplayName("doit mettre a jour et retourner le UserContext mis a jour")
+        void doitMettreAJourEtRetournerContextMisAJour() {
             var jwt = buildJwt("uuid-alice", "new@finance.com", "new_alice", List.of("PREMIUM", "FREEMIUM"));
 
-            userSyncService.syncAndBuildContext(jwt);
+            UserContext ctx = userSyncService.syncAndBuildContext(jwt);
 
-            var updated = userRepository.findById("uuid-alice");
-            assertThat(updated).isPresent();
-            assertThat(updated.get().getEmail()).isEqualTo("new@finance.com");
-            assertThat(updated.get().getUsername()).isEqualTo("new_alice");
-            assertThat(updated.get().getRoles()).containsExactlyInAnyOrder("PREMIUM", "FREEMIUM");
+            assertThat(ctx.email()).isEqualTo("new@finance.com");
+            assertThat(ctx.username()).isEqualTo("new_alice");
+            assertThat(ctx.roles()).containsExactlyInAnyOrder("PREMIUM", "FREEMIUM");
         }
 
         @Test
-        @DisplayName("ne doit pas créer un doublon en base")
+        @DisplayName("ne doit pas creer un doublon en base")
         void neDoisPasCreerDoublon() {
             var jwt = buildJwt("uuid-alice", "new@finance.com", "new_alice", List.of("PREMIUM"));
 
@@ -123,11 +103,11 @@ class UserSyncServiceImplTest {
     }
 
     @Nested
-    @DisplayName("Extraction des rôles depuis le JWT")
+    @DisplayName("Extraction des roles depuis le JWT")
     class ExtractionRoles {
 
         @Test
-        @DisplayName("doit retourner un UserContext avec roles vide si realm_access absent")
+        @DisplayName("doit retourner roles vide si realm_access absent")
         void doitGererAbsenceRealmAccess() {
             var jwt = Jwt.withTokenValue("token")
                     .header("alg", "RS256")
@@ -144,7 +124,7 @@ class UserSyncServiceImplTest {
         }
 
         @Test
-        @DisplayName("doit retourner un UserContext avec roles vide si la liste est vide")
+        @DisplayName("doit retourner roles vide si la liste est vide")
         void doitGererListeRolesVide() {
             var jwt = buildJwt("uuid-empty", "empty@finance.com", "empty", List.of());
 
