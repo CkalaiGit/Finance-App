@@ -3,7 +3,7 @@ package com.cairedine.finance.app.webclient.internal.adapter.fmp;
 import com.cairedine.finance.app.webclient.IMarketDataPort;
 import com.cairedine.finance.app.webclient.internal.dto.FmpCompanyProfileDto;
 import com.cairedine.finance.app.webclient.internal.mapper.CompanyProfileMapper;
-import com.cairedine.finance.app.webclient.record.CompanyProfileRecord;
+import com.cairedine.finance.app.webclient.CompanyProfileRecord;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

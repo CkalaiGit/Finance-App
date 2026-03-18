@@ -1,6 +1,5 @@
 package com.cairedine.finance.app.webclient;
 
-import com.cairedine.finance.app.webclient.record.CompanyProfileRecord;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

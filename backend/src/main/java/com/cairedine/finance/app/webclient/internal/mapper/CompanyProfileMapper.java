@@ -1,7 +1,7 @@
 package com.cairedine.finance.app.webclient.internal.mapper;
 
 import com.cairedine.finance.app.webclient.internal.dto.FmpCompanyProfileDto;
-import com.cairedine.finance.app.webclient.record.CompanyProfileRecord;
+import com.cairedine.finance.app.webclient.CompanyProfileRecord;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;

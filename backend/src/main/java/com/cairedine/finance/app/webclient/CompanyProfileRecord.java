@@ -1,4 +1,4 @@
-package com.cairedine.finance.app.webclient.record;
+package com.cairedine.finance.app.webclient;
 
 import java.math.BigDecimal;
 
