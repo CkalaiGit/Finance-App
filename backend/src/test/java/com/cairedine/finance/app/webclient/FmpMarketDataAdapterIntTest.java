@@ -25,4 +25,15 @@ class FmpMarketDataAdapterIntTest {
         assertThat(result.beta()).isPositive();
         assertThat(result.marketCap()).isPositive();
     }
+
+    @Test
+    @DisplayName("doit retourner un IncomeStatementRecord TTM pour AAPL")
+    void doitRetournerIncomeStatementTtmPourAAPL() {
+        IncomeStatementRecord result = marketDataPort.fetchIncomeStatement("AAPL");
+        assertThat(result).isNotNull();
+        assertThat(result.symbol()).isEqualTo("AAPL");
+        assertThat(result.revenue()).isPositive();
+        assertThat(result.operatingIncome()).isPositive();
+        assertThat(result.eps()).isPositive();
+    }
 }

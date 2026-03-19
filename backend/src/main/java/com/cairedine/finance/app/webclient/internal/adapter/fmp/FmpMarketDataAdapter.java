@@ -1,9 +1,12 @@
 package com.cairedine.finance.app.webclient.internal.adapter.fmp;
 
 import com.cairedine.finance.app.webclient.IMarketDataPort;
+import com.cairedine.finance.app.webclient.IncomeStatementRecord;
 import com.cairedine.finance.app.webclient.internal.dto.FmpCompanyProfileDto;
+import com.cairedine.finance.app.webclient.internal.dto.FmpIncomeStatementTtmDto;
 import com.cairedine.finance.app.webclient.internal.mapper.CompanyProfileMapper;
 import com.cairedine.finance.app.webclient.CompanyProfileRecord;
+import com.cairedine.finance.app.webclient.internal.mapper.IncomeStatementMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -16,6 +19,7 @@ class FmpMarketDataAdapter implements IMarketDataPort {
 
     private final RestClient fmpRestClient;
     private final CompanyProfileMapper companyProfileMapper;
+    private final IncomeStatementMapper incomeStatementMapper;
 
     @Override
     public CompanyProfileRecord fetchCompanyProfile(String symbol) {
@@ -25,4 +29,14 @@ class FmpMarketDataAdapter implements IMarketDataPort {
                 .body(FmpCompanyProfileDto[].class);
         return companyProfileMapper.toRecord(dtos[0]);
     }
+
+    @Override
+    public IncomeStatementRecord fetchIncomeStatement(String symbol) {
+        FmpIncomeStatementTtmDto[] dtos = fmpRestClient.get()
+                .uri("/stable/income-statement?symbol={symbol}", symbol)
+                .retrieve()
+                .body(FmpIncomeStatementTtmDto[].class);
+        return incomeStatementMapper.toRecord(dtos[0]);
+    }
 }
+
