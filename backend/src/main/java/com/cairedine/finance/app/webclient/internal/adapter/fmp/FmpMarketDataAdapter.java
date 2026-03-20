@@ -12,6 +12,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+import java.util.Arrays;
+import java.util.List;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -27,6 +30,7 @@ class FmpMarketDataAdapter implements IMarketDataPort {
                 .uri("/stable/profile?symbol={symbol}", symbol)
                 .retrieve()
                 .body(FmpCompanyProfileDto[].class);
+        assert dtos != null;
         return companyProfileMapper.toRecord(dtos[0]);
     }
 
@@ -36,7 +40,20 @@ class FmpMarketDataAdapter implements IMarketDataPort {
                 .uri("/stable/income-statement?symbol={symbol}", symbol)
                 .retrieve()
                 .body(FmpIncomeStatementTtmDto[].class);
+        assert dtos != null;
         return incomeStatementMapper.toRecord(dtos[0]);
+    }
+
+    @Override
+    public List<IncomeStatementRecord> fetchIncomeStatements(String symbol, int limit) {
+        FmpIncomeStatementTtmDto[] dtos = fmpRestClient.get()
+                .uri("/stable/income-statement?symbol={symbol}&period=annual&limit={limit}", symbol, limit)
+                .retrieve()
+                .body(FmpIncomeStatementTtmDto[].class);
+        assert dtos != null;
+        return Arrays.stream(dtos)
+                .map(incomeStatementMapper::toRecord)
+                .toList();
     }
 }
 
