@@ -1,14 +1,8 @@
 package com.cairedine.finance.app.webclient.internal.adapter.fmp;
 
 import com.cairedine.finance.app.webclient.*;
-import com.cairedine.finance.app.webclient.internal.dto.FmpAnalystEstimateDto;
-import com.cairedine.finance.app.webclient.internal.dto.FmpCashFlowTtmDto;
-import com.cairedine.finance.app.webclient.internal.dto.FmpCompanyProfileDto;
-import com.cairedine.finance.app.webclient.internal.dto.FmpIncomeStatementTtmDto;
-import com.cairedine.finance.app.webclient.internal.mapper.AnalystEstimateMapper;
-import com.cairedine.finance.app.webclient.internal.mapper.CashFlowMapper;
-import com.cairedine.finance.app.webclient.internal.mapper.CompanyProfileMapper;
-import com.cairedine.finance.app.webclient.internal.mapper.IncomeStatementMapper;
+import com.cairedine.finance.app.webclient.internal.dto.*;
+import com.cairedine.finance.app.webclient.internal.mapper.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -27,6 +21,7 @@ class FmpMarketDataAdapter implements IMarketDataPort {
     private final IncomeStatementMapper incomeStatementMapper;
     private final CashFlowMapper cashFlowMapper;
     private final AnalystEstimateMapper analystEstimateMapper;
+    private final KeyMetricsMapper keyMetricsMapper;
 
     @Override
     public CompanyProfileRecord fetchCompanyProfile(String symbol) {
@@ -62,6 +57,16 @@ class FmpMarketDataAdapter implements IMarketDataPort {
                 .body(FmpCashFlowTtmDto[].class);
         assert dtos != null;
         return cashFlowMapper.toRecord(dtos[0]);
+    }
+
+    @Override
+    public KeyMetricsRecord fetchKeyMetricsTtm(String symbol) {
+        FmpKeyMetricsTtmDto[] dtos = fmpRestClient.get()
+                .uri("/stable/key-metrics-ttm?symbol={symbol}", symbol)
+                .retrieve()
+                .body(FmpKeyMetricsTtmDto[].class);
+        assert dtos != null;
+        return keyMetricsMapper.toRecord(dtos[0]);
     }
 
     @Override

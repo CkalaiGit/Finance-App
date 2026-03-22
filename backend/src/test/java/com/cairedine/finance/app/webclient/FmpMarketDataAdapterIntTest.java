@@ -57,4 +57,15 @@ class FmpMarketDataAdapterIntTest {
         assertThat(results.getFirst().symbol()).isEqualTo("AAPL");
         assertThat(results.getFirst().epsAvg()).isPositive();
     }
+
+    @Test
+    @DisplayName("doit retourner un KeyMetricsRecord pour AAPL")
+    void doitRetournerKeyMetricsPourAAPL() {
+        KeyMetricsRecord result = marketDataPort.fetchKeyMetricsTtm("AAPL");
+
+        assertThat(result).isNotNull();
+        assertThat(result.symbol()).isEqualTo("AAPL");
+        assertThat(result.returnOnInvestedCapitalTTM()).isPositive();
+        assertThat(result.evToEbit()).isPositive();
+    }
 }
