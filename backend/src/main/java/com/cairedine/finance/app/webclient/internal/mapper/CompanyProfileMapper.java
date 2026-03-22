@@ -4,10 +4,8 @@ import com.cairedine.finance.app.webclient.internal.dto.FmpCompanyProfileDto;
 import com.cairedine.finance.app.webclient.CompanyProfileRecord;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
-
 @Component
-public class CompanyProfileMapper {
+public class CompanyProfileMapper extends BaseMapper {
 
     public CompanyProfileRecord toRecord(FmpCompanyProfileDto dto) {
         return new CompanyProfileRecord(
@@ -18,9 +16,5 @@ public class CompanyProfileMapper {
                 toBigDecimal(dto.beta()),
                 toBigDecimal(dto.marketCap())
         );
-    }
-
-    private BigDecimal toBigDecimal(Double value) {
-        return value != null ? BigDecimal.valueOf(value) : BigDecimal.ZERO;
     }
 }

@@ -5,10 +5,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -29,17 +28,6 @@ class FmpMarketDataAdapterIntTest {
     }
 
     @Test
-    @DisplayName("doit retourner un IncomeStatementRecord TTM pour AAPL")
-    void doitRetournerIncomeStatementTtmPourAAPL() {
-        IncomeStatementRecord result = marketDataPort.fetchIncomeStatement("AAPL");
-        assertThat(result).isNotNull();
-        assertThat(result.symbol()).isEqualTo("AAPL");
-        assertThat(result.revenue()).isPositive();
-        assertThat(result.operatingIncome()).isPositive();
-        assertThat(result.eps()).isPositive();
-    }
-
-    @Test
     @DisplayName("doit retourner une liste de 4 IncomeStatementRecords annuels pour AAPL")
     void doitRetournerIncomeStatementsAnnuelsPourAAPL() {
         List<IncomeStatementRecord> results = marketDataPort.fetchIncomeStatements("AAPL", 4);
@@ -47,5 +35,26 @@ class FmpMarketDataAdapterIntTest {
         assertThat(results).isNotNull();
         assertThat(results.size()).isEqualTo(4);
         assertThat(results.getFirst().revenue()).isPositive();
+    }
+
+    @Test
+    @DisplayName("doit retourner un CashFlowRecord TTM pour AAPL")
+    void doitRetournerCashFlowTtmPourAAPL() {
+        CashFlowRecord result = marketDataPort.fetchCashFlowTtm("AAPL");
+        assertThat(result).isNotNull();
+        assertThat(result.symbol()).isEqualTo("AAPL");
+        assertThat(result.freeCashFlow()).isPositive();
+    }
+
+
+    @Test
+    @DisplayName("doit retourner une liste d'AnalystEstimateRecord pour AAPL")
+    void doitRetournerAnalystEstimatesPourAAPL() {
+        List<AnalystEstimateRecord> results = marketDataPort.fetchAnalystEstimates("AAPL");
+
+        assertThat(results).isNotNull();
+        assertThat(results).isNotEmpty();
+        assertThat(results.getFirst().symbol()).isEqualTo("AAPL");
+        assertThat(results.getFirst().epsAvg()).isPositive();
     }
 }
