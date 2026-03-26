@@ -1,5 +1,6 @@
 package com.cairedine.finance.app.webclient.internal.adapter.fmp;
 
+import com.cairedine.finance.app.shared.exceptions.TickerNotFoundException;
 import com.cairedine.finance.app.webclient.*;
 import com.cairedine.finance.app.webclient.internal.dto.*;
 import com.cairedine.finance.app.webclient.internal.mapper.*;
@@ -29,7 +30,9 @@ class FmpMarketDataAdapter implements IMarketDataPort {
                 .uri("/stable/profile?symbol={symbol}", symbol)
                 .retrieve()
                 .body(FmpCompanyProfileDto[].class);
-        assert dtos != null;
+
+        if (dtos == null || dtos.length == 0) throw new TickerNotFoundException(symbol);
+
         return companyProfileMapper.toRecord(dtos[0]);
     }
 
@@ -40,9 +43,7 @@ class FmpMarketDataAdapter implements IMarketDataPort {
                 .retrieve()
                 .body(FmpIncomeStatementTtmDto[].class);
 
-        if (dtos == null || dtos.length == 0) {
-            return List.of();
-        }
+        if (dtos == null || dtos.length == 0) throw new TickerNotFoundException(symbol);
 
         return Arrays.stream(dtos)
                 .map(incomeStatementMapper::toRecord)
@@ -55,7 +56,9 @@ class FmpMarketDataAdapter implements IMarketDataPort {
                 .uri("/stable/cash-flow-statement?symbol={symbol}", symbol)
                 .retrieve()
                 .body(FmpCashFlowTtmDto[].class);
-        assert dtos != null;
+
+        if (dtos == null || dtos.length == 0) throw new TickerNotFoundException(symbol);
+
         return cashFlowMapper.toRecord(dtos[0]);
     }
 
@@ -65,7 +68,8 @@ class FmpMarketDataAdapter implements IMarketDataPort {
                 .uri("/stable/key-metrics-ttm?symbol={symbol}", symbol)
                 .retrieve()
                 .body(FmpKeyMetricsTtmDto[].class);
-        assert dtos != null;
+        if (dtos == null || dtos.length == 0) throw new TickerNotFoundException(symbol);
+
         return keyMetricsMapper.toRecord(dtos[0]);
     }
 
@@ -76,7 +80,8 @@ class FmpMarketDataAdapter implements IMarketDataPort {
                 .retrieve()
                 .body(FmpAnalystEstimateDto[].class);
 
-        assert dtos != null;
+        if (dtos == null || dtos.length == 0) throw new TickerNotFoundException(symbol);
+
         return Arrays.stream(dtos)
                 .map(analystEstimateMapper::toRecord)
                 .toList();

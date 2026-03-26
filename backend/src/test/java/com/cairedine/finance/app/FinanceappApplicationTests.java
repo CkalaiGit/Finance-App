@@ -11,14 +11,13 @@ import org.springframework.test.context.ActiveProfiles;
 class FinanceappApplicationTests {
 
 	@Test
-	void contextLoads() {
-	}
+	void contextLoads() {}
 
     private final ApplicationModules modules =
             ApplicationModules.of(FinanceApp.class);
 
     @Test
-    void verifyStructureDesModules() {
+    void verifyModulesStructure() {
         modules.verify();
     }
 
