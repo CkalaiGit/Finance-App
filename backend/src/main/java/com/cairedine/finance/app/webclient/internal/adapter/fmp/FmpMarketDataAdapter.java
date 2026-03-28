@@ -1,6 +1,5 @@
 package com.cairedine.finance.app.webclient.internal.adapter.fmp;
 
-import com.cairedine.finance.app.shared.exceptions.TickerNotFoundException;
 import com.cairedine.finance.app.webclient.*;
 import com.cairedine.finance.app.webclient.internal.dto.*;
 import com.cairedine.finance.app.webclient.internal.mapper.*;
@@ -11,6 +10,7 @@ import org.springframework.web.client.RestClient;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -25,15 +25,15 @@ class FmpMarketDataAdapter implements IMarketDataPort {
     private final KeyMetricsMapper keyMetricsMapper;
 
     @Override
-    public CompanyProfileRecord fetchCompanyProfile(String symbol) {
+    public Optional<CompanyProfileRecord> fetchCompanyProfile(String symbol) {
         FmpCompanyProfileDto[] dtos = fmpRestClient.get()
                 .uri("/stable/profile?symbol={symbol}", symbol)
                 .retrieve()
                 .body(FmpCompanyProfileDto[].class);
 
-        if (dtos == null || dtos.length == 0) throw new TickerNotFoundException(symbol);
+        if (dtos == null || dtos.length == 0) return Optional.empty();
 
-        return companyProfileMapper.toRecord(dtos[0]);
+        return Optional.ofNullable(companyProfileMapper.toRecord(dtos[0]));
     }
 
     @Override
@@ -43,7 +43,7 @@ class FmpMarketDataAdapter implements IMarketDataPort {
                 .retrieve()
                 .body(FmpIncomeStatementTtmDto[].class);
 
-        if (dtos == null || dtos.length == 0) throw new TickerNotFoundException(symbol);
+        if (dtos == null || dtos.length == 0) return List.of();
 
         return Arrays.stream(dtos)
                 .map(incomeStatementMapper::toRecord)
@@ -51,26 +51,26 @@ class FmpMarketDataAdapter implements IMarketDataPort {
     }
 
     @Override
-    public CashFlowRecord fetchCashFlowTtm(String symbol) {
+    public Optional<CashFlowRecord> fetchCashFlowTtm(String symbol) {
         FmpCashFlowTtmDto[] dtos = fmpRestClient.get()
                 .uri("/stable/cash-flow-statement?symbol={symbol}", symbol)
                 .retrieve()
                 .body(FmpCashFlowTtmDto[].class);
 
-        if (dtos == null || dtos.length == 0) throw new TickerNotFoundException(symbol);
+        if (dtos == null || dtos.length == 0) return Optional.empty();
 
-        return cashFlowMapper.toRecord(dtos[0]);
+        return Optional.ofNullable(cashFlowMapper.toRecord(dtos[0]));
     }
 
     @Override
-    public KeyMetricsRecord fetchKeyMetricsTtm(String symbol) {
+    public Optional<KeyMetricsRecord> fetchKeyMetricsTtm(String symbol) {
         FmpKeyMetricsTtmDto[] dtos = fmpRestClient.get()
                 .uri("/stable/key-metrics-ttm?symbol={symbol}", symbol)
                 .retrieve()
                 .body(FmpKeyMetricsTtmDto[].class);
-        if (dtos == null || dtos.length == 0) throw new TickerNotFoundException(symbol);
+        if (dtos == null || dtos.length == 0) return Optional.empty();
 
-        return keyMetricsMapper.toRecord(dtos[0]);
+        return Optional.ofNullable(keyMetricsMapper.toRecord(dtos[0]));
     }
 
     @Override
@@ -80,7 +80,7 @@ class FmpMarketDataAdapter implements IMarketDataPort {
                 .retrieve()
                 .body(FmpAnalystEstimateDto[].class);
 
-        if (dtos == null || dtos.length == 0) throw new TickerNotFoundException(symbol);
+        if (dtos == null || dtos.length == 0) return List.of();
 
         return Arrays.stream(dtos)
                 .map(analystEstimateMapper::toRecord)

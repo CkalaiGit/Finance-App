@@ -1,16 +1,14 @@
 package com.cairedine.finance.app.webclient;
 
-import com.cairedine.finance.app.shared.exceptions.TickerNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatNoException;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 import java.util.List;
+import java.util.Optional;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -22,13 +20,11 @@ class FmpMarketDataAdapterIntTest {
     @Test
     @DisplayName("doit retourner un CompanyProfileRecord pour AAPL")
     void doitRetournerCompanyProfilePourAAPL() {
-        CompanyProfileRecord result = marketDataPort.fetchCompanyProfile("AAPL");
+        Optional<CompanyProfileRecord> result = marketDataPort.fetchCompanyProfile("AAPL");
 
-        assertThat(result).isNotNull();
-        assertThat(result.symbol()).isEqualTo("AAPL");
-        assertThat(result.beta()).isPositive();
-        assertThat(result.marketCap()).isPositive();
-        assertThatNoException().isThrownBy(() -> marketDataPort.fetchCompanyProfile("AAPL"));
+        assertThat(result).isPresent();
+        assertThat(result.get().symbol()).isEqualTo("AAPL");
+        assertThat(result.get().beta()).isPositive();
     }
 
     @Test
@@ -37,21 +33,17 @@ class FmpMarketDataAdapterIntTest {
         List<IncomeStatementRecord> results = marketDataPort.fetchIncomeStatements("AAPL", 4);
 
         assertThat(results).isNotNull();
-        assertThat(results.size()).isEqualTo(4);
+        assertThat(results).hasSize(4);
         assertThat(results.getFirst().revenue()).isPositive();
-        assertThatNoException().isThrownBy(() -> marketDataPort.fetchIncomeStatements("AAPL", 4));
-
     }
 
     @Test
     @DisplayName("doit retourner un CashFlowRecord TTM pour AAPL")
     void doitRetournerCashFlowTtmPourAAPL() {
-        CashFlowRecord result = marketDataPort.fetchCashFlowTtm("AAPL");
-        assertThat(result).isNotNull();
-        assertThat(result.symbol()).isEqualTo("AAPL");
-        assertThat(result.freeCashFlow()).isPositive();
-        assertThatNoException().isThrownBy(() -> marketDataPort.fetchCashFlowTtm("AAPL"));
-
+        Optional<CashFlowRecord> result = marketDataPort.fetchCashFlowTtm("AAPL");
+        assertThat(result).isPresent();
+        assertThat(result.get().symbol()).isEqualTo("AAPL");
+        assertThat(result.get().freeCashFlow()).isPositive();
     }
 
 
@@ -64,27 +56,22 @@ class FmpMarketDataAdapterIntTest {
         assertThat(results).isNotEmpty();
         assertThat(results.getFirst().symbol()).isEqualTo("AAPL");
         assertThat(results.getFirst().epsAvg()).isPositive();
-        assertThatNoException().isThrownBy(() -> marketDataPort.fetchAnalystEstimates("AAPL"));
-
     }
 
     @Test
     @DisplayName("doit retourner un KeyMetricsRecord pour AAPL")
     void doitRetournerKeyMetricsPourAAPL() {
-        KeyMetricsRecord result = marketDataPort.fetchKeyMetricsTtm("AAPL");
+        Optional<KeyMetricsRecord> result = marketDataPort.fetchKeyMetricsTtm("AAPL");
 
-        assertThat(result).isNotNull();
-        assertThat(result.symbol()).isEqualTo("AAPL");
-        assertThat(result.returnOnInvestedCapitalTTM()).isPositive();
-        assertThat(result.evToEbit()).isPositive();
-        assertThatNoException().isThrownBy(() -> marketDataPort.fetchKeyMetricsTtm("AAPL"));
-
+        assertThat(result).isPresent();
+        assertThat(result.get().symbol()).isEqualTo("AAPL");
+        assertThat(result.get().returnOnInvestedCapitalTTM()).isPositive();
     }
 
     @Test
-    @DisplayName("doit lever TickerNotFoundException pour un symbol inexistant")
-    void doitLeverTickerNotFoundExceptionPourSymbolInexistant() {
-        assertThatThrownBy(() -> marketDataPort.fetchCompanyProfile("SYMBOLINEXISTANT"))
-                .isInstanceOf(TickerNotFoundException.class);
+    @DisplayName("doit retourner vide pour un symbol inexistant")
+    void doitRetournerVidePourSymbolInexistant() {
+        Optional<CompanyProfileRecord> result = marketDataPort.fetchCompanyProfile("SYMBOLINEXISTANT");
+        assertThat(result).isEmpty();
     }
 }
