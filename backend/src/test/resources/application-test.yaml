@@ -24,6 +24,11 @@ spring:
     exclude:
       - org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration
 
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: "" # On vide l'URI pour éviter les appels réseau vers Keycloak au boot
 fmp:
-  api-key: ${FMP_API_KEY:}
+  api-key: ***REMOVED-FMP-KEY***
   base-url: https://financialmodelingprep.com

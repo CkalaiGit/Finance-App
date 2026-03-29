@@ -1,10 +1,8 @@
 package com.cairedine.finance.app.user.infrastructure.persistence.entity;
 
+import com.cairedine.finance.app.financialanalysis.infrastructure.persistence.entity.FinancialAnalysisJpaEntity;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.Instant;
 import java.util.HashSet;
@@ -13,7 +11,10 @@ import java.util.Set;
 @Entity
 @Table(name = "app_user")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class DBUserJpaEntity {
 
@@ -42,6 +43,14 @@ public class DBUserJpaEntity {
 
     @Column(nullable = false)
     private Instant updatedAt;
+
+    @ManyToMany
+    @JoinTable(
+            name = "user_watchlist",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "analysis_id")
+    )
+    private Set<FinancialAnalysisJpaEntity> watchlist = new HashSet<>();
 
     public DBUserJpaEntity(String keycloakId, String email, String username, Set<String> roles) {
         this.keycloakId = keycloakId;
