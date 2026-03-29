@@ -63,6 +63,20 @@ class FmpMarketDataAdapter implements IMarketDataPort {
     }
 
     @Override
+    public List<CashFlowRecord> fetchCashFlowStatements(String symbol, int limit) {
+        FmpCashFlowTtmDto[] dtos = fmpRestClient.get()
+                .uri("/stable/cash-flow-statement?symbol={symbol}&limit={limit}", symbol, limit)
+                .retrieve()
+                .body(FmpCashFlowTtmDto[].class);
+
+        if (dtos == null || dtos.length == 0) return List.of();
+
+        return Arrays.stream(dtos)
+                .map(cashFlowMapper::toRecord)
+                .toList();
+    }
+
+    @Override
     public Optional<KeyMetricsRecord> fetchKeyMetricsTtm(String symbol) {
         FmpKeyMetricsTtmDto[] dtos = fmpRestClient.get()
                 .uri("/stable/key-metrics-ttm?symbol={symbol}", symbol)

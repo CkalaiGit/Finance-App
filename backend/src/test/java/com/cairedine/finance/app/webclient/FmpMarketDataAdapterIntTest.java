@@ -22,9 +22,10 @@ class FmpMarketDataAdapterIntTest {
     void doitRetournerCompanyProfilePourAAPL() {
         Optional<CompanyProfileRecord> result = marketDataPort.fetchCompanyProfile("AAPL");
 
-        assertThat(result).isPresent();
-        assertThat(result.get().symbol()).isEqualTo("AAPL");
-        assertThat(result.get().beta()).isPositive();
+        assertThat(result).hasValueSatisfying(profile -> {
+            assertThat(profile.symbol()).isEqualTo("AAPL");
+            assertThat(profile.beta()).isPositive();
+        });
     }
 
     @Test

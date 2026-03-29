@@ -10,8 +10,10 @@ public class IncomeStatementMapper extends BaseMapper{
     public IncomeStatementRecord toRecord(FmpIncomeStatementTtmDto dto) {
         return new IncomeStatementRecord(
                 dto.symbol(),
+                dto.date(),
                 toBigDecimal(dto.revenue()),
                 toBigDecimal(dto.operatingIncome()),
+                toBigDecimal(dto.ebitda()),
                 toBigDecimal(dto.eps()),
                 toBigDecimal(dto.sellingGeneralAndAdministrativeExpenses())
         );

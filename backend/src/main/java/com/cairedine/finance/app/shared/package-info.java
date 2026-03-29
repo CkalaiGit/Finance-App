@@ -1,6 +1,4 @@
-@ApplicationModule(
-        allowedDependencies = {"shared::exceptions"}
-)
+@ApplicationModule()
 package com.cairedine.finance.app.shared;
 
 import org.springframework.modulith.ApplicationModule;
