@@ -1,6 +1,5 @@
 package com.cairedine.finance.app.user.infrastructure.persistence.entity;
 
-import com.cairedine.finance.app.financialanalysis.infrastructure.persistence.entity.FinancialAnalysisJpaEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -44,13 +43,13 @@ public class DBUserJpaEntity {
     @Column(nullable = false)
     private Instant updatedAt;
 
-    @ManyToMany
-    @JoinTable(
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
             name = "user_watchlist",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "analysis_id")
+            joinColumns = @JoinColumn(name = "user_id")
     )
-    private Set<FinancialAnalysisJpaEntity> watchlist = new HashSet<>();
+    @Column(name = "ticker")
+    private Set<String> watchlist = new HashSet<>();
 
     public DBUserJpaEntity(String keycloakId, String email, String username, Set<String> roles) {
         this.keycloakId = keycloakId;
