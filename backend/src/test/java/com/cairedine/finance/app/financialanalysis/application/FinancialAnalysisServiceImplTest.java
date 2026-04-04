@@ -1,6 +1,7 @@
 package com.cairedine.finance.app.financialanalysis.application;
 
 import com.cairedine.finance.app.financialanalysis.domain.model.GrowthMetrics;
+import com.cairedine.finance.app.financialanalysis.domain.port.IMetricsCachePort;
 import com.cairedine.finance.app.shared.exceptions.TickerNotFoundException;
 import com.cairedine.finance.app.webclient.CashFlowRecord;
 import com.cairedine.finance.app.webclient.IMarketDataPort;
@@ -13,8 +14,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -22,6 +25,9 @@ class FinancialAnalysisServiceImplTest {
 
     @Mock
     private IMarketDataPort marketDataPort;
+
+    @Mock
+    private IMetricsCachePort metricsCachePort;
 
     @InjectMocks
     private FinancialAnalysisServiceImpl financialAnalysisService;
@@ -97,5 +103,19 @@ class FinancialAnalysisServiceImplTest {
         when(marketDataPort.fetchCashFlowStatements(TICKER, 2)).thenReturn(List.of());
 
         assertThrows(TickerNotFoundException.class, () -> financialAnalysisService.computeMetrics(TICKER));
+    }
+
+    @Test
+    void shouldReturnCachedMetricsIfAvailable() {
+        // Arrange
+        GrowthMetrics cachedMetrics = new GrowthMetrics(BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE);
+        when(metricsCachePort.findByTicker(TICKER)).thenReturn(Optional.of(cachedMetrics));
+
+        // Act
+        GrowthMetrics result = financialAnalysisService.computeMetrics(TICKER);
+
+        // Assert
+        assertEquals(cachedMetrics, result);
+        verifyNoInteractions(marketDataPort);
     }
 }

@@ -2,8 +2,7 @@ package com.cairedine.finance.app.financialanalysis.application;
 
 import com.cairedine.finance.app.financialanalysis.domain.model.GrowthMetrics;
 import com.cairedine.finance.app.financialanalysis.domain.port.IFinancialAnalysisService;
-import com.cairedine.finance.app.financialanalysis.infrastructure.persistence.mapper.FinancialAnalysisPersistenceMapper;
-import com.cairedine.finance.app.financialanalysis.infrastructure.persistence.repository.IFinancialAnalysisRepository;
+import com.cairedine.finance.app.financialanalysis.domain.port.IMetricsCachePort;
 import com.cairedine.finance.app.shared.exceptions.TickerNotFoundException;
 import com.cairedine.finance.app.webclient.CashFlowRecord;
 import com.cairedine.finance.app.webclient.IMarketDataPort;
@@ -24,8 +23,7 @@ import java.util.concurrent.Executors;
 public class FinancialAnalysisServiceImpl implements IFinancialAnalysisService {
 
     private final IMarketDataPort marketDataPort;
-    private final IFinancialAnalysisRepository analysisRepository;
-    private final FinancialAnalysisPersistenceMapper persistenceMapper;
+    private final IMetricsCachePort metricsCache;
 
     private static final MathContext MC = new MathContext(8, RoundingMode.HALF_UP);
 
@@ -34,12 +32,10 @@ public class FinancialAnalysisServiceImpl implements IFinancialAnalysisService {
     public GrowthMetrics computeMetrics(String ticker) {
         String normalizedTicker = ticker.toUpperCase();
 
-        return analysisRepository.findByTicker(normalizedTicker)
-                .map(persistenceMapper::toDomain)
+        return metricsCache.findByTicker(normalizedTicker)
                 .orElseGet(() -> {
                     GrowthMetrics calculated = calculateMetricsFromApi(normalizedTicker);
-                    var entity = persistenceMapper.toEntity(normalizedTicker, calculated);
-                    analysisRepository.save(entity);
+                    metricsCache.save(normalizedTicker, calculated);
                     return calculated;
                 });
     }

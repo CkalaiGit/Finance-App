@@ -43,7 +43,7 @@ class FinancialAnalysisE2ETest {
     @Test
     void shouldFetchAndPersistAnalysisE2E() {
         // Arrange
-        String ticker = "AAPL";
+        String ticker = "GOOGL";
 
         // Act
         ResponseEntity<GrowthMetricsResponse> response = restClient.get()
