@@ -92,7 +92,13 @@ public class FinancialAnalysisServiceImpl implements IFinancialAnalysisService {
             }
 
             // Value
-            BigDecimal pegRatioForward = calculatePegRatio(peRatioTTM, epsGrowth);
+            BigDecimal epsGrowthForward = BigDecimal.ZERO;
+            if (analystEstimates.size() >= 2) {
+                BigDecimal epsNext = analystEstimates.get(0).epsAvg();
+                BigDecimal epsCurrent = analystEstimates.get(1).epsAvg();
+                epsGrowthForward = calculateGrowth(epsNext, epsCurrent);
+            }
+            BigDecimal pegRatioForward = calculatePegRatio(peRatioTTM, epsGrowthForward);
             ValueMetrics value = new ValueMetrics(evToEbit, peRatioTTM, pegRatioForward, evToSales);
 
             // Quality
