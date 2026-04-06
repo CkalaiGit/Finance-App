@@ -1,11 +1,9 @@
 package com.cairedine.finance.app.financialanalysis.application;
 
-import com.cairedine.finance.app.financialanalysis.domain.model.GrowthMetrics;
+import com.cairedine.finance.app.financialanalysis.domain.model.FullMetrics;
 import com.cairedine.finance.app.financialanalysis.domain.port.IMetricsCachePort;
 import com.cairedine.finance.app.shared.exceptions.TickerNotFoundException;
-import com.cairedine.finance.app.webclient.CashFlowRecord;
-import com.cairedine.finance.app.webclient.IMarketDataPort;
-import com.cairedine.finance.app.webclient.IncomeStatementRecord;
+import com.cairedine.finance.app.webclient.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -17,8 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class FinancialAnalysisServiceImplTest {
@@ -27,7 +24,7 @@ class FinancialAnalysisServiceImplTest {
     private IMarketDataPort marketDataPort;
 
     @Mock
-    private IMetricsCachePort metricsCachePort;
+    private IMetricsCachePort metricsCache;
 
     @InjectMocks
     private FinancialAnalysisServiceImpl financialAnalysisService;
@@ -49,56 +46,122 @@ class FinancialAnalysisServiceImplTest {
                 new CashFlowRecord(TICKER, "2022", new BigDecimal("120"), null)
         );
 
+        when(metricsCache.findByTicker(TICKER)).thenReturn(Optional.empty());
         when(marketDataPort.fetchIncomeStatements(TICKER, 4)).thenReturn(incomeStatements);
         when(marketDataPort.fetchCashFlowStatements(TICKER, 2)).thenReturn(cashFlowStatements);
+        when(marketDataPort.fetchKeyMetricsTtm(TICKER)).thenReturn(Optional.empty());
+        when(marketDataPort.fetchAnalystEstimates(TICKER)).thenReturn(List.of());
 
         // Act
-        GrowthMetrics metrics = financialAnalysisService.computeMetrics(TICKER);
+        FullMetrics metrics = financialAnalysisService.computeMetrics(TICKER);
 
         // Assert
         assertNotNull(metrics);
-        // Revenue CAGR: (1000/700)^(1/3) - 1 ≈ 0.1262
-        assertEquals(0, metrics.revenueGrowth3Y().compareTo(new BigDecimal("0.1262")));
-        // EBITDA Growth: (200-180)/180 ≈ 0.1111
-        assertEquals(0, metrics.ebitdaGrowth().compareTo(new BigDecimal("0.1111")));
-        // EPS Growth: (10-9)/9 ≈ 0.1111
-        assertEquals(0, metrics.epsGrowth().compareTo(new BigDecimal("0.1111")));
-        // FCF Growth: (150-120)/120 = 0.25
-        assertEquals(0, metrics.fcfGrowth().compareTo(new BigDecimal("0.25")));
+        assertNotNull(metrics.growth());
+        assertEquals(0, metrics.growth().revenueGrowth3Y().compareTo(new BigDecimal("0.1262")));
+        assertEquals(0, metrics.growth().ebitdaGrowth().compareTo(new BigDecimal("0.1111")));
+        assertEquals(0, metrics.growth().epsGrowth().compareTo(new BigDecimal("0.1111")));
+        assertEquals(0, metrics.growth().fcfGrowth().compareTo(new BigDecimal("0.2500")));
     }
 
     @Test
-    void shouldHandleNegativeValues() {
+    void shouldComputeValueMetricsCorrectly() {
         // Arrange
         List<IncomeStatementRecord> incomeStatements = List.of(
-                new IncomeStatementRecord(TICKER, "2023", new BigDecimal("1000"), null, new BigDecimal("50"), new BigDecimal("1"), null),
-                new IncomeStatementRecord(TICKER, "2022", new BigDecimal("900"), null, new BigDecimal("-50"), new BigDecimal("-1"), null),
+                new IncomeStatementRecord(TICKER, "2023", new BigDecimal("1000"), null, new BigDecimal("200"), new BigDecimal("10"), null),
+                new IncomeStatementRecord(TICKER, "2022", new BigDecimal("900"), null, new BigDecimal("180"), new BigDecimal("9"), null),
                 new IncomeStatementRecord(TICKER, "2021", new BigDecimal("800"), null, new BigDecimal("160"), new BigDecimal("8"), null),
                 new IncomeStatementRecord(TICKER, "2020", new BigDecimal("700"), null, new BigDecimal("140"), new BigDecimal("7"), null)
         );
-
         List<CashFlowRecord> cashFlowStatements = List.of(
-                new CashFlowRecord(TICKER, "2023", new BigDecimal("50"), null),
-                new CashFlowRecord(TICKER, "2022", new BigDecimal("-50"), null)
+                new CashFlowRecord(TICKER, "2023", new BigDecimal("150"), null),
+                new CashFlowRecord(TICKER, "2022", new BigDecimal("120"), null)
         );
+        KeyMetricsRecord keyMetrics = new KeyMetricsRecord(TICKER, new BigDecimal("0.25"), new BigDecimal("1.5"), new BigDecimal("18.5"), new BigDecimal("28.4"), new BigDecimal("7.2"));
 
+        when(metricsCache.findByTicker(TICKER)).thenReturn(Optional.empty());
         when(marketDataPort.fetchIncomeStatements(TICKER, 4)).thenReturn(incomeStatements);
         when(marketDataPort.fetchCashFlowStatements(TICKER, 2)).thenReturn(cashFlowStatements);
+        when(marketDataPort.fetchKeyMetricsTtm(TICKER)).thenReturn(Optional.of(keyMetrics));
+        when(marketDataPort.fetchAnalystEstimates(TICKER)).thenReturn(List.of());
 
         // Act
-        GrowthMetrics metrics = financialAnalysisService.computeMetrics(TICKER);
+        FullMetrics metrics = financialAnalysisService.computeMetrics(TICKER);
 
         // Assert
-        // EBITDA Growth: (50 - (-50)) / |-50| = 100 / 50 = 2.0
-        assertEquals(0, metrics.ebitdaGrowth().compareTo(new BigDecimal("2.0")));
-        // EPS Growth: (1 - (-1)) / |-1| = 2 / 1 = 2.0
-        assertEquals(0, metrics.epsGrowth().compareTo(new BigDecimal("2.0")));
-        // FCF Growth: (50 - (-50)) / |-50| = 2.0
-        assertEquals(0, metrics.fcfGrowth().compareTo(new BigDecimal("2.0")));
+        assertNotNull(metrics.value());
+        assertEquals(0, metrics.value().evToEbit().compareTo(new BigDecimal("18.5000")));
+        assertEquals(0, metrics.value().peRatioTTM().compareTo(new BigDecimal("28.4000")));
+        assertEquals(0, metrics.value().evToSales().compareTo(new BigDecimal("7.2000")));
+        // epsGrowth = 0.1111, pe = 28.4 -> PEG = 28.4 / (0.1111 * 100) = 2.5563
+        assertEquals(0, metrics.value().pegRatioForward().compareTo(new BigDecimal("2.5563")));
+    }
+
+    @Test
+    void shouldComputeQualityMetricsCorrectly() {
+        // Arrange
+        List<IncomeStatementRecord> incomeStatements = List.of(
+                new IncomeStatementRecord(TICKER, "2023", new BigDecimal("1000"), new BigDecimal("298"), new BigDecimal("350"), new BigDecimal("10"), new BigDecimal("65")),
+                new IncomeStatementRecord(TICKER, "2022", new BigDecimal("900"), null, new BigDecimal("300"), new BigDecimal("9"), null),
+                new IncomeStatementRecord(TICKER, "2021", new BigDecimal("800"), null, new BigDecimal("250"), new BigDecimal("8"), null),
+                new IncomeStatementRecord(TICKER, "2020", new BigDecimal("700"), null, new BigDecimal("200"), new BigDecimal("7"), null)
+        );
+        List<CashFlowRecord> cashFlowStatements = List.of(
+                new CashFlowRecord(TICKER, "2023", new BigDecimal("142"), null),
+                new CashFlowRecord(TICKER, "2022", new BigDecimal("120"), null)
+        );
+        KeyMetricsRecord keyMetrics = new KeyMetricsRecord(TICKER, new BigDecimal("0.25"), new BigDecimal("1.5"), new BigDecimal("18.5"), new BigDecimal("28.4"), new BigDecimal("7.2"));
+
+        when(metricsCache.findByTicker(TICKER)).thenReturn(Optional.empty());
+        when(marketDataPort.fetchIncomeStatements(TICKER, 4)).thenReturn(incomeStatements);
+        when(marketDataPort.fetchCashFlowStatements(TICKER, 2)).thenReturn(cashFlowStatements);
+        when(marketDataPort.fetchKeyMetricsTtm(TICKER)).thenReturn(Optional.of(keyMetrics));
+        when(marketDataPort.fetchAnalystEstimates(TICKER)).thenReturn(List.of());
+
+        // Act
+        FullMetrics metrics = financialAnalysisService.computeMetrics(TICKER);
+
+        // Assert
+        assertNotNull(metrics.quality());
+        assertEquals(0, metrics.quality().roic().compareTo(new BigDecimal("0.2500")));
+        assertEquals(0, metrics.quality().netDebtToEbitda().compareTo(new BigDecimal("1.5000")));
+        assertEquals(0, metrics.quality().operatingMargin().compareTo(new BigDecimal("0.2980")));
+        assertEquals(0, metrics.quality().freeCashFlowMargin().compareTo(new BigDecimal("0.1420")));
+        assertEquals(0, metrics.quality().sgaToRevenue().compareTo(new BigDecimal("0.0650")));
+    }
+
+    @Test
+    void shouldReturnZeroQualityMetricsWhenKeyMetricsAbsent() {
+        // Arrange
+        List<IncomeStatementRecord> incomeStatements = List.of(
+                new IncomeStatementRecord(TICKER, "2023", new BigDecimal("1000"), new BigDecimal("298"), new BigDecimal("350"), new BigDecimal("10"), new BigDecimal("65")),
+                new IncomeStatementRecord(TICKER, "2022", new BigDecimal("900"), null, new BigDecimal("300"), new BigDecimal("9"), null),
+                new IncomeStatementRecord(TICKER, "2021", new BigDecimal("800"), null, new BigDecimal("250"), new BigDecimal("8"), null),
+                new IncomeStatementRecord(TICKER, "2020", new BigDecimal("700"), null, new BigDecimal("200"), new BigDecimal("7"), null)
+        );
+        List<CashFlowRecord> cashFlowStatements = List.of(
+                new CashFlowRecord(TICKER, "2023", new BigDecimal("142"), null),
+                new CashFlowRecord(TICKER, "2022", new BigDecimal("120"), null)
+        );
+
+        when(metricsCache.findByTicker(TICKER)).thenReturn(Optional.empty());
+        when(marketDataPort.fetchIncomeStatements(TICKER, 4)).thenReturn(incomeStatements);
+        when(marketDataPort.fetchCashFlowStatements(TICKER, 2)).thenReturn(cashFlowStatements);
+        when(marketDataPort.fetchKeyMetricsTtm(TICKER)).thenReturn(Optional.empty());
+        when(marketDataPort.fetchAnalystEstimates(TICKER)).thenReturn(List.of());
+
+        // Act
+        FullMetrics metrics = financialAnalysisService.computeMetrics(TICKER);
+
+        // Assert
+        assertEquals(0, metrics.quality().roic().compareTo(BigDecimal.ZERO));
+        assertEquals(0, metrics.quality().netDebtToEbitda().compareTo(BigDecimal.ZERO));
+        assertEquals(0, metrics.value().evToEbit().compareTo(BigDecimal.ZERO));
     }
 
     @Test
     void shouldThrowTickerNotFoundExceptionIfInsufficientData() {
+        when(metricsCache.findByTicker(TICKER)).thenReturn(Optional.empty());
         when(marketDataPort.fetchIncomeStatements(TICKER, 4)).thenReturn(List.of());
         when(marketDataPort.fetchCashFlowStatements(TICKER, 2)).thenReturn(List.of());
 
@@ -108,11 +171,11 @@ class FinancialAnalysisServiceImplTest {
     @Test
     void shouldReturnCachedMetricsIfAvailable() {
         // Arrange
-        GrowthMetrics cachedMetrics = new GrowthMetrics(BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE, BigDecimal.ONE);
-        when(metricsCachePort.findByTicker(TICKER)).thenReturn(Optional.of(cachedMetrics));
+        FullMetrics cachedMetrics = mock(FullMetrics.class);
+        when(metricsCache.findByTicker(TICKER)).thenReturn(Optional.of(cachedMetrics));
 
         // Act
-        GrowthMetrics result = financialAnalysisService.computeMetrics(TICKER);
+        FullMetrics result = financialAnalysisService.computeMetrics(TICKER);
 
         // Assert
         assertEquals(cachedMetrics, result);

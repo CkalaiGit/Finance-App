@@ -1,9 +1,9 @@
 package com.cairedine.finance.app.financialanalysis.domain.port;
 
-import com.cairedine.finance.app.financialanalysis.domain.model.GrowthMetrics;
+import com.cairedine.finance.app.financialanalysis.domain.model.FullMetrics;
 import java.util.Optional;
 
 public interface IMetricsCachePort {
-    Optional<GrowthMetrics> findByTicker(String ticker);
-    void save(String ticker, GrowthMetrics metrics);
+    Optional<FullMetrics> findByTicker(String ticker);
+    void save(String ticker, FullMetrics metrics);
 }

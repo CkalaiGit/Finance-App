@@ -24,20 +24,20 @@ class FmpMarketDataAdapterIntTest {
     private JwtDecoder jwtDecoder;
 
     @Test
-    @DisplayName("doit retourner un CompanyProfileRecord pour AAPL")
-    void doitRetournerCompanyProfilePourAAPL() {
-        Optional<CompanyProfileRecord> result = marketDataPort.fetchCompanyProfile("AAPL");
+    @DisplayName("doit retourner un CompanyProfileRecord pour GOOGL")
+    void doitRetournerCompanyProfilePourGOOGL() {
+        Optional<CompanyProfileRecord> result = marketDataPort.fetchCompanyProfile("GOOGL");
 
         assertThat(result).hasValueSatisfying(profile -> {
-            assertThat(profile.symbol()).isEqualTo("AAPL");
+            assertThat(profile.symbol()).isEqualTo("GOOGL");
             assertThat(profile.beta()).isPositive();
         });
     }
 
     @Test
-    @DisplayName("doit retourner une liste de 4 IncomeStatementRecords annuels pour AAPL")
-    void doitRetournerIncomeStatementsAnnuelsPourAAPL() {
-        List<IncomeStatementRecord> results = marketDataPort.fetchIncomeStatements("AAPL", 4);
+    @DisplayName("doit retourner une liste de 4 IncomeStatementRecords annuels pour GOOGL")
+    void doitRetournerIncomeStatementsAnnuelsPourGOOGL() {
+        List<IncomeStatementRecord> results = marketDataPort.fetchIncomeStatements("GOOGL", 4);
 
         assertThat(results).isNotNull();
         assertThat(results).hasSize(4);
@@ -45,33 +45,33 @@ class FmpMarketDataAdapterIntTest {
     }
 
     @Test
-    @DisplayName("doit retourner un CashFlowRecord TTM pour AAPL")
-    void doitRetournerCashFlowTtmPourAAPL() {
-        Optional<CashFlowRecord> result = marketDataPort.fetchCashFlowTtm("AAPL");
+    @DisplayName("doit retourner un CashFlowRecord TTM pour GOOGL")
+    void doitRetournerCashFlowTtmPourGOOGL() {
+        Optional<CashFlowRecord> result = marketDataPort.fetchCashFlowTtm("GOOGL");
         assertThat(result).isPresent();
-        assertThat(result.get().symbol()).isEqualTo("AAPL");
+        assertThat(result.get().symbol()).isEqualTo("GOOGL");
         assertThat(result.get().freeCashFlow()).isPositive();
     }
 
 
     @Test
-    @DisplayName("doit retourner une liste d'AnalystEstimateRecord pour AAPL")
-    void doitRetournerAnalystEstimatesPourAAPL() {
-        List<AnalystEstimateRecord> results = marketDataPort.fetchAnalystEstimates("AAPL");
+    @DisplayName("doit retourner une liste d'AnalystEstimateRecord pour GOOGL")
+    void doitRetournerAnalystEstimatesPourGOOGL() {
+        List<AnalystEstimateRecord> results = marketDataPort.fetchAnalystEstimates("GOOGL");
 
         assertThat(results).isNotNull();
         assertThat(results).isNotEmpty();
-        assertThat(results.getFirst().symbol()).isEqualTo("AAPL");
+        assertThat(results.getFirst().symbol()).isEqualTo("GOOGL");
         assertThat(results.getFirst().epsAvg()).isPositive();
     }
 
     @Test
-    @DisplayName("doit retourner un KeyMetricsRecord pour AAPL")
-    void doitRetournerKeyMetricsPourAAPL() {
-        Optional<KeyMetricsRecord> result = marketDataPort.fetchKeyMetricsTtm("AAPL");
+    @DisplayName("doit retourner un KeyMetricsRecord pour GOOGL")
+    void doitRetournerKeyMetricsPourGOOGL() {
+        Optional<KeyMetricsRecord> result = marketDataPort.fetchKeyMetricsTtm("GOOGL");
 
         assertThat(result).isPresent();
-        assertThat(result.get().symbol()).isEqualTo("AAPL");
+        assertThat(result.get().symbol()).isEqualTo("GOOGL");
         assertThat(result.get().returnOnInvestedCapitalTTM()).isPositive();
     }
 

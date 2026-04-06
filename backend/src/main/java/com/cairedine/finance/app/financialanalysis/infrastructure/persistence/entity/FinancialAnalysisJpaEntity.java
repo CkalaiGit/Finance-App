@@ -24,6 +24,12 @@ public class FinancialAnalysisJpaEntity {
     @Embedded
     private GrowthMetricsEmbeddable growthMetrics;
 
+    @Embedded
+    private ValueMetricsEmbeddable valueMetrics;
+
+    @Embedded
+    private QualityMetricsEmbeddable qualityMetrics;
+
     @Column(nullable = false)
     private Instant lastUpdated;
 

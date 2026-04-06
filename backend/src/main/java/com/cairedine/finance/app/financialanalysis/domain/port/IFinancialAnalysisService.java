@@ -1,7 +1,7 @@
 package com.cairedine.finance.app.financialanalysis.domain.port;
 
-import com.cairedine.finance.app.financialanalysis.domain.model.GrowthMetrics;
+import com.cairedine.finance.app.financialanalysis.domain.model.FullMetrics;
 
 public interface IFinancialAnalysisService {
-    GrowthMetrics computeMetrics(String ticker);
+    FullMetrics computeMetrics(String ticker);
 }

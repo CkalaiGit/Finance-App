@@ -7,5 +7,7 @@ public record FmpKeyMetricsTtmDto(
         String symbol,
         Double returnOnInvestedCapitalTTM,
         Double netDebtToEBITDATTM,
-        Double evToOperatingCashFlowTTM
+        Double evToOperatingCashFlowTTM,
+        Double peRatioTTM,
+        Double evToSalesTTM
 ) {}

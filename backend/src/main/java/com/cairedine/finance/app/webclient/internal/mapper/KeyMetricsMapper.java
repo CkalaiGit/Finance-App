@@ -11,7 +11,9 @@ public class KeyMetricsMapper extends BaseMapper {
                 dto.symbol(),
                 toBigDecimal(dto.returnOnInvestedCapitalTTM()),
                 toBigDecimal(dto.netDebtToEBITDATTM()),
-                toBigDecimal(dto.evToOperatingCashFlowTTM())
+                toBigDecimal(dto.evToOperatingCashFlowTTM()),
+                toBigDecimal(dto.peRatioTTM()),
+                toBigDecimal(dto.evToSalesTTM())
         );
     }
 }

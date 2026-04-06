@@ -1,7 +1,7 @@
 package com.cairedine.finance.app.financialanalysis;
 
 import com.cairedine.finance.app.financialanalysis.infrastructure.persistence.repository.IFinancialAnalysisRepository;
-import com.cairedine.finance.app.financialanalysis.infrastructure.web.dto.GrowthMetricsResponse;
+import com.cairedine.finance.app.financialanalysis.infrastructure.web.dto.FullMetricsResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,22 +46,22 @@ class FinancialAnalysisE2ETest {
         String ticker = "GOOGL";
 
         // Act
-        ResponseEntity<GrowthMetricsResponse> response = restClient.get()
+        ResponseEntity<FullMetricsResponse> response = restClient.get()
                 .uri("/api/v1/analysis/{ticker}", ticker)
                 .retrieve()
-                .toEntity(GrowthMetricsResponse.class);
+                .toEntity(FullMetricsResponse.class);
 
         // Assert
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
-        
-        GrowthMetricsResponse body = response.getBody();
+
+        FullMetricsResponse body = response.getBody();
         assertThat(body).isNotNull();
-        assertThat(body.revenueGrowth3Y()).isNotNull();
+        assertThat(body.growth()).isNotNull();
 
         // Verify Persistence (Cache-Aside)
         var persisted = repository.findByTicker(ticker);
         assertThat(persisted).isPresent();
-        assertThat(persisted.get().getGrowthMetrics().getRevenueGrowth3Y()).isEqualByComparingTo(body.revenueGrowth3Y());
+        assertThat(persisted.get().getGrowthMetrics().getRevenueGrowth3Y()).isEqualByComparingTo(body.growth().revenueGrowth3Y());
         assertThat(persisted.get().getTicker()).isEqualTo(ticker);
     }
 }
