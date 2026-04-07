@@ -6,7 +6,7 @@ public record KeyMetricsRecord(
         String symbol,
         BigDecimal returnOnInvestedCapitalTTM,
         BigDecimal netDebtToEbitda,
-        BigDecimal evToEbit,
+        BigDecimal enterpriseValueTTM,
         BigDecimal peRatioTTM,
         BigDecimal evToSalesTTM
 ) {}

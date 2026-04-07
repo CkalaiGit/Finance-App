@@ -6,7 +6,9 @@ import lombok.*;
 import java.time.Instant;
 
 @Entity
-@Table(name = "financial_analysis")
+@Table(name = "financial_analysis", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"ticker", "periodEndDate"})
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -18,7 +20,7 @@ public class FinancialAnalysisJpaEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String ticker;
 
     @Embedded
@@ -32,6 +34,9 @@ public class FinancialAnalysisJpaEntity {
 
     @Column(nullable = false)
     private Instant lastUpdated;
+
+    @Column(name = "period_end_date", nullable = false)
+    private String periodEndDate;
 
     @PrePersist
     @PreUpdate

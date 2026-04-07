@@ -78,13 +78,33 @@ class FmpMarketDataAdapter implements IMarketDataPort {
 
     @Override
     public Optional<KeyMetricsRecord> fetchKeyMetricsTtm(String symbol) {
-        FmpKeyMetricsTtmDto[] dtos = fmpRestClient.get()
+        // Fetch from key-metrics-ttm
+        FmpKeyMetricsTtmDto[] kmDtos = fmpRestClient.get()
                 .uri("/stable/key-metrics-ttm?symbol={symbol}", symbol)
                 .retrieve()
                 .body(FmpKeyMetricsTtmDto[].class);
-        if (dtos == null || dtos.length == 0) return Optional.empty();
 
-        return Optional.ofNullable(keyMetricsMapper.toRecord(dtos[0]));
+        // Fetch from ratios-ttm (for PE ratio)
+        FmpKeyMetricsTtmDto[] ratioDtos = fmpRestClient.get()
+                .uri("/stable/ratios-ttm?symbol={symbol}", symbol)
+                .retrieve()
+                .body(FmpKeyMetricsTtmDto[].class);
+
+        if (kmDtos == null || kmDtos.length == 0) return Optional.empty();
+
+        FmpKeyMetricsTtmDto km = kmDtos[0];
+        Double pe = (ratioDtos != null && ratioDtos.length > 0) ? ratioDtos[0].peRatioTTM() : null;
+
+        FmpKeyMetricsTtmDto merged = new FmpKeyMetricsTtmDto(
+                km.symbol(),
+                km.returnOnInvestedCapitalTTM(),
+                km.netDebtToEBITDATTM(),
+                km.enterpriseValueTTM(),
+                pe,
+                km.evToSalesTTM()
+        );
+
+        return Optional.ofNullable(keyMetricsMapper.toRecord(merged));
     }
 
     @Override

@@ -7,6 +7,7 @@ import com.cairedine.finance.app.financialanalysis.infrastructure.persistence.re
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -17,12 +18,21 @@ public class MetricsCachePersistenceAdapter implements IMetricsCachePort {
     private final FinancialAnalysisPersistenceMapper mapper;
 
     @Override
-    public Optional<FullMetrics> findByTicker(String ticker) {
-        return repository.findByTicker(ticker).map(mapper::toDomain);
+    public List<FullMetrics> findAllByTicker(String ticker) {
+        return repository.findAllByTickerOrderByPeriodEndDateDesc(ticker).stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public Optional<FullMetrics> findByTickerAndPeriod(String ticker, String period) {
+        return repository.findByTickerAndPeriodEndDate(ticker, period).map(mapper::toDomain);
     }
 
     @Override
     public void save(String ticker, FullMetrics metrics) {
-        repository.save(mapper.toEntity(ticker, metrics));
+        if (repository.findByTickerAndPeriodEndDate(ticker, metrics.periodEndDate()).isEmpty()) {
+            repository.save(mapper.toEntity(ticker, metrics));
+        }
     }
 }

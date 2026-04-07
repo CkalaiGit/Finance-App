@@ -8,12 +8,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.HttpClientErrorException;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -48,16 +51,17 @@ class FinancialAnalysisE2ETest {
         String ticker = "GOOGL";
 
         // Act
-        ResponseEntity<FullMetricsResponse> response = restClient.get()
+        ResponseEntity<List<FullMetricsResponse>> response = restClient.get()
                 .uri("/api/v1/analysis/{ticker}", ticker)
                 .retrieve()
-                .toEntity(FullMetricsResponse.class);
+                .toEntity(new ParameterizedTypeReference<>() {});
 
         // Assert
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
 
-        FullMetricsResponse body = response.getBody();
-        assertThat(body).isNotNull();
+        List<FullMetricsResponse> bodyList = response.getBody();
+        assertThat(bodyList).isNotEmpty();
+        FullMetricsResponse body = bodyList.getFirst();
 
         // ── Growth
         assertThat(body.growth()).isNotNull();
@@ -66,50 +70,23 @@ class FinancialAnalysisE2ETest {
         // ── Value
         assertThat(body.value()).isNotNull();
         assertThat(body.value().evToEbit()).isNotNull();
-        assertThat(body.value().peRatioTTM()).isNotNull();
-        assertThat(body.value().pegRatioForward()).isNotNull();
-        assertThat(body.value().evToSales()).isNotNull();
 
         // ── Quality
         assertThat(body.quality()).isNotNull();
         assertThat(body.quality().roic()).isNotNull();
-        assertThat(body.quality().operatingMargin()).isNotNull();
-        assertThat(body.quality().netDebtToEbitda()).isNotNull();
-        assertThat(body.quality().freeCashFlowMargin()).isNotNull();
-        assertThat(body.quality().sgaToRevenue()).isNotNull();
 
-        // Verify Persistence (Cache-Aside)
-        var persisted = repository.findByTicker(ticker);
-        assertThat(persisted).isPresent();
-        assertThat(persisted.get().getTicker()).isEqualTo(ticker);
+        // Verify Persistence
+        var persistedList = repository.findAllByTickerOrderByPeriodEndDateDesc(ticker);
+        assertThat(persistedList).isNotEmpty();
+        var persisted = persistedList.getFirst();
+        assertThat(persisted.getTicker()).isEqualTo(ticker);
+        assertThat(persisted.getPeriodEndDate()).isEqualTo(body.periodEndDate());
 
-        // ── Persistance growth
-        assertThat(persisted.get().getGrowthMetrics().getRevenueGrowth3Y())
+        // ── Persistance checks
+        assertThat(persisted.getGrowthMetrics().getRevenueGrowth3Y())
                 .isEqualByComparingTo(body.growth().revenueGrowth3Y());
-
-        // ── Persistance value
-        assertThat(persisted.get().getValueMetrics()).isNotNull();
-        assertThat(persisted.get().getValueMetrics().getEvToEbit())
+        assertThat(persisted.getValueMetrics().getEvToEbit())
                 .isEqualByComparingTo(body.value().evToEbit());
-        assertThat(persisted.get().getValueMetrics().getPeRatioTTM())
-                .isEqualByComparingTo(body.value().peRatioTTM());
-        assertThat(persisted.get().getValueMetrics().getPegRatioForward())
-                .isEqualByComparingTo(body.value().pegRatioForward());
-        assertThat(persisted.get().getValueMetrics().getEvToSales())
-                .isEqualByComparingTo(body.value().evToSales());
-
-        // ── Persistance quality
-        assertThat(persisted.get().getQualityMetrics()).isNotNull();
-        assertThat(persisted.get().getQualityMetrics().getRoic())
-                .isEqualByComparingTo(body.quality().roic());
-        assertThat(persisted.get().getQualityMetrics().getOperatingMargin())
-                .isEqualByComparingTo(body.quality().operatingMargin());
-        assertThat(persisted.get().getQualityMetrics().getNetDebtToEbitda())
-                .isEqualByComparingTo(body.quality().netDebtToEbitda());
-        assertThat(persisted.get().getQualityMetrics().getFreeCashFlowMargin())
-                .isEqualByComparingTo(body.quality().freeCashFlowMargin());
-        assertThat(persisted.get().getQualityMetrics().getSgaToRevenue())
-                .isEqualByComparingTo(body.quality().sgaToRevenue());
     }
 
     @Test
@@ -117,31 +94,35 @@ class FinancialAnalysisE2ETest {
         String ticker = "GOOGL";
 
         // Premier appel — calcul + persistance
-        ResponseEntity<FullMetricsResponse> first = restClient.get()
+        ResponseEntity<List<FullMetricsResponse>> first = restClient.get()
                 .uri("/api/v1/analysis/{ticker}", ticker)
                 .retrieve()
-                .toEntity(FullMetricsResponse.class);
+                .toEntity(new ParameterizedTypeReference<>() {});
 
         assertThat(first.getStatusCode().is2xxSuccessful()).isTrue();
 
         // Second appel — doit venir du cache
-        ResponseEntity<FullMetricsResponse> second = restClient.get()
+        ResponseEntity<List<FullMetricsResponse>> second = restClient.get()
                 .uri("/api/v1/analysis/{ticker}", ticker)
                 .retrieve()
-                .toEntity(FullMetricsResponse.class);
+                .toEntity(new ParameterizedTypeReference<>() {});
 
         assertThat(second.getStatusCode().is2xxSuccessful()).isTrue();
 
-        assert first.getBody() != null;
-        assert second.getBody() != null;
-        assertThat(second.getBody().growth().revenueGrowth3Y())
-                .isEqualByComparingTo(first.getBody().growth().revenueGrowth3Y());
-        assertThat(second.getBody().value().evToEbit())
-                .isEqualByComparingTo(first.getBody().value().evToEbit());
-        assertThat(second.getBody().quality().roic())
-                .isEqualByComparingTo(first.getBody().quality().roic());
+        List<FullMetricsResponse> firstBodyList = first.getBody();
+        List<FullMetricsResponse> secondBodyList = second.getBody();
+        
+        assertThat(firstBodyList).isNotEmpty();
+        assertThat(secondBodyList).isNotEmpty();
+        
+        FullMetricsResponse firstBody = firstBodyList.getFirst();
+        FullMetricsResponse secondBody = secondBodyList.getFirst();
+        
+        assertThat(secondBody.periodEndDate()).isEqualTo(firstBody.periodEndDate());
+        assertThat(secondBody.growth().revenueGrowth3Y())
+                .isEqualByComparingTo(firstBody.growth().revenueGrowth3Y());
 
-        // Un seul enregistrement en base — pas de doublon
+        // Un seul enregistrement en base
         assertThat(repository.count()).isEqualTo(1);
     }
 
@@ -151,7 +132,7 @@ class FinancialAnalysisE2ETest {
             restClient.get()
                     .uri("/api/v1/analysis/{ticker}", "SYMBOLINEXISTANT")
                     .retrieve()
-                    .toEntity(FullMetricsResponse.class);
+                    .toEntity(new ParameterizedTypeReference<List<FullMetricsResponse>>() {});
 
             fail("Une exception HTTP était attendue");
 

@@ -14,10 +14,12 @@ import org.springframework.stereotype.Component;
 public class FinancialAnalysisWebMapper {
 
     public FullMetricsResponse toResponse(FullMetrics domain) {
+        if (domain == null) return null;
         return new FullMetricsResponse(
                 toGrowthResponse(domain.growth()),
                 toValueResponse(domain.value()),
-                toQualityResponse(domain.quality())
+                toQualityResponse(domain.quality()),
+                domain.periodEndDate()
         );
     }
 

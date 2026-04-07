@@ -20,7 +20,8 @@ public class FinancialAnalysisPersistenceMapper {
         return new FullMetrics(
                 toGrowthDomain(entity.getGrowthMetrics()),
                 toValueDomain(entity.getValueMetrics()),
-                toQualityDomain(entity.getQualityMetrics())
+                toQualityDomain(entity.getQualityMetrics()),
+                entity.getPeriodEndDate()
         );
     }
 
@@ -62,6 +63,7 @@ public class FinancialAnalysisPersistenceMapper {
                 .valueMetrics(toValueEmbeddable(domain.value()))
                 .qualityMetrics(toQualityEmbeddable(domain.quality()))
                 .lastUpdated(Instant.now())
+                .periodEndDate(domain.periodEndDate())
                 .build();
     }
 
