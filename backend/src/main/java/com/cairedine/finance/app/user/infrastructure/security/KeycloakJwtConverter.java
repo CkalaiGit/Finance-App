@@ -20,7 +20,7 @@ public class KeycloakJwtConverter implements Converter<@NonNull Jwt, JwtAuthenti
     private final IUserSyncService userSyncService;
 
     @Override
-    public JwtAuthenticationToken convert(Jwt jwt) {
+    public JwtAuthenticationToken convert(@NonNull Jwt jwt) {
         UserContext ctx = userSyncService.syncAndBuildContext(jwt);
 
         Set<SimpleGrantedAuthority> authorities = ctx.roles().stream()

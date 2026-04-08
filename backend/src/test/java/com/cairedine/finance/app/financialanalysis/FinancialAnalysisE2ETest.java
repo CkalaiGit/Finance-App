@@ -2,6 +2,7 @@ package com.cairedine.finance.app.financialanalysis;
 
 import com.cairedine.finance.app.financialanalysis.infrastructure.persistence.repository.IFinancialAnalysisRepository;
 import com.cairedine.finance.app.financialanalysis.infrastructure.web.dto.FullMetricsResponse;
+import com.cairedine.finance.app.webclient.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,14 +18,16 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.HttpClientErrorException;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.Assertions.within;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -43,21 +46,68 @@ class FinancialAnalysisE2ETest {
     @MockitoBean
     private JwtDecoder jwtDecoder;
 
+    @MockitoBean
+    private IMarketDataPort marketDataPort;
+
     @BeforeEach
     void setUp() {
         repository.deleteAll();
 
-        // Mock d'un JWT valide pour passer la sécurité
+        // 1. Mock du JWT pour passer la sécurité Spring
         Jwt jwt = Jwt.withTokenValue("fake-token")
                 .header("alg", "none")
                 .claim("sub", "test-user")
-                .claim("scope", "read")
-                .issuedAt(Instant.now())
-                .expiresAt(Instant.now().plusSeconds(3600))
                 .build();
-
         when(jwtDecoder.decode(anyString())).thenReturn(jwt);
 
+        // 2. Mock des données de l'API (IMarketDataPort)
+
+        // IncomeStatementRecord : symbol, date, revenue, operatingIncome, ebitda, eps, sga
+        IncomeStatementRecord mockIncome = new IncomeStatementRecord(
+                "GOOGL",
+                "2023-12-31",
+                new BigDecimal("307394000000"),
+                new BigDecimal("84293000000"),
+                new BigDecimal("95000000000"),
+                new BigDecimal("5.80"),
+                new BigDecimal("18000000000")
+        );
+
+        // Le service exige size >= 4 pour le calcul de croissance 3 ans
+        when(marketDataPort.fetchIncomeStatements(eq("GOOGL"), anyInt()))
+                .thenReturn(List.of(mockIncome, mockIncome, mockIncome, mockIncome));
+
+        // CashFlowRecord : symbol, date, freeCashFlow, commonStockRepurchased
+        CashFlowRecord mockCashFlow = new CashFlowRecord(
+                "GOOGL",
+                "2023-12-31",
+                new BigDecimal("60000000000"),
+                BigDecimal.ZERO
+        );
+
+        // IMPORTANT : Le service exige size >= 2 pour le calcul de croissance FCF
+        when(marketDataPort.fetchCashFlowStatements(anyString(), anyInt()))
+                .thenReturn(List.of(mockCashFlow, mockCashFlow));
+
+        // KeyMetricsRecord : symbol, roic, netDebtToEbitda, enterpriseValueTTM, peRatioTTM, evToSalesTTM
+        when(marketDataPort.fetchKeyMetricsTtm(anyString()))
+                .thenReturn(Optional.of(new KeyMetricsRecord(
+                        "GOOGL",
+                        new BigDecimal("0.25"),
+                        new BigDecimal("0.5"),
+                        new BigDecimal("1500000000000"),
+                        new BigDecimal("25"),
+                        new BigDecimal("5")
+                )));
+
+        // AnalystEstimateRecord : symbol, date, epsAvg, revenueAvg
+        when(marketDataPort.fetchAnalystEstimates(anyString()))
+                .thenReturn(List.of(
+                        new AnalystEstimateRecord("GOOGL", "2024-12-31", new BigDecimal("6.5"), new BigDecimal("320000000000")),
+                        new AnalystEstimateRecord("GOOGL", "2023-12-31", new BigDecimal("5.8"), new BigDecimal("300000000000"))
+                ));
+
+        // 3. Initialisation du RestClient de test
         restClient = RestClient.builder()
                 .baseUrl("http://localhost:" + port)
                 .defaultHeader("Authorization", "Bearer fake-token")
@@ -154,16 +204,20 @@ class FinancialAnalysisE2ETest {
 
     @Test
     void shouldReturn404ForUnknownTicker() {
-        try {
-            restClient.get()
-                    .uri("/api/v1/analysis/{ticker}", "TICKER_INEXISTANT")
-                    .retrieve()
-                    .toEntity(new ParameterizedTypeReference<List<FullMetricsResponse>>() {});
+        // Arrange
+        String unknownTicker = "TICKER_INEXISTANT";
+        when(marketDataPort.fetchIncomeStatements(eq(unknownTicker), anyInt()))
+                .thenReturn(List.of());
 
-            fail("Une exception HTTP était attendue");
-
-        } catch (HttpClientErrorException ex) {
-            assertThat(ex.getStatusCode().value()).isEqualTo(404);
-        }
+        // Act & Assert
+        assertThatThrownBy(() -> restClient.get()
+                .uri("/api/v1/analysis/{ticker}", unknownTicker)
+                .retrieve()
+                .toBodilessEntity()) // Plus d'accolades, plus de ; interne
+                .isInstanceOf(HttpClientErrorException.class)
+                .satisfies(ex -> {
+                    HttpClientErrorException httpEx = (HttpClientErrorException) ex;
+                    assertThat(httpEx.getStatusCode().value()).isEqualTo(404);
+                });
     }
 }

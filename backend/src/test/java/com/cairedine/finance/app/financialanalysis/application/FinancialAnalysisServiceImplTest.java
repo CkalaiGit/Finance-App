@@ -130,7 +130,6 @@ class FinancialAnalysisServiceImplTest {
         // Arrange
         when(marketDataPort.fetchIncomeStatements(TICKER, 4)).thenReturn(incomeStatements4);
         FullMetrics existing = mock(FullMetrics.class);
-        //when(existing.fiscalYearEndDate()).thenReturn("2023");
 
         when(metricsCache.findByTickerAndFiscalYear(TICKER, "2023")).thenReturn(Optional.of(existing));
         when(metricsCache.findAllByTicker(TICKER)).thenReturn(List.of(existing));
