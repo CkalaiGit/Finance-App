@@ -10,7 +10,7 @@ import java.util.Optional;
 @Repository
 public interface IFinancialAnalysisRepository extends JpaRepository<FinancialAnalysisJpaEntity, Long> {
 
-    List<FinancialAnalysisJpaEntity> findAllByTickerOrderByPeriodEndDateDesc(String ticker);
+    List<FinancialAnalysisJpaEntity> findAllByTickerOrderByFiscalYearEndDateDesc(String ticker);
 
-    Optional<FinancialAnalysisJpaEntity> findByTickerAndPeriodEndDate(String ticker, String periodEndDate);
+    Optional<FinancialAnalysisJpaEntity> findByTickerAndFiscalYearEndDate(String ticker, String fiscalYearEndDate);
 }

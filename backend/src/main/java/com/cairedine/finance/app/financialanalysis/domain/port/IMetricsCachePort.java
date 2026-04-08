@@ -6,6 +6,6 @@ import java.util.Optional;
 
 public interface IMetricsCachePort {
     List<FullMetrics> findAllByTicker(String ticker);
-    Optional<FullMetrics> findByTickerAndPeriod(String ticker, String period);
+    Optional<FullMetrics> findByTickerAndFiscalYear(String ticker, String fiscalYearEndDate);
     void save(String ticker, FullMetrics metrics);
 }

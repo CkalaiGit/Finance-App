@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -29,110 +30,111 @@ public class FinancialAnalysisServiceImpl implements IFinancialAnalysisService {
 
     private static final MathContext MC = new MathContext(8, RoundingMode.HALF_UP);
 
-    @Override
-    @Transactional
-    public List<FullMetrics> computeMetrics(String ticker) {
-        String normalizedTicker = ticker.toUpperCase();
+     @Override
+     @Transactional
+     public List<FullMetrics> computeMetrics(String ticker) {
+         String normalizedTicker = ticker.toUpperCase();
 
-        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            var incomeFuture = CompletableFuture.supplyAsync(
-                    () -> marketDataPort.fetchIncomeStatements(normalizedTicker, 4), executor);
+         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+             var incomeFuture = CompletableFuture.supplyAsync(
+                     () -> marketDataPort.fetchIncomeStatements(normalizedTicker, 4), executor);
 
-            List<IncomeStatementRecord> incomeStatements = incomeFuture.join();
-            if (incomeStatements.isEmpty()) {
-                throw new TickerNotFoundException(normalizedTicker);
-            }
+             List<IncomeStatementRecord> incomeStatements = incomeFuture.join();
+             if (incomeStatements.isEmpty()) {
+                 throw new TickerNotFoundException(normalizedTicker);
+             }
 
-            String currentPeriodEndDate = incomeStatements.getFirst().date();
+             String currentFiscalYearEndDate = incomeStatements.getFirst().date();
 
-            // 1. Check if the current period is already in history
-            if (metricsCache.findByTickerAndPeriod(normalizedTicker, currentPeriodEndDate).isEmpty()) {
-                FullMetrics calculated = calculateMetricsFromApi(normalizedTicker, incomeStatements);
-                metricsCache.save(normalizedTicker, calculated);
-            }
+             // 1. Check if the current period is already in history
+             if (metricsCache.findByTickerAndFiscalYear(normalizedTicker, currentFiscalYearEndDate).isEmpty()) {
+                 FullMetrics calculated = calculateMetricsFromApi(normalizedTicker, incomeStatements);
+                 metricsCache.save(normalizedTicker, calculated);
+             }
 
-            // 2. Return the full history
-            return metricsCache.findAllByTicker(normalizedTicker);
+             // 2. Return the full history
+             return metricsCache.findAllByTicker(normalizedTicker);
 
-        } catch (Exception e) {
-            Throwable cause = e.getCause() != null ? e.getCause() : e;
-            if (cause instanceof TickerNotFoundException tnf) throw tnf;
-            throw new RuntimeException("Error computing historical metrics for " + ticker, cause);
-        }
-    }
+         } catch (Exception e) {
+             Throwable cause = e.getCause() != null ? e.getCause() : e;
+             if (cause instanceof TickerNotFoundException tnf) throw tnf;
+             throw new RuntimeException("Error computing historical metrics for " + ticker, cause);
+         }
+     }
 
-    private FullMetrics calculateMetricsFromApi(String ticker, List<IncomeStatementRecord> preFetchedIncome) {
-        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+     private FullMetrics calculateMetricsFromApi(String ticker, List<IncomeStatementRecord> preFetchedIncome) {
+         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
 
-            var cashFlowFuture = CompletableFuture.supplyAsync(
-                    () -> marketDataPort.fetchCashFlowStatements(ticker, 2), executor);
+             var cashFlowFuture = CompletableFuture.supplyAsync(
+                     () -> marketDataPort.fetchCashFlowStatements(ticker, 2), executor);
 
-            var keyMetricsFuture = CompletableFuture.supplyAsync(
-                    () -> marketDataPort.fetchKeyMetricsTtm(ticker), executor);
+             var keyMetricsFuture = CompletableFuture.supplyAsync(
+                     () -> marketDataPort.fetchKeyMetricsTtm(ticker), executor);
 
-            var analystEstimatesFuture = CompletableFuture.supplyAsync(
-                    () -> marketDataPort.fetchAnalystEstimates(ticker), executor);
+             var analystEstimatesFuture = CompletableFuture.supplyAsync(
+                     () -> marketDataPort.fetchAnalystEstimates(ticker), executor);
 
-            List<CashFlowRecord> cashFlowStatements = cashFlowFuture.join();
-            Optional<KeyMetricsRecord> keyMetricsOpt = keyMetricsFuture.join();
-            List<AnalystEstimateRecord> analystEstimates = analystEstimatesFuture.join();
+             List<CashFlowRecord> cashFlowStatements = cashFlowFuture.join();
+             Optional<KeyMetricsRecord> keyMetricsOpt = keyMetricsFuture.join();
+             List<AnalystEstimateRecord> analystEstimates = analystEstimatesFuture.join();
 
-            if (preFetchedIncome.size() < 4 || cashFlowStatements.size() < 2) {
-                throw new TickerNotFoundException(ticker + " (Insufficient data)");
-            }
+             if (preFetchedIncome.size() < 4 || cashFlowStatements.size() < 2) {
+                 throw new TickerNotFoundException(ticker + " (Insufficient data)");
+             }
 
-            IncomeStatementRecord ttmIncome = preFetchedIncome.getFirst();
-            CashFlowRecord ttmCashFlow = cashFlowStatements.getFirst();
-            String periodEndDate = ttmIncome.date();
+             IncomeStatementRecord ttmIncome = preFetchedIncome.getFirst();
+             CashFlowRecord ttmCashFlow = cashFlowStatements.getFirst();
+             String fiscalYearEndDate = ttmIncome.date();
+             Instant marketDataAsOf = Instant.now();
 
-            // Growth
-            BigDecimal revenueGrowth3Y = calculateCAGR(ttmIncome.revenue(), preFetchedIncome.get(3).revenue());
-            BigDecimal ebitdaGrowth = calculateGrowth(ttmIncome.ebitda(), preFetchedIncome.get(1).ebitda());
-            BigDecimal epsGrowth = calculateGrowth(ttmIncome.eps(), preFetchedIncome.get(1).eps());
-            BigDecimal fcfGrowth = calculateGrowth(ttmCashFlow.freeCashFlow(), cashFlowStatements.get(1).freeCashFlow());
-            GrowthMetrics growth = new GrowthMetrics(revenueGrowth3Y, ebitdaGrowth, epsGrowth, fcfGrowth);
+             // Growth
+             BigDecimal revenueGrowth3Y = calculateCAGR(ttmIncome.revenue(), preFetchedIncome.get(3).revenue());
+             BigDecimal ebitdaGrowth = calculateGrowth(ttmIncome.ebitda(), preFetchedIncome.get(1).ebitda());
+             BigDecimal epsGrowth = calculateGrowth(ttmIncome.eps(), preFetchedIncome.get(1).eps());
+             BigDecimal fcfGrowth = calculateGrowth(ttmCashFlow.freeCashFlow(), cashFlowStatements.get(1).freeCashFlow());
+             GrowthMetrics growth = new GrowthMetrics(revenueGrowth3Y, ebitdaGrowth, epsGrowth, fcfGrowth);
 
-            // Value & Quality base from KeyMetrics
-            BigDecimal roic = BigDecimal.ZERO;
-            BigDecimal netDebtToEbitda = BigDecimal.ZERO;
-            BigDecimal enterpriseValue = BigDecimal.ZERO;
-            BigDecimal peRatioTTM = BigDecimal.ZERO;
-            BigDecimal evToSales = BigDecimal.ZERO;
+             // Value & Quality base from KeyMetrics
+             BigDecimal roic = BigDecimal.ZERO;
+             BigDecimal netDebtToEbitda = BigDecimal.ZERO;
+             BigDecimal enterpriseValue = BigDecimal.ZERO;
+             BigDecimal peRatioTTM = BigDecimal.ZERO;
+             BigDecimal evToSales = BigDecimal.ZERO;
 
-            if (keyMetricsOpt.isPresent()) {
-                KeyMetricsRecord km = keyMetricsOpt.get();
-                roic = safeValue(km.returnOnInvestedCapitalTTM());
-                netDebtToEbitda = safeValue(km.netDebtToEbitda());
-                enterpriseValue = safeValue(km.enterpriseValueTTM());
-                peRatioTTM = safeValue(km.peRatioTTM());
-                evToSales = safeValue(km.evToSalesTTM());
-            }
+             if (keyMetricsOpt.isPresent()) {
+                 KeyMetricsRecord km = keyMetricsOpt.get();
+                 roic = safeValue(km.returnOnInvestedCapitalTTM());
+                 netDebtToEbitda = safeValue(km.netDebtToEbitda());
+                 enterpriseValue = safeValue(km.enterpriseValueTTM());
+                 peRatioTTM = safeValue(km.peRatioTTM());
+                 evToSales = safeValue(km.evToSalesTTM());
+             }
 
-            // Value
-            BigDecimal evToEbit = calculateRatio(enterpriseValue, ttmIncome.operatingIncome());
-            BigDecimal epsGrowthForward = BigDecimal.ZERO;
-            if (analystEstimates.size() >= 2) {
-                BigDecimal epsNext = analystEstimates.get(0).epsAvg();
-                BigDecimal epsCurrent = analystEstimates.get(1).epsAvg();
-                epsGrowthForward = calculateGrowth(epsNext, epsCurrent);
-            }
-            BigDecimal pegRatioForward = calculatePegRatio(peRatioTTM, epsGrowthForward);
-            ValueMetrics value = new ValueMetrics(evToEbit, peRatioTTM, pegRatioForward, evToSales);
+             // Value
+             BigDecimal evToEbit = calculateRatio(enterpriseValue, ttmIncome.operatingIncome());
+             BigDecimal epsGrowthForward = BigDecimal.ZERO;
+             if (analystEstimates.size() >= 2) {
+                 BigDecimal epsNext = analystEstimates.get(0).epsAvg();
+                 BigDecimal epsCurrent = analystEstimates.get(1).epsAvg();
+                 epsGrowthForward = calculateGrowth(epsNext, epsCurrent);
+             }
+             BigDecimal pegRatioForward = calculatePegRatio(peRatioTTM, epsGrowthForward);
+             ValueMetrics value = new ValueMetrics(evToEbit, peRatioTTM, pegRatioForward, evToSales);
 
-            // Quality
-            BigDecimal operatingMargin = calculateRatio(ttmIncome.operatingIncome(), ttmIncome.revenue());
-            BigDecimal freeCashFlowMargin = calculateRatio(ttmCashFlow.freeCashFlow(), ttmIncome.revenue());
-            BigDecimal sgaToRevenue = calculateRatio(ttmIncome.sellingGeneralAndAdministrativeExpenses(), ttmIncome.revenue());
-            QualityMetrics quality = new QualityMetrics(roic, operatingMargin, netDebtToEbitda, freeCashFlowMargin, sgaToRevenue);
+             // Quality
+             BigDecimal operatingMargin = calculateRatio(ttmIncome.operatingIncome(), ttmIncome.revenue());
+             BigDecimal freeCashFlowMargin = calculateRatio(ttmCashFlow.freeCashFlow(), ttmIncome.revenue());
+             BigDecimal sgaToRevenue = calculateRatio(ttmIncome.sellingGeneralAndAdministrativeExpenses(), ttmIncome.revenue());
+             QualityMetrics quality = new QualityMetrics(roic, operatingMargin, netDebtToEbitda, freeCashFlowMargin, sgaToRevenue);
 
-            return new FullMetrics(growth, value, quality, periodEndDate);
+             return new FullMetrics(growth, value, quality, fiscalYearEndDate, marketDataAsOf);
 
-        } catch (Exception e) {
-            Throwable cause = e.getCause() != null ? e.getCause() : e;
-            if (cause instanceof TickerNotFoundException tnf) throw tnf;
-            throw new RuntimeException("Error calculating current metrics for " + ticker, cause);
-        }
-    }
+         } catch (Exception e) {
+             Throwable cause = e.getCause() != null ? e.getCause() : e;
+             if (cause instanceof TickerNotFoundException tnf) throw tnf;
+             throw new RuntimeException("Error calculating current metrics for " + ticker, cause);
+         }
+     }
 
     private BigDecimal calculateCAGR(BigDecimal endValue, BigDecimal startValue) {
         if (startValue == null || endValue == null || startValue.signum() <= 0 || endValue.signum() <= 0) {

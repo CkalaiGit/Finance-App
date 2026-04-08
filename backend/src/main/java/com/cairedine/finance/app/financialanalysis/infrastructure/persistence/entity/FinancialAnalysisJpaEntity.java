@@ -7,7 +7,7 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "financial_analysis", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"ticker", "periodEndDate"})
+        @UniqueConstraint(columnNames = {"ticker", "fiscal_year_end_date"})
 })
 @Getter
 @Setter
@@ -35,8 +35,11 @@ public class FinancialAnalysisJpaEntity {
     @Column(nullable = false)
     private Instant lastUpdated;
 
-    @Column(name = "period_end_date", nullable = false)
-    private String periodEndDate;
+    @Column(name = "fiscal_year_end_date", nullable = false)
+    private String fiscalYearEndDate;
+
+    @Column(nullable = false, updatable = false)
+    private Instant marketDataAsOf;
 
     @PrePersist
     @PreUpdate

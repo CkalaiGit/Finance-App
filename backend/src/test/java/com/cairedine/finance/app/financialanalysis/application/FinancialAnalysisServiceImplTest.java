@@ -49,7 +49,7 @@ class FinancialAnalysisServiceImplTest {
     void shouldComputeGrowthMetricsCorrectly() {
         // Arrange
         when(marketDataPort.fetchIncomeStatements(TICKER, 4)).thenReturn(incomeStatements4);
-        when(metricsCache.findByTickerAndPeriod(TICKER, "2023")).thenReturn(Optional.empty());
+        when(metricsCache.findByTickerAndFiscalYear(TICKER, "2023")).thenReturn(Optional.empty());
         when(marketDataPort.fetchCashFlowStatements(TICKER, 2)).thenReturn(cashFlowStatements2);
         when(marketDataPort.fetchKeyMetricsTtm(TICKER)).thenReturn(Optional.empty());
         when(marketDataPort.fetchAnalystEstimates(TICKER)).thenReturn(List.of());
@@ -75,7 +75,7 @@ class FinancialAnalysisServiceImplTest {
         );
 
         when(marketDataPort.fetchIncomeStatements(TICKER, 4)).thenReturn(incomeStatements4);
-        when(metricsCache.findByTickerAndPeriod(TICKER, "2023")).thenReturn(Optional.empty());
+        when(metricsCache.findByTickerAndFiscalYear(TICKER, "2023")).thenReturn(Optional.empty());
         when(marketDataPort.fetchCashFlowStatements(TICKER, 2)).thenReturn(cashFlowStatements2);
         when(marketDataPort.fetchKeyMetricsTtm(TICKER)).thenReturn(Optional.of(keyMetrics));
         when(marketDataPort.fetchAnalystEstimates(TICKER)).thenReturn(analystEstimates);
@@ -100,7 +100,7 @@ class FinancialAnalysisServiceImplTest {
                 new IncomeStatementRecord(TICKER, "2021", new BigDecimal("800"), null, new BigDecimal("160"), new BigDecimal("8"), null),
                 new IncomeStatementRecord(TICKER, "2020", new BigDecimal("700"), null, new BigDecimal("140"), new BigDecimal("7"), null)
         ));
-        when(metricsCache.findByTickerAndPeriod(TICKER, "2023")).thenReturn(Optional.empty());
+        when(metricsCache.findByTickerAndFiscalYear(TICKER, "2023")).thenReturn(Optional.empty());
         when(marketDataPort.fetchCashFlowStatements(TICKER, 2)).thenReturn(List.of(
                 new CashFlowRecord(TICKER, "2023", new BigDecimal("142"), null),
                 new CashFlowRecord(TICKER, "2022", new BigDecimal("120"), null)
@@ -130,9 +130,9 @@ class FinancialAnalysisServiceImplTest {
         // Arrange
         when(marketDataPort.fetchIncomeStatements(TICKER, 4)).thenReturn(incomeStatements4);
         FullMetrics existing = mock(FullMetrics.class);
-        //when(existing.periodEndDate()).thenReturn("2023");
+        //when(existing.fiscalYearEndDate()).thenReturn("2023");
 
-        when(metricsCache.findByTickerAndPeriod(TICKER, "2023")).thenReturn(Optional.of(existing));
+        when(metricsCache.findByTickerAndFiscalYear(TICKER, "2023")).thenReturn(Optional.of(existing));
         when(metricsCache.findAllByTicker(TICKER)).thenReturn(List.of(existing));
 
         // Act

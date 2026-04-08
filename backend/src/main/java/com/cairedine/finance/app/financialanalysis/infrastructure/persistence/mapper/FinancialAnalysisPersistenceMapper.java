@@ -21,7 +21,8 @@ public class FinancialAnalysisPersistenceMapper {
                 toGrowthDomain(entity.getGrowthMetrics()),
                 toValueDomain(entity.getValueMetrics()),
                 toQualityDomain(entity.getQualityMetrics()),
-                entity.getPeriodEndDate()
+                entity.getFiscalYearEndDate(),
+                entity.getMarketDataAsOf()
         );
     }
 
@@ -63,7 +64,8 @@ public class FinancialAnalysisPersistenceMapper {
                 .valueMetrics(toValueEmbeddable(domain.value()))
                 .qualityMetrics(toQualityEmbeddable(domain.quality()))
                 .lastUpdated(Instant.now())
-                .periodEndDate(domain.periodEndDate())
+                .fiscalYearEndDate(domain.fiscalYearEndDate())
+                .marketDataAsOf(domain.marketDataAsOf())
                 .build();
     }
 

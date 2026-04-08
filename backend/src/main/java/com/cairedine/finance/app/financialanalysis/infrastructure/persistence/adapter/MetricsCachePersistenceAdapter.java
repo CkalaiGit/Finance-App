@@ -19,19 +19,19 @@ public class MetricsCachePersistenceAdapter implements IMetricsCachePort {
 
     @Override
     public List<FullMetrics> findAllByTicker(String ticker) {
-        return repository.findAllByTickerOrderByPeriodEndDateDesc(ticker).stream()
+        return repository.findAllByTickerOrderByFiscalYearEndDateDesc(ticker).stream()
                 .map(mapper::toDomain)
                 .toList();
     }
 
     @Override
-    public Optional<FullMetrics> findByTickerAndPeriod(String ticker, String period) {
-        return repository.findByTickerAndPeriodEndDate(ticker, period).map(mapper::toDomain);
+    public Optional<FullMetrics> findByTickerAndFiscalYear(String ticker, String fiscalYearEndDate) {
+        return repository.findByTickerAndFiscalYearEndDate(ticker, fiscalYearEndDate).map(mapper::toDomain);
     }
 
     @Override
     public void save(String ticker, FullMetrics metrics) {
-        if (repository.findByTickerAndPeriodEndDate(ticker, metrics.periodEndDate()).isEmpty()) {
+        if (repository.findByTickerAndFiscalYearEndDate(ticker, metrics.fiscalYearEndDate()).isEmpty()) {
             repository.save(mapper.toEntity(ticker, metrics));
         }
     }

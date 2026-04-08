@@ -10,16 +10,22 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.HttpClientErrorException;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static org.assertj.core.api.Assertions.within;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestSecurityConfig.class)
@@ -40,8 +46,21 @@ class FinancialAnalysisE2ETest {
     @BeforeEach
     void setUp() {
         repository.deleteAll();
+
+        // Mock d'un JWT valide pour passer la sécurité
+        Jwt jwt = Jwt.withTokenValue("fake-token")
+                .header("alg", "none")
+                .claim("sub", "test-user")
+                .claim("scope", "read")
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plusSeconds(3600))
+                .build();
+
+        when(jwtDecoder.decode(anyString())).thenReturn(jwt);
+
         restClient = RestClient.builder()
                 .baseUrl("http://localhost:" + port)
+                .defaultHeader("Authorization", "Bearer fake-token")
                 .build();
     }
 
@@ -75,12 +94,19 @@ class FinancialAnalysisE2ETest {
         assertThat(body.quality()).isNotNull();
         assertThat(body.quality().roic()).isNotNull();
 
+        // ── Verify dates
+        assertThat(body.fiscalYearEndDate()).isNotNull();
+        assertThat(body.fiscalYearEndDate()).matches("\\d{4}-\\d{2}-\\d{2}");  // Format YYYY-MM-DD
+        assertThat(body.marketDataAsOf()).isNotNull();
+        assertThat(body.marketDataAsOf()).isCloseTo(Instant.now(), within(60, ChronoUnit.SECONDS));
+
         // Verify Persistence
-        var persistedList = repository.findAllByTickerOrderByPeriodEndDateDesc(ticker);
+        var persistedList = repository.findAllByTickerOrderByFiscalYearEndDateDesc(ticker);
         assertThat(persistedList).isNotEmpty();
         var persisted = persistedList.getFirst();
         assertThat(persisted.getTicker()).isEqualTo(ticker);
-        assertThat(persisted.getPeriodEndDate()).isEqualTo(body.periodEndDate());
+        assertThat(persisted.getFiscalYearEndDate()).isEqualTo(body.fiscalYearEndDate());
+        assertThat(persisted.getMarketDataAsOf()).isNotNull();
 
         // ── Persistance checks
         assertThat(persisted.getGrowthMetrics().getRevenueGrowth3Y())
@@ -118,7 +144,7 @@ class FinancialAnalysisE2ETest {
         FullMetricsResponse firstBody = firstBodyList.getFirst();
         FullMetricsResponse secondBody = secondBodyList.getFirst();
         
-        assertThat(secondBody.periodEndDate()).isEqualTo(firstBody.periodEndDate());
+        assertThat(secondBody.fiscalYearEndDate()).isEqualTo(firstBody.fiscalYearEndDate());
         assertThat(secondBody.growth().revenueGrowth3Y())
                 .isEqualByComparingTo(firstBody.growth().revenueGrowth3Y());
 
@@ -130,7 +156,7 @@ class FinancialAnalysisE2ETest {
     void shouldReturn404ForUnknownTicker() {
         try {
             restClient.get()
-                    .uri("/api/v1/analysis/{ticker}", "SYMBOLINEXISTANT")
+                    .uri("/api/v1/analysis/{ticker}", "TICKER_INEXISTANT")
                     .retrieve()
                     .toEntity(new ParameterizedTypeReference<List<FullMetricsResponse>>() {});
 

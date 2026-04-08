@@ -19,7 +19,8 @@ public class FinancialAnalysisWebMapper {
                 toGrowthResponse(domain.growth()),
                 toValueResponse(domain.value()),
                 toQualityResponse(domain.quality()),
-                domain.periodEndDate()
+                domain.fiscalYearEndDate(),
+                domain.marketDataAsOf()
         );
     }
 
