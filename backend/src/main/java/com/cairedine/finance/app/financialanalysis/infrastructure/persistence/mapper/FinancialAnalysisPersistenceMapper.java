@@ -30,8 +30,8 @@ public class FinancialAnalysisPersistenceMapper {
         if (embeddable == null) return null;
         return new GrowthMetrics(
                 embeddable.getRevenueGrowth3Y(),
-                embeddable.getEbitdaGrowth(),
-                embeddable.getEpsGrowth(),
+                embeddable.getEbitdaGrowth3Y(),
+                embeddable.getEpsGrowth3Y(),
                 embeddable.getFcfGrowth()
         );
     }
@@ -73,8 +73,8 @@ public class FinancialAnalysisPersistenceMapper {
         if (domain == null) return null;
         return GrowthMetricsEmbeddable.builder()
                 .revenueGrowth3Y(domain.revenueGrowth3Y())
-                .ebitdaGrowth(domain.ebitdaGrowth())
-                .epsGrowth(domain.epsGrowth())
+                .ebitdaGrowth3Y(domain.ebitdaGrowth3Y())
+                .epsGrowth3Y(domain.epsGrowth3Y())
                 .fcfGrowth(domain.fcfGrowth())
                 .build();
     }

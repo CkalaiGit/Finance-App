@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 
 public record GrowthMetrics(
         BigDecimal revenueGrowth3Y,
-        BigDecimal ebitdaGrowth,
-        BigDecimal epsGrowth,
+        BigDecimal ebitdaGrowth3Y,
+        BigDecimal epsGrowth3Y,
         BigDecimal fcfGrowth
 ) {}

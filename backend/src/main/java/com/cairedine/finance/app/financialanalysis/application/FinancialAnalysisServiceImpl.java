@@ -89,10 +89,10 @@ public class FinancialAnalysisServiceImpl implements IFinancialAnalysisService {
 
              // Growth
              BigDecimal revenueGrowth3Y = calculateCAGR(ttmIncome.revenue(), preFetchedIncome.get(3).revenue());
-             BigDecimal ebitdaGrowth = calculateGrowth(ttmIncome.ebitda(), preFetchedIncome.get(1).ebitda());
-             BigDecimal epsGrowth = calculateGrowth(ttmIncome.eps(), preFetchedIncome.get(1).eps());
+             BigDecimal ebitdaGrowth3Y = calculateCAGR(ttmIncome.ebitda(), preFetchedIncome.get(3).ebitda());
+             BigDecimal epsGrowth3Y = calculateCAGR(ttmIncome.eps(), preFetchedIncome.get(3).eps());
              BigDecimal fcfGrowth = calculateGrowth(ttmCashFlow.freeCashFlow(), cashFlowStatements.get(1).freeCashFlow());
-             GrowthMetrics growth = new GrowthMetrics(revenueGrowth3Y, ebitdaGrowth, epsGrowth, fcfGrowth);
+             GrowthMetrics growth = new GrowthMetrics(revenueGrowth3Y, ebitdaGrowth3Y, epsGrowth3Y, fcfGrowth);
 
              // Value & Quality base from KeyMetrics
              BigDecimal roic = BigDecimal.ZERO;
@@ -111,6 +111,9 @@ public class FinancialAnalysisServiceImpl implements IFinancialAnalysisService {
              }
 
              // Value
+             // EV (instantanée, TTM boursier) / EBIT (comptable, dernière clôture)
+             // Ratio cohérent en convention marché — EV et EBIT doivent couvrir 12 mois TTM
+             // KeyMetrics FMP retourne un EV TTM aligné sur les 12 derniers mois.
              BigDecimal evToEbit = calculateRatio(enterpriseValue, ttmIncome.operatingIncome());
              BigDecimal epsGrowthForward = BigDecimal.ZERO;
              if (analystEstimates.size() >= 2) {
@@ -137,12 +140,21 @@ public class FinancialAnalysisServiceImpl implements IFinancialAnalysisService {
      }
 
     private BigDecimal calculateCAGR(BigDecimal endValue, BigDecimal startValue) {
-        if (startValue == null || endValue == null || startValue.signum() <= 0 || endValue.signum() <= 0) {
+        // Return ZERO if either value is null
+        if (startValue == null || endValue == null) {
             return BigDecimal.ZERO;
         }
-        double ratio = endValue.divide(startValue, MC).doubleValue();
-        double cagr = Math.pow(ratio, 1.0 / 3.0) - 1;
-        return BigDecimal.valueOf(cagr).setScale(4, RoundingMode.HALF_UP);
+
+        // If both values are positive, calculate proper CAGR
+        if (startValue.signum() > 0 && endValue.signum() > 0) {
+            double ratio = endValue.divide(startValue, MC).doubleValue();
+            double cagr = Math.pow(ratio, 1.0 / 3.0) - 1;
+            return BigDecimal.valueOf(cagr).setScale(4, RoundingMode.HALF_UP);
+        }
+
+        // Fallback: use simple growth rate when CAGR is not calculable
+        // This handles cases like negative-to-positive transitions
+        return calculateGrowth(endValue, startValue);
     }
 
     private BigDecimal calculateGrowth(BigDecimal current, BigDecimal previous) {

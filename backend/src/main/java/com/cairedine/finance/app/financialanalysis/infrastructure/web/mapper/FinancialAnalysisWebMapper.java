@@ -28,8 +28,8 @@ public class FinancialAnalysisWebMapper {
         if (domain == null) return null;
         return new GrowthMetricsResponse(
                 domain.revenueGrowth3Y(),
-                domain.ebitdaGrowth(),
-                domain.epsGrowth(),
+                domain.ebitdaGrowth3Y(),
+                domain.epsGrowth3Y(),
                 domain.fcfGrowth()
         );
     }

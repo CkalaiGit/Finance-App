@@ -16,9 +16,9 @@ public class GrowthMetricsEmbeddable {
     @Column(precision = 19, scale = 4)
     private BigDecimal revenueGrowth3Y;
     @Column(precision = 19, scale = 4)
-    private BigDecimal ebitdaGrowth;
+    private BigDecimal ebitdaGrowth3Y;
     @Column(precision = 19, scale = 4)
-    private BigDecimal epsGrowth;
+    private BigDecimal epsGrowth3Y;
     @Column(precision = 19, scale = 4)
     private BigDecimal fcfGrowth;
 
