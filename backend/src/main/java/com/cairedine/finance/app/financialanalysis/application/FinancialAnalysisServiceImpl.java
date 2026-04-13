@@ -1,5 +1,6 @@
 package com.cairedine.finance.app.financialanalysis.application;
 
+import com.cairedine.finance.app.financialanalysis.domain.FinancialMath;
 import com.cairedine.finance.app.financialanalysis.domain.model.FullMetrics;
 import com.cairedine.finance.app.financialanalysis.domain.model.GrowthMetrics;
 import com.cairedine.finance.app.financialanalysis.domain.model.QualityMetrics;
@@ -13,13 +14,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.MathContext;
-import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
+
+import static com.cairedine.finance.app.financialanalysis.domain.FinancialMath.calculateCAGR;
+import static com.cairedine.finance.app.financialanalysis.domain.FinancialMath.calculateGrowth;
 
 @Service
 @RequiredArgsConstructor
@@ -27,8 +29,6 @@ public class FinancialAnalysisServiceImpl implements IFinancialAnalysisService {
 
     private final IMarketDataPort marketDataPort;
     private final IMetricsCachePort metricsCache;
-
-    private static final MathContext MC = new MathContext(8, RoundingMode.HALF_UP);
 
      @Override
      @Transactional
@@ -103,31 +103,31 @@ public class FinancialAnalysisServiceImpl implements IFinancialAnalysisService {
 
              if (keyMetricsOpt.isPresent()) {
                  KeyMetricsRecord km = keyMetricsOpt.get();
-                 roic = safeValue(km.returnOnInvestedCapitalTTM());
-                 netDebtToEbitda = safeValue(km.netDebtToEbitda());
-                 enterpriseValue = safeValue(km.enterpriseValueTTM());
-                 peRatioTTM = safeValue(km.peRatioTTM());
-                 evToSales = safeValue(km.evToSalesTTM());
+                 roic = FinancialMath.safeValue(km.returnOnInvestedCapitalTTM());
+                 netDebtToEbitda = FinancialMath.safeValue(km.netDebtToEbitda());
+                 enterpriseValue = FinancialMath.safeValue(km.enterpriseValueTTM());
+                 peRatioTTM = FinancialMath.safeValue(km.peRatioTTM());
+                 evToSales = FinancialMath.safeValue(km.evToSalesTTM());
              }
 
              // Value
              // EV (instantanée, TTM boursier) / EBIT (comptable, dernière clôture)
              // Ratio cohérent en convention marché — EV et EBIT doivent couvrir 12 mois TTM
              // KeyMetrics FMP retourne un EV TTM aligné sur les 12 derniers mois.
-             BigDecimal evToEbit = calculateRatio(enterpriseValue, ttmIncome.operatingIncome());
+             BigDecimal evToEbit = FinancialMath.calculateRatio(enterpriseValue, ttmIncome.operatingIncome());
              BigDecimal epsGrowthForward = BigDecimal.ZERO;
              if (analystEstimates.size() >= 2) {
                  BigDecimal epsNext = analystEstimates.get(0).epsAvg();
                  BigDecimal epsCurrent = analystEstimates.get(1).epsAvg();
                  epsGrowthForward = calculateGrowth(epsNext, epsCurrent);
              }
-             BigDecimal pegRatioForward = calculatePegRatio(peRatioTTM, epsGrowthForward);
+             BigDecimal pegRatioForward = FinancialMath.calculatePegRatio(peRatioTTM, epsGrowthForward);
              ValueMetrics value = new ValueMetrics(evToEbit, peRatioTTM, pegRatioForward, evToSales);
 
              // Quality
-             BigDecimal operatingMargin = calculateRatio(ttmIncome.operatingIncome(), ttmIncome.revenue());
-             BigDecimal freeCashFlowMargin = calculateRatio(ttmCashFlow.freeCashFlow(), ttmIncome.revenue());
-             BigDecimal sgaToRevenue = calculateRatio(ttmIncome.sellingGeneralAndAdministrativeExpenses(), ttmIncome.revenue());
+             BigDecimal operatingMargin = FinancialMath.calculateRatio(ttmIncome.operatingIncome(), ttmIncome.revenue());
+             BigDecimal freeCashFlowMargin = FinancialMath.calculateRatio(ttmCashFlow.freeCashFlow(), ttmIncome.revenue());
+             BigDecimal sgaToRevenue = FinancialMath.calculateRatio(ttmIncome.sellingGeneralAndAdministrativeExpenses(), ttmIncome.revenue());
              QualityMetrics quality = new QualityMetrics(roic, operatingMargin, netDebtToEbitda, freeCashFlowMargin, sgaToRevenue);
 
              return new FullMetrics(growth, value, quality, fiscalYearEndDate, marketDataAsOf);
@@ -139,49 +139,6 @@ public class FinancialAnalysisServiceImpl implements IFinancialAnalysisService {
          }
      }
 
-    private BigDecimal calculateCAGR(BigDecimal endValue, BigDecimal startValue) {
-        // Return ZERO if either value is null
-        if (startValue == null || endValue == null) {
-            return BigDecimal.ZERO;
-        }
 
-        // If both values are positive, calculate proper CAGR
-        if (startValue.signum() > 0 && endValue.signum() > 0) {
-            double ratio = endValue.divide(startValue, MC).doubleValue();
-            double cagr = Math.pow(ratio, 1.0 / 3.0) - 1;
-            return BigDecimal.valueOf(cagr).setScale(4, RoundingMode.HALF_UP);
-        }
 
-        // Fallback: use simple growth rate when CAGR is not calculable
-        // This handles cases like negative-to-positive transitions
-        return calculateGrowth(endValue, startValue);
-    }
-
-    private BigDecimal calculateGrowth(BigDecimal current, BigDecimal previous) {
-        if (current == null || previous == null || previous.signum() == 0) {
-            return BigDecimal.ZERO;
-        }
-        return current.subtract(previous)
-                .divide(previous.abs(), MC)
-                .setScale(4, RoundingMode.HALF_UP);
-    }
-
-    private BigDecimal calculateRatio(BigDecimal numerator, BigDecimal denominator) {
-        if (numerator == null || denominator == null || denominator.signum() == 0) {
-            return BigDecimal.ZERO;
-        }
-        return numerator.divide(denominator, MC).setScale(4, RoundingMode.HALF_UP);
-    }
-
-    private BigDecimal calculatePegRatio(BigDecimal pe, BigDecimal epsGrowth) {
-        if (pe == null || epsGrowth == null || epsGrowth.signum() <= 0) {
-            return BigDecimal.ZERO;
-        }
-        BigDecimal epsGrowthPercent = epsGrowth.multiply(BigDecimal.valueOf(100));
-        return pe.divide(epsGrowthPercent, MC).setScale(4, RoundingMode.HALF_UP);
-    }
-
-    private BigDecimal safeValue(BigDecimal value) {
-        return value != null ? value.setScale(4, RoundingMode.HALF_UP) : BigDecimal.ZERO;
-    }
 }
