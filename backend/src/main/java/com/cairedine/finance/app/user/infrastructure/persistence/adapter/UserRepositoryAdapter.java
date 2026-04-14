@@ -8,24 +8,26 @@ import com.cairedine.finance.app.user.infrastructure.persistence.repository.IUse
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
 import java.util.Optional;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
 public class UserRepositoryAdapter implements IUserRepositoryPort {
 
-    private final IUserRepository jpaRepository;
+    private final IUserRepository userRepository;
     private final UserPersistenceMapper mapper;
 
     @Override
     public Optional<User> findById(String keycloakId) {
-        return jpaRepository.findById(keycloakId)
+        return userRepository.findById(keycloakId)
                 .map(mapper::toDomain);
     }
 
     @Override
     public void save(User user) {
-        jpaRepository.findById(user.keycloakId())
+        userRepository.findById(user.keycloakId())
                 .ifPresentOrElse(
                         entity -> {
                             entity.updateFrom(
@@ -33,9 +35,32 @@ public class UserRepositoryAdapter implements IUserRepositoryPort {
                                     user.username(),
                                     user.roles()
                             );
-                            jpaRepository.save(entity);
+                            userRepository.save(entity);
                         },
-                        () -> jpaRepository.save(mapper.toEntity(user))
+                        () -> userRepository.save(mapper.toEntity(user))
                 );
+    }
+
+    @Override
+    public void addToWatchlist(String keycloakId, String ticker) {
+        userRepository.findById(keycloakId).ifPresent(entity -> {
+            entity.getWatchlist().add(ticker.toUpperCase());
+            userRepository.save(entity);
+        });
+    }
+
+    @Override
+    public void removeFromWatchlist(String keycloakId, String ticker) {
+        userRepository.findById(keycloakId).ifPresent(entity -> {
+            entity.getWatchlist().remove(ticker.toUpperCase());
+            userRepository.save(entity);
+        });
+    }
+
+    @Override
+    public Set<String> getWatchlist(String keycloakId) {
+        return userRepository.findById(keycloakId)
+                .map(entity -> Set.copyOf(entity.getWatchlist()))
+                .orElse(Collections.emptySet());
     }
 }

@@ -46,7 +46,7 @@ public class DBUserJpaEntity {
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
             name = "user_watchlist",
-            joinColumns = @JoinColumn(name = "user_id")
+            joinColumns = @JoinColumn(name = "keycloak_id")
     )
     @Column(name = "ticker")
     private Set<String> watchlist = new HashSet<>();
