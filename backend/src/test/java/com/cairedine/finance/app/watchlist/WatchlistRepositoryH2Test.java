@@ -1,5 +1,7 @@
 package com.cairedine.finance.app.watchlist;
 
+import com.cairedine.finance.app.user.infrastructure.persistence.entity.DBUserJpaEntity;
+import com.cairedine.finance.app.user.infrastructure.persistence.repository.IUserRepository;
 import com.cairedine.finance.app.watchlist.infrastructure.persistence.entity.WatchlistItemJpaEntity;
 import com.cairedine.finance.app.watchlist.infrastructure.persistence.repository.IWatchlistJpaRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -27,9 +31,24 @@ class WatchlistRepositoryH2Test {
     @Autowired
     private IWatchlistJpaRepository watchlistRepository;
 
+    @Autowired
+    private IUserRepository userRepository;
+
     @BeforeEach
     void setUp() {
         watchlistRepository.deleteAll();
+        userRepository.deleteAll();
+        
+        // Créer un utilisateur en base pour satisfaire la contrainte FK
+        DBUserJpaEntity user = DBUserJpaEntity.builder()
+            .keycloakId(KEYCLOAK_ID)
+            .email("test@example.com")
+            .username("testuser")
+            .roles(new HashSet<>())
+            .createdAt(Instant.now())
+            .updatedAt(Instant.now())
+            .build();
+        userRepository.save(user);
     }
 
     @Test

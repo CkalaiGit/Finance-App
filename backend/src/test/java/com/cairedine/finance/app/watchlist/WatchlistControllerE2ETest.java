@@ -1,6 +1,8 @@
 package com.cairedine.finance.app.watchlist;
 
 import com.cairedine.finance.app.financialanalysis.TestSecurityConfig;
+import com.cairedine.finance.app.user.infrastructure.persistence.entity.DBUserJpaEntity;
+import com.cairedine.finance.app.user.infrastructure.persistence.repository.IUserRepository;
 import com.cairedine.finance.app.watchlist.infrastructure.persistence.entity.WatchlistItemJpaEntity;
 import com.cairedine.finance.app.watchlist.infrastructure.persistence.repository.IWatchlistJpaRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +14,9 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.Instant;
+import java.util.HashSet;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
@@ -35,9 +40,24 @@ class WatchlistControllerE2ETest {
     @Autowired
     private IWatchlistJpaRepository watchlistRepository;
 
+    @Autowired
+    private IUserRepository userRepository;
+
     @BeforeEach
     void setUp() {
         watchlistRepository.deleteAll();
+        userRepository.deleteAll();
+
+        // Créer un utilisateur en base pour satisfaire la contrainte FK
+        DBUserJpaEntity user = DBUserJpaEntity.builder()
+            .keycloakId(KEYCLOAK_ID)
+            .email("test@example.com")
+            .username("testuser")
+            .roles(new HashSet<>())
+            .createdAt(Instant.now())
+            .updatedAt(Instant.now())
+            .build();
+        userRepository.save(user);
     }
 
     @Test

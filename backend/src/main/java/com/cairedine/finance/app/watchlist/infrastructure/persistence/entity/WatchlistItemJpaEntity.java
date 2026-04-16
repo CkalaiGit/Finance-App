@@ -8,6 +8,7 @@ import java.time.Instant;
 /**
  * Entité JPA pour la persistance de la watchlist.
  * Représente l'association entre un utilisateur et un ticker suivi.
+ * La colonne keycloak_id est une clé étrangère vers la table app_user.
  */
 @Entity
 @Table(name = "user_watchlist", uniqueConstraints = {
