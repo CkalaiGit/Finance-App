@@ -111,6 +111,6 @@ class WatchlistAggregateTest {
         // Act & Assert
         assertThat(watchlist.containsTicker(null)).isFalse();
     }
-    
+
 }
 
