@@ -15,7 +15,7 @@ public class TestSecurityConfig {
     @Order(Ordered.HIGHEST_PRECEDENCE)
     public SecurityFilterChain testFilterChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/api/v1/analysis/**") // On ne cible que nos endpoints d'analyse pour le test
+                .securityMatcher("/api/v1/analysis/**", "/api/v1/watchlist/**") // On cible les endpoints d'analyse et watchlist pour le test
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
         return http.build();
