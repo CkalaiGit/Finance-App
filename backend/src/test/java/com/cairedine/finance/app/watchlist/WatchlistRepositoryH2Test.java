@@ -11,6 +11,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -67,11 +68,11 @@ class WatchlistRepositoryH2Test {
         watchlistRepository.saveAll(List.of(item1, item2));
 
         // Act
-        List<WatchlistItemJpaEntity> items = watchlistRepository.findByKeycloakId(KEYCLOAK_ID);
+        Set<String> items = watchlistRepository.findAllTickersByKeycloakId(KEYCLOAK_ID);
 
         // Assert
         assertThat(items).hasSize(2);
-        assertThat(items.stream().map(WatchlistItemJpaEntity::getTicker))
+        assertThat(items.stream())
             .containsExactlyInAnyOrder(TICKER_AAPL, TICKER_MSFT);
     }
 
@@ -125,10 +126,10 @@ class WatchlistRepositoryH2Test {
         watchlistRepository.saveAll(List.of(item1, item2));
 
         // Act
-        watchlistRepository.deleteByKeycloakId(KEYCLOAK_ID);
+        watchlistRepository.deleteAllByKeycloakId(KEYCLOAK_ID);
 
         // Assert
-        assertThat(watchlistRepository.findByKeycloakId(KEYCLOAK_ID)).isEmpty();
+        assertThat(watchlistRepository.findAllTickersByKeycloakId(KEYCLOAK_ID)).isEmpty();
     }
 
     @Test
@@ -143,7 +144,7 @@ class WatchlistRepositoryH2Test {
         watchlistRepository.save(item1);
 
         // Act & Assert : La deuxième sauvegarde devrait échouer
-        assertThat(watchlistRepository.findByKeycloakId(KEYCLOAK_ID)).hasSize(1);
+        assertThat(watchlistRepository.findAllTickersByKeycloakId(KEYCLOAK_ID)).hasSize(1);
     }
 }
 

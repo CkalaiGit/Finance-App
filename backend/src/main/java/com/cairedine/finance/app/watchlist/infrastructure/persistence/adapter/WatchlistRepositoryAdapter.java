@@ -23,26 +23,18 @@ import java.util.stream.Collectors;
 @Transactional
 public class WatchlistRepositoryAdapter implements IWatchlistRepositoryPort {
 
-    private final IWatchlistJpaRepository jpaRepository;
+    private final IWatchlistJpaRepository iWatchlistJpaRepository;
 
     @Override
     public Optional<WatchlistAggregate> findByKeycloakId(String keycloakId) {
-        var items = jpaRepository.findByKeycloakId(keycloakId);
-        if (items.isEmpty()) {
-            return Optional.empty();
-        }
-
-        Set<String> tickers = items.stream()
-            .map(WatchlistItemJpaEntity::getTicker)
-            .collect(Collectors.toSet());
-
+        Set<String> tickers = iWatchlistJpaRepository.findAllTickersByKeycloakId(keycloakId);
         return Optional.of(new WatchlistAggregate(keycloakId, tickers));
     }
 
     @Override
     public void save(String keycloakId, WatchlistAggregate watchlist) {
         // Nettoyer les anciens items
-        jpaRepository.deleteByKeycloakId(keycloakId);
+        iWatchlistJpaRepository.deleteAllByKeycloakId(keycloakId);
 
         // Créer les nouveaux items
         var items = watchlist.tickers().stream()
@@ -52,12 +44,12 @@ public class WatchlistRepositoryAdapter implements IWatchlistRepositoryPort {
                 .build())
             .collect(Collectors.toList());
 
-        jpaRepository.saveAll(items);
+        iWatchlistJpaRepository.saveAll(items);
     }
 
     @Override
     public boolean existsTickerInWatchlist(String keycloakId, String ticker) {
-        return jpaRepository.existsByKeycloakIdAndTicker(keycloakId, ticker.toUpperCase());
+        return iWatchlistJpaRepository.existsByKeycloakIdAndTicker(keycloakId, ticker.toUpperCase());
     }
 
     @Override
@@ -67,19 +59,17 @@ public class WatchlistRepositoryAdapter implements IWatchlistRepositoryPort {
             .ticker(ticker.toUpperCase())
             .build();
 
-        jpaRepository.save(item);
+        iWatchlistJpaRepository.save(item);
     }
 
     @Override
     public void removeTickerFromWatchlist(String keycloakId, String ticker) {
-        jpaRepository.deleteByKeycloakIdAndTicker(keycloakId, ticker.toUpperCase());
+        iWatchlistJpaRepository.deleteByKeycloakIdAndTicker(keycloakId, ticker.toUpperCase());
     }
 
     @Override
     public Set<String> findAllTickersByKeycloakId(String keycloakId) {
-        return jpaRepository.findByKeycloakId(keycloakId).stream()
-            .map(WatchlistItemJpaEntity::getTicker)
-            .collect(Collectors.toSet());
+        return iWatchlistJpaRepository.findAllTickersByKeycloakId(keycloakId);
     }
 }
 

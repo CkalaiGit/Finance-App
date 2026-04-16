@@ -9,6 +9,8 @@ import java.util.Set;
  */
 public interface IWatchlistRepositoryPort {
 
+    Optional<WatchlistAggregate> findByKeycloakId(String keycloakId);
+
     void save(String keycloakId, WatchlistAggregate watchlist);
 
     boolean existsTickerInWatchlist(String keycloakId, String ticker);
