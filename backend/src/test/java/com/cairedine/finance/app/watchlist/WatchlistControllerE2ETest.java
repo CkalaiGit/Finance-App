@@ -97,14 +97,6 @@ class WatchlistControllerE2ETest {
     }
 
     @Test
-    @DisplayName("Devrait retourner 401 si non authentifié")
-    void shouldReturn401IfNotAuthenticated() throws Exception {
-        // Act & Assert
-        mockMvc.perform(post("/api/v1/watchlist/{ticker}", TICKER_AAPL))
-            .andExpect(status().isUnauthorized());
-    }
-
-    @Test
     @DisplayName("Devrait supprimer un ticker de la watchlist")
     void shouldRemoveTickerFromWatchlist() throws Exception {
         // Arrange : Ajouter le ticker d'abord

@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -41,9 +42,9 @@ public class WatchlistController {
     })
     public ResponseEntity<WatchlistResponse> addTicker(
             @PathVariable
-            @Parameter(description = "Le code ticker du titre (ex: AAPL, MSFT)")
+            @Parameter(description = "Le code ticker du titre (ex: AAPL, MSFT)", example = "AAPL")
             String ticker,
-            JwtAuthenticationToken auth) {
+            @Parameter(hidden = true) JwtAuthenticationToken auth) {
 
         String keycloakId = extractKeycloakId(auth);
 
@@ -70,9 +71,9 @@ public class WatchlistController {
     })
     public ResponseEntity<WatchlistResponse> removeTicker(
             @PathVariable
-            @Parameter(description = "Le code ticker à supprimer")
+            @Parameter(description = "Le code ticker à supprimer", example = "AAPL")
             String ticker,
-            JwtAuthenticationToken auth) {
+            @Parameter(hidden = true) JwtAuthenticationToken auth) {
 
         String keycloakId = extractKeycloakId(auth);
 
@@ -95,7 +96,7 @@ public class WatchlistController {
         @ApiResponse(responseCode = "401", description = "Non authentifié"),
         @ApiResponse(responseCode = "500", description = "Erreur serveur")
     })
-    public ResponseEntity<WatchlistResponse> getWatchlist(JwtAuthenticationToken auth) {
+    public ResponseEntity<WatchlistResponse> getWatchlist(@Parameter(hidden = true) JwtAuthenticationToken auth) {
         String keycloakId = extractKeycloakId(auth);
         Set<String> watchlist = watchlistService.getUserWatchlist(keycloakId);
         return ResponseEntity.ok(new WatchlistResponse(keycloakId, watchlist));
@@ -113,9 +114,9 @@ public class WatchlistController {
     })
     public ResponseEntity<TickerExistsResponse> checkTickerExists(
             @PathVariable
-            @Parameter(description = "Le code ticker à vérifier")
+            @Parameter(description = "Le code ticker à vérifier", example = "AAPL")
             String ticker,
-            JwtAuthenticationToken auth) {
+            @Parameter(hidden = true) JwtAuthenticationToken auth) {
 
         String keycloakId = extractKeycloakId(auth);
         boolean exists = watchlistService.isTickerInWatchlist(keycloakId, ticker);
@@ -139,13 +140,23 @@ public class WatchlistController {
     /**
      * DTO de réponse pour la watchlist
      */
-    public record WatchlistResponse(String keycloakId, Set<String> tickers) {
+    @Schema(description = "DTO de réponse contenant la watchlist de l'utilisateur")
+    public record WatchlistResponse(
+            @Schema(description = "Identifiant de l'utilisateur", example = "user-123")
+            String keycloakId, 
+            @Schema(description = "Ensemble de tickers surveillés", example = "[\"AAPL\", \"MSFT\"]")
+            Set<String> tickers) {
     }
 
     /**
      * DTO de réponse pour la vérification d'existence
      */
-    public record TickerExistsResponse(String ticker, boolean exists) {
+    @Schema(description = "DTO de réponse pour la vérification de présence d'un ticker")
+    public record TickerExistsResponse(
+            @Schema(description = "Le ticker vérifié", example = "AAPL")
+            String ticker, 
+            @Schema(description = "Indique si le ticker est présent dans la watchlist", example = "true")
+            boolean exists) {
     }
 }
 
