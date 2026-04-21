@@ -21,7 +21,7 @@ spring:
   # DATASOURCE — PostgreSQL applicatif (app-db)
   # ─────────────────────────────────────────────────────────────
   datasource:
-    url: jdbc:postgresql://localhost:5432/financeapp
+    url: jdbc:postgresql://localhost:5434/financeapp
     username: financeapp
     password: financeapp
     driver-class-name: org.postgresql.Driver
@@ -98,5 +98,5 @@ logging:
 # ─────────────────────────────────────────────────────────────
 
 fmp:
-  api-key:
+  api-key: ***REMOVED-FMP-KEY***
   base-url: https://financialmodelingprep.com

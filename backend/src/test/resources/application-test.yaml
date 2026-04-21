@@ -30,5 +30,5 @@ spring:
         jwt:
           issuer-uri: "" # On vide l'URI pour éviter les appels réseau vers Keycloak au boot
 fmp:
-  api-key:
+  api-key: ***REMOVED-FMP-KEY***
   base-url: https://financialmodelingprep.com
