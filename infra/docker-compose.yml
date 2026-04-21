@@ -50,17 +50,12 @@ services:
       KC_CACHE_THEME_TEMPLATES: "false"
     command: start-dev --import-realm
     volumes:
-      - ./keycloak/realm-dev.json:/opt/keycloak/data/import/realm.json:ro
-      - ./keycloak/themes:/opt/keycloak/themes:rw
+      - "C:\\dev\\Projet-App-Finance\\infra-keycloak\\keycloak\\realm-dev.json:/opt/keycloak/data/import/realm.json:ro"
+      - "C:\\dev\\Projet-App-Finance\\infra-keycloak\\keycloak\\themes:/opt/keycloak/themes:rw"
     ports:
       - "8080:8080"
     networks:
       - finance-net
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1"]
-      interval: 15s
-      timeout: 10s
-      retries: 10
 
   # ─────────────────────────────────────────────────────────────
   # BASE DE DONNÉES APPLICATIVE
@@ -73,10 +68,11 @@ services:
       POSTGRES_DB: ${APP_DB:-financeapp}
       POSTGRES_USER: ${APP_DB_USER:-financeapp}
       POSTGRES_PASSWORD: ${APP_DB_PASSWORD:-financeapp}
+      POSTGRES_INITDB_ARGS: "-c password_encryption=md5"
     volumes:
       - app_db_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5434:5432"
     networks:
       - finance-net
     healthcheck:
@@ -84,6 +80,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    command:
+      - "postgres"
+      - "-c"
+      - "password_encryption=md5"
 
 volumes:
   keycloak_data:
