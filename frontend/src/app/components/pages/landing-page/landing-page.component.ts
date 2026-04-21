@@ -67,8 +67,8 @@ export class LandingPageComponent implements OnInit {
 
     console.log('Recherche lancée pour :', searchValue);
     
-    // TODO : Décommenter quand la page de recherche existera
-    // this.router.navigate(['/search'], { queryParams: { q: searchValue } });
+    // Navigation vers la page de détails de l'entreprise recherchée
+    this.router.navigate(['/details', searchValue.toUpperCase()]);
   }
 
   /**
@@ -77,7 +77,6 @@ export class LandingPageComponent implements OnInit {
   onCompanyClick(company: CompanyDisplayDTO): void {
     console.log('Navigation vers les détails de :', company.ticker);
     
-    // TODO : Décommenter quand la page de détail existera
-    // this.router.navigate(['/company', company.ticker]);
+    this.router.navigate(['/details', company.ticker]);
   }
 }

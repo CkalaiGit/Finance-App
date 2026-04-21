@@ -26,6 +26,12 @@ export const routes: Routes = [
   //   title: 'FinanceApp - À propos'
   // },
   {
+    path: 'details/:ticker',
+    loadComponent: () => import('./components/pages/company-details/company-details.component')
+      .then(m => m.CompanyDetailsComponent),
+    title: 'FinanceApp - Détails Entreprise'
+  },
+  {
     path: '**',
     redirectTo: 'home'
   }
