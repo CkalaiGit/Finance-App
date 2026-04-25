@@ -347,7 +347,7 @@ button, input, select, textarea, .ui-text {
 ======================================== */
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: 1fr;
   gap: 24px;
 }
 
@@ -359,6 +359,9 @@ button, input, select, textarea, .ui-text {
   padding: 32px;
   transition: var(--transition-smooth);
   box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
 
   &:hover {
     background: var(--bg-card-hover);
@@ -378,8 +381,14 @@ button, input, select, textarea, .ui-text {
   justify-content: center;
   color: white;
   font-size: 24px;
-  margin-bottom: 20px;
   box-shadow: var(--shadow-glow);
+  flex-shrink: 0;
+}
+
+.metric-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 /* Icônes spécifiques par catégorie */

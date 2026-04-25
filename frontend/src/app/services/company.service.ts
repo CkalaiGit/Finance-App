@@ -26,7 +26,7 @@ import { Company, CompanyDisplayDTO } from '../models/company.model';
   providedIn: 'root'
 })
 export class CompanyService {
-  
+
   /**
    * Mapping industrie → couleur de badge
    * 
@@ -78,9 +78,7 @@ export class CompanyService {
     }
   ];
 
-  constructor() {
-    console.log('✅ CompanyService initialisé avec', this.mockCompanies.length, 'entreprises');
-  }
+  constructor() { }
 
   /**
    * Récupère les entreprises vedettes pour la landing page
@@ -129,12 +127,12 @@ export class CompanyService {
     }
 
     const term = searchTerm.toLowerCase().trim();
-    
+
     return of(this.mockCompanies).pipe(
       delay(200),
-      map(companies => 
+      map(companies =>
         companies
-          .filter(c => 
+          .filter(c =>
             c.ticker.toLowerCase().includes(term) ||
             c.name.toLowerCase().includes(term)
           )
@@ -166,7 +164,7 @@ export class CompanyService {
     const company = this.mockCompanies.find(
       c => c.ticker.toLowerCase() === ticker.toLowerCase()
     );
-    
+
     return of(company ? this.toDisplayDTO(company) : null).pipe(
       delay(150)
     );

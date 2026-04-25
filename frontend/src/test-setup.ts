@@ -6,7 +6,6 @@ import {
   platformBrowserDynamicTesting,
 } from '@angular/platform-browser-dynamic/testing';
 
-console.log('🚀 Vitest : Initialisation de l\'environnement Angular...');
 
 getTestBed().initTestEnvironment(
   BrowserDynamicTestingModule,

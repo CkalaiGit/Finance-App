@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { Observable, of } from 'rxjs';
-import { switchMap, catchError } from 'rxjs/operators';
+import { switchMap, catchError, map, distinctUntilChanged } from 'rxjs/operators';
 import { FinancialAnalysisService } from '../../../services/financial-analysis.service';
 import { CompanyService } from '../../../services/company.service';
 import { FullMetrics } from '../../../models/analysis.model';
@@ -17,7 +17,7 @@ import { CompanyDisplayDTO } from '../../../models/company.model';
 })
 export class CompanyDetailsComponent implements OnInit {
   activeTab: 'growth' | 'value' | 'quality' = 'growth';
-  
+
   metrics$!: Observable<FullMetrics | null>;
   company$!: Observable<CompanyDisplayDTO | null>;
 
@@ -25,31 +25,19 @@ export class CompanyDetailsComponent implements OnInit {
     private readonly route: ActivatedRoute,
     private readonly analysisService: FinancialAnalysisService,
     private readonly companyService: CompanyService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
-    // Get ticker from route and fetch company data
-    this.company$ = this.route.paramMap.pipe(
-      switchMap(params => {
-        const ticker = params.get('ticker') || '';
-        return this.companyService.getByTicker(ticker).pipe(
-          catchError(() => of(null))
-        );
+    this.route.paramMap.pipe(
+      map(params => params.get('ticker') || ''),
+      distinctUntilChanged(),
+      switchMap(ticker => {
+        if (!ticker) return of(null);
+        this.company$ = this.companyService.getByTicker(ticker).pipe(catchError(() => of(null)));
+        this.metrics$ = this.analysisService.getMetrics(ticker).pipe(catchError(() => of(null)));
+        return of(ticker);
       })
-    );
-
-    // Get ticker from route and fetch metrics
-    this.metrics$ = this.route.paramMap.pipe(
-      switchMap(params => {
-        const ticker = params.get('ticker') || '';
-        return this.analysisService.getMetrics(ticker).pipe(
-          catchError((err) => {
-             console.error('Error fetching metrics', err);
-             return of(null);
-          })
-        );
-      })
-    );
+    ).subscribe();
   }
 
   switchTab(tab: 'growth' | 'value' | 'quality'): void {
