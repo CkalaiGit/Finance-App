@@ -10,6 +10,8 @@ import com.cairedine.finance.app.financialanalysis.domain.port.IMetricsCachePort
 import com.cairedine.finance.app.shared.exceptions.TickerNotFoundException;
 import com.cairedine.finance.app.webclient.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,7 @@ import java.util.concurrent.Executors;
 import static com.cairedine.finance.app.financialanalysis.domain.FinancialMath.calculateCAGR;
 import static com.cairedine.finance.app.financialanalysis.domain.FinancialMath.calculateGrowth;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FinancialAnalysisServiceImpl implements IFinancialAnalysisService {
@@ -31,7 +34,6 @@ public class FinancialAnalysisServiceImpl implements IFinancialAnalysisService {
     private final IMetricsCachePort metricsCache;
 
      @Override
-     @Transactional
      public List<FullMetrics> computeMetrics(String ticker) {
          String normalizedTicker = ticker.toUpperCase();
 
@@ -46,13 +48,17 @@ public class FinancialAnalysisServiceImpl implements IFinancialAnalysisService {
 
              String currentFiscalYearEndDate = incomeStatements.getFirst().date();
 
-             // 1. Check if the current period is already in history
              if (metricsCache.findByTickerAndFiscalYear(normalizedTicker, currentFiscalYearEndDate).isEmpty()) {
                  FullMetrics calculated = calculateMetricsFromApi(normalizedTicker, incomeStatements);
-                 metricsCache.save(normalizedTicker, calculated);
+                 try {
+                     metricsCache.save(normalizedTicker, calculated);
+                 } catch (DataIntegrityViolationException e) {
+                    log.info("Les métriques pour {} à la date {} ont déjà été calculées et sauvées par une autre requête concurrentielle.",
+                             normalizedTicker, currentFiscalYearEndDate);
+                 }
              }
 
-             // 2. Return the full history
+             // 3. Return the full history
              return metricsCache.findAllByTicker(normalizedTicker);
 
          } catch (Exception e) {
