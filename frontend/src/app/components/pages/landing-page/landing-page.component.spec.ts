@@ -1,6 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { LandingPageComponent } from './landing-page.component';
+import { describe, beforeEach, it, expect } from 'vitest';
 
 describe('LandingPageComponent', () => {
   let component: LandingPageComponent;
@@ -8,9 +11,13 @@ describe('LandingPageComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [LandingPageComponent]
+      imports: [LandingPageComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting()
+      ]
     })
-    .compileComponents();
+      .compileComponents();
 
     fixture = TestBed.createComponent(LandingPageComponent);
     component = fixture.componentInstance;

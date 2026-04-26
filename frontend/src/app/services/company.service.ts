@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { map, delay } from 'rxjs/operators';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Observable, of, throwError } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { Company, CompanyDisplayDTO } from '../models/company.model';
 
 /**
@@ -45,40 +46,9 @@ export class CompanyService {
     // Extensible : ajoutez vos secteurs ici
   };
 
-  /**
-   * Données mockées des entreprises vedettes
-   * 
-   * @description
-   * En production, ces données viendraient d'une API via HttpClient.
-   * Structure prête pour migration vers un appel HTTP.
-   * 
-   * ⚠️ TODO : Remplacer par un appel API réel plus tard
-   */
-  private readonly mockCompanies: Company[] = [
-    {
-      ticker: 'NVDA',
-      name: 'NVIDIA Corporation',
-      industry: 'Semi-conducteurs',
-      marketCap: 1200000000000, // 1.2T $
-      currentPrice: 875.50
-    },
-    {
-      ticker: 'GOOGL',
-      name: 'Alphabet Inc.',
-      industry: 'Services Internet',
-      marketCap: 1800000000000, // 1.8T $
-      currentPrice: 142.30
-    },
-    {
-      ticker: 'MSFT',
-      name: 'Microsoft Corporation',
-      industry: 'Logiciels & Cloud',
-      marketCap: 2900000000000, // 2.9T $
-      currentPrice: 398.75
-    }
-  ];
+  private readonly baseUrl = 'http://localhost:8081/api/v1/companies';
 
-  constructor() { }
+  constructor(private readonly http: HttpClient) { }
 
   /**
    * Récupère les entreprises vedettes pour la landing page
@@ -86,7 +56,7 @@ export class CompanyService {
    * @returns Observable de CompanyDisplayDTO[] avec métadonnées UI
    * 
    * @description
-   * Simule un appel API avec delay pour réalisme.
+   * Appelle l'API pour obtenir les entreprises vedettes.
    * Transforme les Company en CompanyDisplayDTO avec colorVariant.
    * 
    * @example
@@ -99,9 +69,9 @@ export class CompanyService {
    * ```
    */
   getFeaturedCompanies(): Observable<CompanyDisplayDTO[]> {
-    return of(this.mockCompanies).pipe(
-      delay(300), // Simule latence réseau (enlevez en prod)
-      map(companies => companies.map(c => this.toDisplayDTO(c)))
+    return this.http.get<Company[]>(`${this.baseUrl}/featured`).pipe(
+      map(companies => companies.map(c => this.toDisplayDTO(c))),
+      catchError(this.handleError.bind(this))
     );
   }
 
@@ -112,8 +82,7 @@ export class CompanyService {
    * @returns Observable de CompanyDisplayDTO[]
    * 
    * @description
-   * Recherche insensible à la casse sur le ticker et le nom.
-   * Prêt pour être remplacé par un appel API avec query params.
+   * Appelle l'API avec query params.
    * 
    * @example
    * ```typescript
@@ -126,18 +95,11 @@ export class CompanyService {
       return of([]);
     }
 
-    const term = searchTerm.toLowerCase().trim();
+    const term = encodeURIComponent(searchTerm.trim());
 
-    return of(this.mockCompanies).pipe(
-      delay(200),
-      map(companies =>
-        companies
-          .filter(c =>
-            c.ticker.toLowerCase().includes(term) ||
-            c.name.toLowerCase().includes(term)
-          )
-          .map(c => this.toDisplayDTO(c))
-      )
+    return this.http.get<Company[]>(`${this.baseUrl}/search?q=${term}`).pipe(
+      map(companies => companies.map(c => this.toDisplayDTO(c))),
+      catchError(this.handleError.bind(this))
     );
   }
 
@@ -148,7 +110,7 @@ export class CompanyService {
    * @returns Observable de CompanyDisplayDTO ou null si non trouvée
    * 
    * @description
-   * Prêt pour être remplacé par un GET /api/companies/:ticker
+   * Fait un appel API vers GET /api/companies/:ticker
    * 
    * @example
    * ```typescript
@@ -161,13 +123,15 @@ export class CompanyService {
    * ```
    */
   getByTicker(ticker: string): Observable<CompanyDisplayDTO | null> {
-    const company = this.mockCompanies.find(
-      c => c.ticker.toLowerCase() === ticker.toLowerCase()
+    return this.http.get<Company>(`${this.baseUrl}/${ticker.toUpperCase()}`).pipe(
+      map(company => company ? this.toDisplayDTO(company) : null),
+      catchError(this.handleError.bind(this))
     );
+  }
 
-    return of(company ? this.toDisplayDTO(company) : null).pipe(
-      delay(150)
-    );
+  private handleError(error: HttpErrorResponse): Observable<never> {
+    console.error('Erreur API:', error);
+    return throwError(() => new Error('Erreur lors du chargement des données'));
   }
 
   /**
@@ -203,30 +167,5 @@ export class CompanyService {
     return this.industryColorMap[industry] || 'blue';
   }
 
-  // ========================================
-  // MÉTHODES FUTURES (prêtes pour l'API)
-  // ========================================
 
-  /**
-   * @future Migration vers HttpClient
-   * 
-   * Une fois le backend prêt, remplacez les méthodes ci-dessus par :
-   * 
-   * ```typescript
-   * constructor(private http: HttpClient) {}
-   * 
-   * getFeaturedCompanies(): Observable<CompanyDisplayDTO[]> {
-   *   return this.http.get<Company[]>('/api/companies/featured')
-   *     .pipe(
-   *       map(companies => companies.map(c => this.toDisplayDTO(c))),
-   *       catchError(this.handleError)
-   *     );
-   * }
-   * 
-   * private handleError(error: HttpErrorResponse): Observable<never> {
-   *   console.error('Erreur API:', error);
-   *   return throwError(() => new Error('Erreur lors du chargement des données'));
-   * }
-   * ```
-   */
 }
