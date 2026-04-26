@@ -19,12 +19,10 @@ export class CompanyDetailsComponent implements OnInit {
   activeTab: 'growth' | 'value' | 'quality' = 'growth';
 
   metrics$!: Observable<FullMetrics | null>;
-  company$!: Observable<CompanyDisplayDTO | null>;
 
   constructor(
     private readonly route: ActivatedRoute,
-    private readonly analysisService: FinancialAnalysisService,
-    private readonly companyService: CompanyService
+    private readonly analysisService: FinancialAnalysisService
   ) { }
 
   ngOnInit(): void {
@@ -33,7 +31,6 @@ export class CompanyDetailsComponent implements OnInit {
       distinctUntilChanged(),
       switchMap(ticker => {
         if (!ticker) return of(null);
-        this.company$ = this.companyService.getByTicker(ticker).pipe(catchError(() => of(null)));
         this.metrics$ = this.analysisService.getMetrics(ticker).pipe(catchError(() => of(null)));
         return of(ticker);
       })

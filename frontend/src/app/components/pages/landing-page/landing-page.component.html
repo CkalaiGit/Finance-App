@@ -33,69 +33,6 @@
       </form>
     </section>
 
-    <section class="companies-section" aria-labelledby="companies-title">
-      <h2 id="companies-title" class="sr-only">Entreprises en vedette</h2>
 
-      @if (error$ | async; as errorMsg) {
-        <div class="error-state" role="alert" aria-live="assertive">
-          <div class="error-icon" aria-hidden="true">
-            <i class="bi bi-exclamation-triangle"></i>
-          </div>
-          <p class="error-text">{{ errorMsg }}</p>
-          <button class="btn-retry" (click)="load()">
-            <i class="bi bi-arrow-clockwise"></i> Réessayer
-          </button>
-        </div>
-      } @else {
-        
-        @if (companies$ | async; as list) {
-          
-          @if (list.length > 0) {
-            <div class="companies-grid">
-              @for (company of list; track company.ticker) {
-                <article 
-                  class="company-card"
-                  [ngClass]="'company-card-' + company.colorVariant"
-                  role="button"
-                  tabindex="0"
-                  (click)="onCompanyClick(company)"
-                  (keydown.enter)="onCompanyClick(company)">
-                  
-                  <div class="company-ticker">
-                    {{ company.ticker }}
-                  </div>
-                  
-                  <div class="company-info">
-                    <h3 class="company-name">{{ company.name }}</h3>
-                    <p class="company-industry">{{ company.industry }}</p>
-                    
-                    @if (company.currentPrice) {
-                      <p class="company-price">
-                        {{ company.currentPrice | currency:'USD':'symbol':'1.2-2' }}
-                      </p>
-                    }
-                  </div>
-                  
-                  <div class="company-arrow">
-                    <i class="bi bi-arrow-right"></i>
-                  </div>
-                </article>
-              }
-            </div>
-          } @else {
-            <div class="empty-state">
-              <div class="empty-icon"><i class="bi bi-inbox"></i></div>
-              <p class="empty-text">Aucune entreprise à afficher</p>
-            </div>
-          }
-
-        } @else {
-          <div class="loading-state">
-            <div class="spinner"></div>
-            <p class="loading-text">Analyse du marché en cours...</p>
-          </div>
-        }
-      }
-    </section>
   </div>
 </main>

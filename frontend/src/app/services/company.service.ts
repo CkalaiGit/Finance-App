@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { Company, CompanyDisplayDTO } from '../models/company.model';
 
@@ -18,8 +18,8 @@ import { Company, CompanyDisplayDTO } from '../models/company.model';
  * constructor(private companyService: CompanyService) {}
  * 
  * ngOnInit() {
- *   this.companyService.getFeaturedCompanies()
- *     .subscribe(companies => this.companies = companies);
+ *   this.companyService.getByTicker('AAPL')
+ *     .subscribe(company => this.company = company);
  * }
  * ```
  */
@@ -50,58 +50,7 @@ export class CompanyService {
 
   constructor(private readonly http: HttpClient) { }
 
-  /**
-   * Récupère les entreprises vedettes pour la landing page
-   * 
-   * @returns Observable de CompanyDisplayDTO[] avec métadonnées UI
-   * 
-   * @description
-   * Appelle l'API pour obtenir les entreprises vedettes.
-   * Transforme les Company en CompanyDisplayDTO avec colorVariant.
-   * 
-   * @example
-   * ```typescript
-   * this.companyService.getFeaturedCompanies()
-   *   .subscribe({
-   *     next: (companies) => this.companies = companies,
-   *     error: (err) => console.error(err)
-   *   });
-   * ```
-   */
-  getFeaturedCompanies(): Observable<CompanyDisplayDTO[]> {
-    return this.http.get<Company[]>(`${this.baseUrl}/featured`).pipe(
-      map(companies => companies.map(c => this.toDisplayDTO(c))),
-      catchError(this.handleError.bind(this))
-    );
-  }
 
-  /**
-   * Recherche des entreprises par terme
-   * 
-   * @param searchTerm - Terme de recherche (ticker ou nom)
-   * @returns Observable de CompanyDisplayDTO[]
-   * 
-   * @description
-   * Appelle l'API avec query params.
-   * 
-   * @example
-   * ```typescript
-   * this.companyService.searchCompanies('NVDA')
-   *   .subscribe(results => console.log(results));
-   * ```
-   */
-  searchCompanies(searchTerm: string): Observable<CompanyDisplayDTO[]> {
-    if (!searchTerm.trim()) {
-      return of([]);
-    }
-
-    const term = encodeURIComponent(searchTerm.trim());
-
-    return this.http.get<Company[]>(`${this.baseUrl}/search?q=${term}`).pipe(
-      map(companies => companies.map(c => this.toDisplayDTO(c))),
-      catchError(this.handleError.bind(this))
-    );
-  }
 
   /**
    * Récupère une entreprise par son ticker

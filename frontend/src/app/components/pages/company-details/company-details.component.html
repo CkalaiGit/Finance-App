@@ -1,5 +1,5 @@
 <div class="container mt-4">
-  <!-- HEADER ENTREPRISE -->
+  <!-- HEADER ENTREPRISE 
   @if (company$ | async; as company) {
     <div class="company-header">
       <div class="company-ticker-large">{{ company.ticker }}</div>
@@ -10,27 +10,21 @@
     <div class="company-header">
       <h1 class="company-name-large text-muted">Chargement de l'entreprise...</h1>
     </div>
-  }
+  }-->
 
   <!-- TABS NAVIGATION -->
   <div class="tabs-container">
     <div class="tabs-nav">
-      <button class="tab-button tab-growth" 
-              [class.active]="activeTab === 'growth'" 
-              (click)="switchTab('growth')"
-              aria-label="Croissance">
+      <button class="tab-button tab-growth" [class.active]="activeTab === 'growth'" (click)="switchTab('growth')"
+        aria-label="Croissance">
         <i class="bi bi-graph-up-arrow"></i> Croissance
       </button>
-      <button class="tab-button tab-value" 
-              [class.active]="activeTab === 'value'" 
-              (click)="switchTab('value')"
-              aria-label="Valorisation">
+      <button class="tab-button tab-value" [class.active]="activeTab === 'value'" (click)="switchTab('value')"
+        aria-label="Valorisation">
         <i class="bi bi-tags"></i> Valorisation
       </button>
-      <button class="tab-button tab-quality" 
-              [class.active]="activeTab === 'quality'" 
-              (click)="switchTab('quality')"
-              aria-label="Qualité">
+      <button class="tab-button tab-quality" [class.active]="activeTab === 'quality'" (click)="switchTab('quality')"
+        aria-label="Qualité">
         <i class="bi bi-shield-check"></i> Qualité
       </button>
     </div>
@@ -38,120 +32,121 @@
 
   <!-- TAB CONTENT -->
   @if (metrics$ | async; as metrics) {
-    <div class="tab-content" [class.active]="activeTab === 'growth'">
-      <div class="metrics-grid">
-        <div class="metric-card growth">
-          <div class="metric-icon"><i class="bi bi-graph-up"></i></div>
-          <div class="metric-content">
-            <div class="metric-label">Croissance CA (3A)</div>
-            <div class="metric-value-large">{{ formatPercent(metrics.growth.revenueGrowth3Y) }}</div>
-            <div class="metric-description">Taux de croissance annuel moyen du chiffre d'affaires sur 3 ans.</div>
-          </div>
+  <div class="tab-content" [class.active]="activeTab === 'growth'">
+    <div class="metrics-grid">
+      <div class="metric-card growth">
+        <div class="metric-icon"><i class="bi bi-graph-up"></i></div>
+        <div class="metric-content">
+          <div class="metric-label">Croissance CA (3A)</div>
+          <div class="metric-value-large">{{ formatPercent(metrics.growth.revenueGrowth3Y) }}</div>
+          <div class="metric-description">Taux de croissance annuel moyen du chiffre d'affaires sur 3 ans.</div>
         </div>
-        <div class="metric-card growth">
-          <div class="metric-icon"><i class="bi bi-cash-stack"></i></div>
-          <div class="metric-content">
-            <div class="metric-label">Croissance EBITDA (3A)</div>
-            <div class="metric-value-large">{{ formatPercent(metrics.growth.ebitdaGrowth3Y) }}</div>
-            <div class="metric-description">Croissance de la rentabilité opérationnelle sur 3 ans.</div>
-          </div>
+      </div>
+      <div class="metric-card growth">
+        <div class="metric-icon"><i class="bi bi-cash-stack"></i></div>
+        <div class="metric-content">
+          <div class="metric-label">Croissance EBITDA (3A)</div>
+          <div class="metric-value-large">{{ formatPercent(metrics.growth.ebitdaGrowth3Y) }}</div>
+          <div class="metric-description">Croissance de la rentabilité opérationnelle sur 3 ans.</div>
         </div>
-        <div class="metric-card growth">
-          <div class="metric-icon"><i class="bi bi-person-lines-fill"></i></div>
-          <div class="metric-content">
-            <div class="metric-label">Croissance BNA (3A)</div>
-            <div class="metric-value-large">{{ formatPercent(metrics.growth.epsGrowth3Y) }}</div>
-            <div class="metric-description">Croissance du Bénéfice Net par Action.</div>
-          </div>
+      </div>
+      <div class="metric-card growth">
+        <div class="metric-icon"><i class="bi bi-person-lines-fill"></i></div>
+        <div class="metric-content">
+          <div class="metric-label">Croissance BNA (3A)</div>
+          <div class="metric-value-large">{{ formatPercent(metrics.growth.epsGrowth3Y) }}</div>
+          <div class="metric-description">Croissance du Bénéfice Net par Action.</div>
         </div>
-        <div class="metric-card growth">
-          <div class="metric-icon"><i class="bi bi-wallet2"></i></div>
-          <div class="metric-content">
-            <div class="metric-label">Croissance FCF</div>
-            <div class="metric-value-large">{{ formatPercent(metrics.growth.fcfGrowth) }}</div>
-            <div class="metric-description">Croissance du Free Cash Flow sur la dernière année.</div>
-          </div>
+      </div>
+      <div class="metric-card growth">
+        <div class="metric-icon"><i class="bi bi-wallet2"></i></div>
+        <div class="metric-content">
+          <div class="metric-label">Croissance FCF</div>
+          <div class="metric-value-large">{{ formatPercent(metrics.growth.fcfGrowth) }}</div>
+          <div class="metric-description">Croissance du Free Cash Flow sur la dernière année.</div>
         </div>
       </div>
     </div>
+  </div>
 
-    <div class="tab-content" [class.active]="activeTab === 'value'">
-      <div class="metrics-grid">
-        <div class="metric-card value">
-          <div class="metric-icon"><i class="bi bi-building"></i></div>
-          <div class="metric-content">
-            <div class="metric-label">EV / EBIT</div>
-            <div class="metric-value-large">{{ formatRatio(metrics.value.evToEbit) }}</div>
-            <div class="metric-description">Multiple de valorisation de l'entreprise par rapport à son résultat opérationnel.</div>
-          </div>
+  <div class="tab-content" [class.active]="activeTab === 'value'">
+    <div class="metrics-grid">
+      <div class="metric-card value">
+        <div class="metric-icon"><i class="bi bi-building"></i></div>
+        <div class="metric-content">
+          <div class="metric-label">EV / EBIT</div>
+          <div class="metric-value-large">{{ formatRatio(metrics.value.evToEbit) }}</div>
+          <div class="metric-description">Multiple de valorisation de l'entreprise par rapport à son résultat
+            opérationnel.</div>
         </div>
-        <div class="metric-card value">
-          <div class="metric-icon"><i class="bi bi-calculator"></i></div>
-          <div class="metric-content">
-            <div class="metric-label">P/E Ratio (TTM)</div>
-            <div class="metric-value-large">{{ formatRatio(metrics.value.peRatioTTM) }}</div>
-            <div class="metric-description">Price to Earnings Ratio sur les 12 derniers mois.</div>
-          </div>
+      </div>
+      <div class="metric-card value">
+        <div class="metric-icon"><i class="bi bi-calculator"></i></div>
+        <div class="metric-content">
+          <div class="metric-label">P/E Ratio (TTM)</div>
+          <div class="metric-value-large">{{ formatRatio(metrics.value.peRatioTTM) }}</div>
+          <div class="metric-description">Price to Earnings Ratio sur les 12 derniers mois.</div>
         </div>
-        <div class="metric-card value">
-          <div class="metric-icon"><i class="bi bi-bar-chart"></i></div>
-          <div class="metric-content">
-            <div class="metric-label">PEG Ratio</div>
-            <div class="metric-value-large">{{ formatRatio(metrics.value.pegRatioForward) }}</div>
-            <div class="metric-description">P/E Ratio rapporté à la croissance attendue.</div>
-          </div>
+      </div>
+      <div class="metric-card value">
+        <div class="metric-icon"><i class="bi bi-bar-chart"></i></div>
+        <div class="metric-content">
+          <div class="metric-label">PEG Ratio</div>
+          <div class="metric-value-large">{{ formatRatio(metrics.value.pegRatioForward) }}</div>
+          <div class="metric-description">P/E Ratio rapporté à la croissance attendue.</div>
         </div>
-        <div class="metric-card value">
-          <div class="metric-icon"><i class="bi bi-shop"></i></div>
-          <div class="metric-content">
-            <div class="metric-label">EV / Sales</div>
-            <div class="metric-value-large">{{ formatRatio(metrics.value.evToSales) }}</div>
-            <div class="metric-description">Multiple de valorisation sur le chiffre d'affaires.</div>
-          </div>
+      </div>
+      <div class="metric-card value">
+        <div class="metric-icon"><i class="bi bi-shop"></i></div>
+        <div class="metric-content">
+          <div class="metric-label">EV / Sales</div>
+          <div class="metric-value-large">{{ formatRatio(metrics.value.evToSales) }}</div>
+          <div class="metric-description">Multiple de valorisation sur le chiffre d'affaires.</div>
         </div>
       </div>
     </div>
+  </div>
 
-    <div class="tab-content" [class.active]="activeTab === 'quality'">
-      <div class="metrics-grid">
-        <div class="metric-card quality">
-          <div class="metric-icon"><i class="bi bi-award"></i></div>
-          <div class="metric-content">
-            <div class="metric-label">ROIC</div>
-            <div class="metric-value-large">{{ formatPercent(metrics.quality.roic) }}</div>
-            <div class="metric-description">Return on Invested Capital. Qualité des investissements.</div>
-          </div>
+  <div class="tab-content" [class.active]="activeTab === 'quality'">
+    <div class="metrics-grid">
+      <div class="metric-card quality">
+        <div class="metric-icon"><i class="bi bi-award"></i></div>
+        <div class="metric-content">
+          <div class="metric-label">ROIC</div>
+          <div class="metric-value-large">{{ formatPercent(metrics.quality.roic) }}</div>
+          <div class="metric-description">Return on Invested Capital. Qualité des investissements.</div>
         </div>
-        <div class="metric-card quality">
-          <div class="metric-icon"><i class="bi bi-percent"></i></div>
-          <div class="metric-content">
-            <div class="metric-label">Marge Opérationnelle</div>
-            <div class="metric-value-large">{{ formatPercent(metrics.quality.operatingMargin) }}</div>
-            <div class="metric-description">Rentabilité opérationnelle de base.</div>
-          </div>
+      </div>
+      <div class="metric-card quality">
+        <div class="metric-icon"><i class="bi bi-percent"></i></div>
+        <div class="metric-content">
+          <div class="metric-label">Marge Opérationnelle</div>
+          <div class="metric-value-large">{{ formatPercent(metrics.quality.operatingMargin) }}</div>
+          <div class="metric-description">Rentabilité opérationnelle de base.</div>
         </div>
-        <div class="metric-card quality">
-          <div class="metric-icon"><i class="bi bi-bank"></i></div>
-          <div class="metric-content">
-            <div class="metric-label">Dette Nette / EBITDA</div>
-            <div class="metric-value-large">{{ formatRatio(metrics.quality.netDebtToEbitda) }}</div>
-            <div class="metric-description">Levier financier et capacité de remboursement.</div>
-          </div>
+      </div>
+      <div class="metric-card quality">
+        <div class="metric-icon"><i class="bi bi-bank"></i></div>
+        <div class="metric-content">
+          <div class="metric-label">Dette Nette / EBITDA</div>
+          <div class="metric-value-large">{{ formatRatio(metrics.quality.netDebtToEbitda) }}</div>
+          <div class="metric-description">Levier financier et capacité de remboursement.</div>
         </div>
-        <div class="metric-card quality">
-          <div class="metric-icon"><i class="bi bi-piggy-bank"></i></div>
-          <div class="metric-content">
-            <div class="metric-label">Marge FCF</div>
-            <div class="metric-value-large">{{ formatPercent(metrics.quality.freeCashFlowMargin) }}</div>
-            <div class="metric-description">Proportion du CA transformée en cash flow libre.</div>
-          </div>
+      </div>
+      <div class="metric-card quality">
+        <div class="metric-icon"><i class="bi bi-piggy-bank"></i></div>
+        <div class="metric-content">
+          <div class="metric-label">Marge FCF</div>
+          <div class="metric-value-large">{{ formatPercent(metrics.quality.freeCashFlowMargin) }}</div>
+          <div class="metric-description">Proportion du CA transformée en cash flow libre.</div>
         </div>
       </div>
     </div>
+  </div>
   } @else {
-    <div class="text-center mt-4 text-muted">
-      <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
-      <p class="mt-2">Chargement des données d'analyse...</p>
-    </div>
+  <div class="text-center mt-4 text-muted">
+    <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
+    <p class="mt-2">Chargement des données d'analyse...</p>
+  </div>
   }
 </div>
