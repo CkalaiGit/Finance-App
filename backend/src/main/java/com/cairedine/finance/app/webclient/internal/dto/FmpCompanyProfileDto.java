@@ -9,5 +9,7 @@ public record FmpCompanyProfileDto(
         String industry,
         String image,
         Double beta,
-        Double marketCap
+        Double marketCap,
+        String description,
+        Double price
 ) {}

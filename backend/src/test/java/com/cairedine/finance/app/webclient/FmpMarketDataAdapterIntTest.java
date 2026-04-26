@@ -31,6 +31,9 @@ class FmpMarketDataAdapterIntTest {
         assertThat(result).hasValueSatisfying(profile -> {
             assertThat(profile.symbol()).isEqualTo("GOOGL");
             assertThat(profile.beta()).isPositive();
+            assertThat(profile.industry()).isNotBlank();
+            assertThat(profile.description()).isNotBlank();
+            assertThat(profile.price()).isPositive();
         });
     }
 

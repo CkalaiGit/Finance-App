@@ -8,5 +8,7 @@ public record CompanyProfileRecord(
         String industry,
         String image,
         BigDecimal beta,
-        BigDecimal marketCap
+        BigDecimal marketCap,
+        String description,
+        BigDecimal price
 ) {}

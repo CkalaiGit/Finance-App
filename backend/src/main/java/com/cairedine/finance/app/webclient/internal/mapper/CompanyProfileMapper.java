@@ -14,7 +14,9 @@ public class CompanyProfileMapper extends BaseMapper {
                 dto.industry(),
                 dto.image(),
                 toBigDecimal(dto.beta()),
-                toBigDecimal(dto.marketCap())
+                toBigDecimal(dto.marketCap()),
+                dto.description(),
+                toBigDecimal(dto.price())
         );
     }
 }
