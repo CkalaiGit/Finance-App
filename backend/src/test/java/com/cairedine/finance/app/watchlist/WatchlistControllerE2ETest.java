@@ -1,8 +1,9 @@
 package com.cairedine.finance.app.watchlist;
 
-import com.cairedine.finance.app.financialanalysis.TestSecurityConfig;
 import com.cairedine.finance.app.user.infrastructure.persistence.entity.DBUserJpaEntity;
 import com.cairedine.finance.app.user.infrastructure.persistence.repository.IUserRepository;
+import com.cairedine.finance.app.user.infrastructure.security.SecurityConfig;
+import com.cairedine.finance.app.user.infrastructure.security.WebConfig;
 import com.cairedine.finance.app.watchlist.infrastructure.persistence.entity.WatchlistItemJpaEntity;
 import com.cairedine.finance.app.watchlist.infrastructure.persistence.repository.IWatchlistJpaRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,7 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
@@ -25,9 +28,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
+@Import({SecurityConfig.class, WebConfig.class})
 @ActiveProfiles("test")
 @DisplayName("WatchlistController Integration Tests")
-@Import({TestSecurityConfig.class, WatchlistTestConfig.class})
 class WatchlistControllerE2ETest {
 
     private static final String KEYCLOAK_ID = "user-123";
@@ -42,6 +45,9 @@ class WatchlistControllerE2ETest {
 
     @Autowired
     private IUserRepository userRepository;
+
+    @MockitoBean
+    private JwtDecoder jwtDecoder;
 
     @BeforeEach
     void setUp() {
@@ -223,4 +229,3 @@ class WatchlistControllerE2ETest {
         assert watchlistRepository.existsByKeycloakIdAndTicker(KEYCLOAK_ID, "AAPL");
     }
 }
-
