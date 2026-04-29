@@ -1,9 +1,10 @@
 package com.cairedine.finance.app.financialanalysis.infrastructure.web.controller;
 
+import com.cairedine.finance.app.financialanalysis.infrastructure.web.dto.CompanyProfileResponse;
 import com.cairedine.finance.app.financialanalysis.infrastructure.web.mapper.CompanyProfileWebMapper;
 import com.cairedine.finance.app.shared.exceptions.TickerNotFoundException;
+import com.cairedine.finance.app.webclient.CompanyProfileRecord;
 import com.cairedine.finance.app.webclient.IMarketDataPort;
-import com.cairedine.finance.app.webclient.web.dto.CompanyProfileResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -18,6 +19,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Optional;
 
 /**
  * REST Controller pour exposer les données de profil d'entreprise.
@@ -65,7 +68,7 @@ public class CompanyProfileController {
         String normalizedTicker = ticker.toUpperCase();
         log.info("Récupération du profil pour le ticker: {}", normalizedTicker);
 
-        var profileOptional = marketDataPort.fetchCompanyProfile(normalizedTicker);
+        Optional<CompanyProfileRecord> profileOptional = marketDataPort.fetchCompanyProfile(normalizedTicker);
 
         if (profileOptional.isEmpty()) {
             log.warn("Profil non trouvé pour le ticker: {}", normalizedTicker);

@@ -1,7 +1,7 @@
 package com.cairedine.finance.app.financialanalysis.infrastructure.web.mapper;
 
+import com.cairedine.finance.app.financialanalysis.infrastructure.web.dto.CompanyProfileResponse;
 import com.cairedine.finance.app.webclient.CompanyProfileRecord;
-import com.cairedine.finance.app.webclient.web.dto.CompanyProfileResponse;
 import org.springframework.stereotype.Component;
 
 /**
