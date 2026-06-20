@@ -16,7 +16,7 @@ export class LandingPageComponent {
 
   constructor(
     private readonly router: Router // Injecté pour gérer les clics
-  ) {}
+  ) { }
 
   // --- INTERACTIONS UTILISATEUR ---
 
@@ -24,19 +24,15 @@ export class LandingPageComponent {
    * Déclenchée lors de la soumission du formulaire (touche Entrée ou clic sur la loupe)
    */
   onSearch(event: Event): void {
-    event.preventDefault(); // Empêche le rechargement total de la page
-    
-    // Récupération de la valeur (soit via ngModel, soit directement dans le DOM)
+    event.preventDefault();
+
     const input = (event.target as HTMLFormElement).querySelector('input');
     const searchValue = input?.value.trim() || this.searchTerm.trim();
 
     if (!searchValue) {
-      return; // Ne fait rien si la recherche est vide
+      return;
     }
 
-    console.log('Recherche lancée pour :', searchValue);
-    
-    // Navigation vers la page de détails de l'entreprise recherchée
     this.router.navigate(['/details', searchValue.toUpperCase()]);
   }
 

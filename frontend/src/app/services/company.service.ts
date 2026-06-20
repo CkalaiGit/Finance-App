@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { Company, CompanyDisplayDTO } from '../models/company.model';
+import { Company, CompanyDisplayDTO, CompanyProfileResponse } from '../models/company.model';
 
 /**
  * Service de gestion des entreprises
@@ -74,6 +74,18 @@ export class CompanyService {
   getByTicker(ticker: string): Observable<CompanyDisplayDTO | null> {
     return this.http.get<Company>(`${this.baseUrl}/${ticker.toUpperCase()}`).pipe(
       map(company => company ? this.toDisplayDTO(company) : null),
+      catchError(this.handleError.bind(this))
+    );
+  }
+
+  /**
+   * Récupère le profil complet d'une entreprise
+   * 
+   * @param ticker - Symbole boursier
+   * @returns Observable de CompanyProfileResponse
+   */
+  getCompanyProfile(ticker: string): Observable<CompanyProfileResponse> {
+    return this.http.get<CompanyProfileResponse>(`http://localhost:8081/api/v1/company-profile/${ticker.toUpperCase()}`).pipe(
       catchError(this.handleError.bind(this))
     );
   }

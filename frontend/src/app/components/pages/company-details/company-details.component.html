@@ -1,16 +1,38 @@
 <div class="container mt-4">
-  <!-- HEADER ENTREPRISE 
-  @if (company$ | async; as company) {
+  <!-- HEADER ENTREPRISE -->
+  @if (companyProfile$ | async; as profile) {
     <div class="company-header">
-      <div class="company-ticker-large">{{ company.ticker }}</div>
-      <h1 class="company-name-large">{{ company.name }}</h1>
-      <div class="company-industry">{{ company.industry }}</div>
+      @if (profile.image) {
+        <img [src]="profile.image" [alt]="profile.companyName" class="company-logo">
+      }
+      <div class="company-ticker-large">{{ profile.symbol }}</div>
+      <h1 class="company-name-large">{{ profile.companyName }}</h1>
+      
+      <div class="company-badges">
+        <span class="badge-info"><i class="bi bi-building"></i> {{ profile.industry }}</span>
+        @if (profile.price) {
+          <span class="badge-info"><i class="bi bi-tag"></i> {{ profile.price | currency:'USD' }}</span>
+        }
+        @if (profile.marketCap) {
+          <span class="badge-info"><i class="bi bi-bank"></i> Cap: {{ profile.marketCap | currency:'USD':'symbol':'1.0-0' }}</span>
+        }
+        @if (profile.beta) {
+          <span class="badge-info"><i class="bi bi-graph-up-arrow"></i> Beta: {{ profile.beta }}</span>
+        }
+      </div>
+
+      @if (profile.description) {
+        <p class="company-description">{{ profile.description }}</p>
+      }
     </div>
   } @else {
     <div class="company-header">
-      <h1 class="company-name-large text-muted">Chargement de l'entreprise...</h1>
+      <div class="text-center">
+        <i class="bi bi-hourglass-split" style="font-size: 2rem; color: var(--text-muted);"></i>
+        <h1 class="company-name-large text-muted mt-2" style="font-size: 24px;">Chargement du profil...</h1>
+      </div>
     </div>
-  }-->
+  }
 
   <!-- TABS NAVIGATION -->
   <div class="tabs-container">

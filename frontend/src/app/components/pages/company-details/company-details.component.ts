@@ -6,7 +6,7 @@ import { switchMap, catchError, map, distinctUntilChanged } from 'rxjs/operators
 import { FinancialAnalysisService } from '../../../services/financial-analysis.service';
 import { CompanyService } from '../../../services/company.service';
 import { FullMetrics } from '../../../models/analysis.model';
-import { CompanyDisplayDTO } from '../../../models/company.model';
+import { CompanyProfileResponse } from '../../../models/company.model';
 
 @Component({
   selector: 'app-company-details',
@@ -19,10 +19,12 @@ export class CompanyDetailsComponent implements OnInit {
   activeTab: 'growth' | 'value' | 'quality' = 'growth';
 
   metrics$!: Observable<FullMetrics | null>;
+  companyProfile$!: Observable<CompanyProfileResponse | null>;
 
   constructor(
     private readonly route: ActivatedRoute,
-    private readonly analysisService: FinancialAnalysisService
+    private readonly analysisService: FinancialAnalysisService,
+    private readonly companyService: CompanyService
   ) { }
 
   ngOnInit(): void {
@@ -30,8 +32,13 @@ export class CompanyDetailsComponent implements OnInit {
       map(params => params.get('ticker') || ''),
       distinctUntilChanged(),
       switchMap(ticker => {
-        if (!ticker) return of(null);
+        if (!ticker) {
+          this.metrics$ = of(null);
+          this.companyProfile$ = of(null);
+          return of(null);
+        }
         this.metrics$ = this.analysisService.getMetrics(ticker).pipe(catchError(() => of(null)));
+        this.companyProfile$ = this.companyService.getCompanyProfile(ticker).pipe(catchError(() => of(null)));
         return of(ticker);
       })
     ).subscribe();

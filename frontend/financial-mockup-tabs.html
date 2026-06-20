@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinanceApp - Dashboard Premium</title>
+    
+    <!-- Police LaTeX-like -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        /* ========================================
+           VARIABLES & RESET
+        ======================================== */
+        :root {
+            /* Couleurs principales */
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --bg-card-hover: rgba(255, 255, 255, 0.06);
+            
+            /* Couleurs texte (contrastes RGAA validés) */
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            
+            /* Accents */
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-yellow: #f59e0b;
+            
+            /* Bordures */
+            --border-color: rgba(255, 255, 255, 0.1);
+            --border-focus: rgba(59, 130, 246, 0.5);
+            
+            /* Ombres */
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.2);
+            --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.3);
+            --shadow-glow: 0 8px 24px rgba(59, 130, 246, 0.4);
+            
+            /* Transitions */
+            --transition-fast: 0.2s ease;
+            --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Crimson Text', Georgia, serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            line-height: 1.7;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        button, input, select, textarea, .ui-text {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        /* Arrière-plan animé */
+        .background-elements {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.08;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .blob-1 {
+            width: 600px;
+            height: 600px;
+            background: linear-gradient(45deg, var(--accent-blue), var(--accent-purple));
+            top: -15%;
+            left: -10%;
+            animation-delay: 0s;
+        }
+
+        .blob-2 {
+            width: 500px;
+            height: 500px;
+            background: linear-gradient(45deg, var(--accent-cyan), var(--accent-blue));
+            bottom: -15%;
+            right: -10%;
+            animation-delay: 10s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -30px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+
+        .main-container {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* ========================================
+           NAVBAR
+        ======================================== */
+        .navbar {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .navbar-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            color: white;
+            box-shadow: var(--shadow-glow);
+        }
+
+        .brand-text {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-accent {
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 8px;
+            list-style: none;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            font-size: 15px;
+            border-radius: 8px;
+            transition: var(--transition-smooth);
+        }
+
+        .nav-link:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+
+        .nav-link.active {
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            color: white;
+        }
+
+        /* ========================================
+           SECTIONS
+        ======================================== */
+        .section-hidden {
+            display: none;
+        }
+
+        section {
+            flex: 1;
+            padding: 40px 0;
+        }
+
+        /* ========================================
+           PAGE DÉTAILS - HEADER
+        ======================================== */
+        .company-header {
+            text-align: center;
+            margin-bottom: 48px;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 48px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .company-ticker-large {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            font-size: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-glow);
+        }
+
+        .company-name-large {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            letter-spacing: -1px;
+        }
+
+        .company-industry {
+            font-size: 18px;
+            color: var(--text-secondary);
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* ========================================
+           TABS NAVIGATION (Growth / Value / Quality)
+        ======================================== */
+        .tabs-container {
+            margin-bottom: 40px;
+        }
+
+        .tabs-nav {
+            display: flex;
+            gap: 12px;
+            padding: 8px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(20px);
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 16px 24px;
+            background: transparent;
+            border: none;
+            border-radius: 12px;
+            color: var(--text-secondary);
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .tab-button i {
+            font-size: 20px;
+        }
+
+        .tab-button:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            color: white;
+            box-shadow: var(--shadow-glow);
+        }
+
+        /* Couleurs spécifiques par onglet */
+        .tab-button.tab-growth.active {
+            background: linear-gradient(135deg, var(--accent-green) 0%, var(--accent-cyan) 100%);
+        }
+
+        .tab-button.tab-value.active {
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+        }
+
+        .tab-button.tab-quality.active {
+            background: linear-gradient(135deg, var(--accent-yellow) 0%, var(--accent-red) 100%);
+        }
+
+        /* ========================================
+           TAB CONTENT
+        ======================================== */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ========================================
+           METRICS GRID
+        ======================================== */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 32px;
+            transition: var(--transition-smooth);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .metric-card:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--accent-blue);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .metric-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-glow);
+        }
+
+        /* Icônes spécifiques par catégorie */
+        .metric-card.growth .metric-icon {
+            background: linear-gradient(135deg, var(--accent-green) 0%, var(--accent-cyan) 100%);
+        }
+
+        .metric-card.value .metric-icon {
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+        }
+
+        .metric-card.quality .metric-icon {
+            background: linear-gradient(135deg, var(--accent-yellow) 0%, var(--accent-red) 100%);
+        }
+
+        .metric-label {
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .metric-value-large {
+            font-size: 42px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -1px;
+        }
+
+        .metric-change {
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .metric-positive {
+            color: var(--accent-green);
+        }
+
+        .metric-negative {
+            color: var(--accent-red);
+        }
+
+        .metric-neutral {
+            color: var(--text-muted);
+        }
+
+        /* Description de la métrique */
+        .metric-description {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-color);
+            font-size: 14px;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+        }
+
+        /* ========================================
+           RESPONSIVE
+        ======================================== */
+        @media (max-width: 768px) {
+            .navbar-content {
+                flex-direction: column;
+            }
+
+            .nav-menu {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .nav-link {
+                justify-content: center;
+            }
+
+            .company-name-large {
+                font-size: 36px;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tabs-nav {
+                flex-direction: column;
+            }
+
+            .tab-button {
+                width: 100%;
+            }
+        }
+
+        /* ========================================
+           ACCESSIBILITÉ
+        ======================================== */
+        *:focus-visible {
+            outline: 2px solid var(--accent-blue);
+            outline-offset: 2px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* ========================================
+           FOOTER
+        ======================================== */
+        footer {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border-color);
+            padding: 32px 0;
+            margin-top: auto;
+            text-align: center;
+        }
+
+        .footer-text {
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Arrière-plan animé -->
+    <div class="background-elements" aria-hidden="true">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <!-- Container principal -->
+    <div class="main-container">
+        <!-- Navigation -->
+        <nav class="navbar" role="navigation" aria-label="Navigation principale">
+            <div class="container">
+                <div class="navbar-content">
+                    <a href="#" class="navbar-brand" aria-label="FinanceApp - Accueil">
+                        <div class="logo-icon" aria-hidden="true">Ƒ</div>
+                        <span class="brand-text">Finance<span class="brand-accent">App</span></span>
+                    </a>
+
+                    <ul class="nav-menu" role="menubar">
+                        <li role="none">
+                            <a href="#" class="nav-link" role="menuitem">
+                                <i class="bi bi-house-door-fill" aria-hidden="true"></i>
+                                <span class="ui-text">Accueil</span>
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a href="#" class="nav-link" role="menuitem">
+                                <i class="bi bi-star-fill" aria-hidden="true"></i>
+                                <span class="ui-text">Watchlist</span>
+                            </a>
+                        </li>
+                        <li role="none">
+                            <a href="#" class="nav-link active" role="menuitem">
+                                <i class="bi bi-graph-up" aria-hidden="true"></i>
+                                <span class="ui-text">Détails</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- PAGE DÉTAILS -->
+        <section id="details-section" aria-labelledby="details-title">
+            <div class="container">
+                <!-- En-tête entreprise -->
+                <div class="company-header">
+                    <span class="company-ticker-large" aria-label="Ticker">AAPL</span>
+                    <h1 id="details-title" class="company-name-large">Apple Inc.</h1>
+                    <p class="company-industry">Technology • Consumer Electronics • Cupertino, CA</p>
+                </div>
+
+                <!-- Tabs Navigation -->
+                <div class="tabs-container">
+                    <div class="tabs-nav" role="tablist">
+                        <button class="tab-button tab-growth active" 
+                                role="tab" 
+                                aria-selected="true" 
+                                aria-controls="tab-growth-content"
+                                onclick="switchTab('growth')">
+                            <i class="bi bi-graph-up-arrow"></i>
+                            <span>Growth</span>
+                        </button>
+                        <button class="tab-button tab-value" 
+                                role="tab" 
+                                aria-selected="false" 
+                                aria-controls="tab-value-content"
+                                onclick="switchTab('value')">
+                            <i class="bi bi-currency-dollar"></i>
+                            <span>Valorisation</span>
+                        </button>
+                        <button class="tab-button tab-quality" 
+                                role="tab" 
+                                aria-selected="false" 
+                                aria-controls="tab-quality-content"
+                                onclick="switchTab('quality')">
+                            <i class="bi bi-shield-check"></i>
+                            <span>Qualité</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TAB CONTENT: GROWTH -->
+                <div id="tab-growth-content" class="tab-content active" role="tabpanel" aria-labelledby="tab-growth">
+                    <div class="metrics-grid">
+                        <!-- Croissance CA TTM -->
+                        <article class="metric-card growth">
+                            <div class="metric-icon" aria-hidden="true">
+                                <i class="bi bi-arrow-up-right-circle"></i>
+                            </div>
+                            <h2 class="metric-label">Croissance CA TTM (3 ans)</h2>
+                            <div class="metric-value-large metric-positive">+12.7%</div>
+                            <div class="metric-change metric-positive">
+                                <i class="bi bi-arrow-up" aria-hidden="true"></i>
+                                <span>Croissance stable et soutenue</span>
+                            </div>
+                            <div class="metric-description">
+                                Taux de croissance annuel moyen du chiffre d'affaires sur les 3 dernières années (Trailing Twelve Months).
+                            </div>
+                        </article>
+
+                        <!-- Croissance EBITDA -->
+                        <article class="metric-card growth">
+                            <div class="metric-icon" aria-hidden="true">
+                                <i class="bi bi-graph-up"></i>
+                            </div>
+                            <h2 class="metric-label">Croissance EBITDA</h2>
+                            <div class="metric-value-large metric-positive">+15.3%</div>
+                            <div class="metric-change metric-positive">
+                                <i class="bi bi-arrow-up" aria-hidden="true"></i>
+                                <span>+2.1% vs année précédente</span>
+                            </div>
+                            <div class="metric-description">
+                                Évolution de l'EBITDA (bénéfice avant intérêts, impôts, dépréciation et amortissement) sur 12 mois glissants.
+                            </div>
+                        </article>
+
+                        <!-- Croissance BPA -->
+                        <article class="metric-card growth">
+                            <div class="metric-icon" aria-hidden="true">
+                                <i class="bi bi-bar-chart-line"></i>
+                            </div>
+                            <h2 class="metric-label">Croissance BPA (EPS)</h2>
+                            <div class="metric-value-large metric-positive">+18.2%</div>
+                            <div class="metric-change metric-positive">
+                                <i class="bi bi-arrow-up" aria-hidden="true"></i>
+                                <span>Accélération de la croissance</span>
+                            </div>
+                            <div class="metric-description">
+                                Taux de croissance du bénéfice par action (Earnings Per Share) sur les 12 derniers mois.
+                            </div>
+                        </article>
+
+                        <!-- Croissance Free Cash Flow -->
+                        <article class="metric-card growth">
+                            <div class="metric-icon" aria-hidden="true">
+                                <i class="bi bi-cash-coin"></i>
+                            </div>
+                            <h2 class="metric-label">Croissance FCF</h2>
+                            <div class="metric-value-large metric-positive">+10.8%</div>
+                            <div class="metric-change metric-positive">
+                                <i class="bi bi-arrow-up" aria-hidden="true"></i>
+                                <span>Génération de cash solide</span>
+                            </div>
+                            <div class="metric-description">
+                                Évolution du Free Cash Flow, indicateur clé de la capacité à générer de la trésorerie disponible.
+                            </div>
+                        </article>
+
+                        <!-- Perspectives de croissance -->
+                        <article class="metric-card growth">
+                            <div class="metric-icon" aria-hidden="true">
+                                <i class="bi bi-binoculars"></i>
+                            </div>
+                            <h2 class="metric-label">Croissance Forward (Consensus)</h2>
+                            <div class="metric-value-large metric-positive">+8.5%</div>
+                            <div class="metric-change metric-neutral">
+                                <i class="bi bi-info-circle" aria-hidden="true"></i>
+                                <span>Estimation analystes 2025</span>
+                            </div>
+                            <div class="metric-description">
+                                Prévision de croissance du CA pour l'exercice prochain selon le consensus des analystes.
+                            </div>
+                        </article>
+
+                        <!-- Part de marché -->
+                        <article class="metric-card growth">
+                            <div class="metric-icon" aria-hidden="true">
+                                <i class="bi bi-pie-chart"></i>
+                            </div>
+                            <h2 class="metric-label">Évolution Part de Marché</h2>
+                            <div class="metric-value-large metric-positive">+1.2pt</div>
+                            <div class="metric-change metric-positive">
+                                <i class="bi bi-arrow-up" aria-hidden="true"></i>
+                                <span>Gain de parts sur 12 mois</span>
+                            </div>
+                            <div class="metric-description">
+                                Variation de la part de marché dans le segment smartphones premium sur les 12 derniers mois.
+                            </div>
+                        </article>
+                    </div>
+                </div>
+
+                <!-- TAB CONTENT: VALORISATION -->
+                <div id="tab-value-content" class="tab-content" role="tabpanel" aria-labelledby="tab-value">
+                    <div class="metrics-grid">
+                        <!-- EV/EBITDA -->
+                        <article class="metric-card value">
+                            <div class="metric-icon" aria-hidden="true">
+                                <i class="bi bi-calculator"></i>
+                            </div>
+                            <h2 class="metric-label">EV/EBITDA</h2>
+                            <div class="metric-value-large">18.5x</div>
+                            <div class="metric-change metric-positive">
+                                <i class="bi bi-arrow-up" aria-hidden="true"></i>
+                                <span>+2.3% vs année précédente</span>
+                            </div>
+                            <div class="metric-description">
+                                Ratio Valeur d'Entreprise / EBITDA. Mesure la valorisation par rapport à la génération de cash opérationnelle.
+                            </div>
+                        </article>
+
+                        <!-- P/E Ratio -->
+                        <article class="metric-card value">
+                            <div class="metric-icon" aria-hidden="true">
+                                <i class="bi bi-percent"></i>
+                            </div>
+                            <h2 class="metric-label">P/E Ratio (TTM)</h2>
+                            <div class="metric-value-large">28.4x</div>
+                            <div class="metric-change metric-neutral">
+                                <i class="bi bi-dash-circle" aria-hidden="true"></i>
+                                <span>Stable vs moyenne sectorielle</span>
+                            </div>
+                            <div class="metric-description">
+                                Price-to-Earnings ratio. Compare le prix de l'action au bénéfice par action. Indicateur de cherté relative.
+                            </div>
+                        </article>
+
+                        <!-- PEG Forward -->
+                        <article class="metric-card value">
+                            <div class="metric-icon" aria-hidden="true">
+                                <i class="bi bi-speedometer2"></i>
+                            </div>
+                            <h2 class="metric-label">PEG Forward</h2>
+                            <div class="metric-value-large">2.1</div>
+                            <div class="metric-change metric-positive">
+                                <i class="bi bi-arrow-up" aria-hidden="true"></i>
+                                <span>+0.2 vs trimestre précédent</span>
+                            </div>
+                            <div class="metric-description">
+                                Price/Earnings to Growth. Ratio P/E ajusté par la croissance. < 1 = sous-évalué, > 2 = surévalué.
+                            </div>
+                        </article>
+
+                        <!-- Price to Book -->
+                        <article class="metric-card value">
+                            <div class="metric-icon" aria-hidden="true">
+                                <i class="bi bi-book"></i>
+                            </div>
+                            <h2 class="metric-label">Price to Book (P/B)</h2>
+                            <div class="metric-value-large">42.3x</div>
+                            <div class="metric-change metric-neutral">
+                                <i class="bi bi-info-circle" aria-hidden="true"></i>
+                                <span>Premium pour actifs intangibles</span>
+                            </div>
+                            <div class="metric-description">
+                                Ratio Prix / Valeur comptable. Élevé pour les entreprises tech en raison de la marque et de la R&D.
+                            </div>
+                        </article>
+
+                        <!-- Dividend Yield -->
+                        <article class="metric-card value">
+                            <div class="metric-icon" aria-hidden="true">
+                                <i class="bi bi-coin"></i>
+                            </div>
+                            <h2 class="metric-label">Dividend Yield</h2>
+                            <div class="metric-value-large">0.52%</div>
+                            <div class="metric-change metric-neutral">
+                                <i class="bi bi-dash-circle" aria-hidden="true"></i>
+                                <span>Politique de dividende stable</span>
+                            </div>
+                            <div class="metric-description">
+                                Rendement du dividende annuel par rapport au prix de l'action. Faible mais croissant.
+                            </div>
+                        </article>
+
+                        <!-- EV/Sales -->
+                        <article class="metric-card value">
+                            <div class="metric-icon" aria-hidden="true">
+                                <i class="bi bi-receipt"></i>
+                            </div>
+                            <h2 class="metric-label">EV/Sales</h2>
+                            <div class="metric-value-large">7.2x</div>
+                            <div class="metric-change metric-positive">
+                                <i class="bi bi-arrow-up" aria-hidden="true"></i>
+                                <span>+0.8x vs année précédente</span>
+                            </div>
+                            <div class="metric-description">
+                                Valeur d'entreprise / Chiffre d'affaires. Valorisation relative indépendante de la rentabilité.
+                            </div>
+                        </article>
+                    </div>
+                </div>
+
+                <!-- TAB CONTENT: QUALITÉ -->
+                <div id="tab-quality-content" class="tab-content" role="tabpanel" aria-labelledby="tab-quality">
+                    <div class="metrics-grid">
+                        <!-- ROIC -->
+                        <article class="metric-card quality">
+                            <div class="metric-icon" aria-hidden="true">
+                                <i class="bi bi-trophy"></i>
+                            </div>
+                            <h2 class="metric-label">ROIC (Return on Invested Capital)</h2>
+                            <div class="metric-value-large metric-positive">32.4%</div>
+                            <div class="metric-change metric-positive">
+                                <i class="bi bi-arrow-up" aria-hidden="true"></i>
+                                <span>+1.8% vs année précédente</span>
+                            </div>
+                            <div class="metric-description">
+                                Retour sur capital investi. Mesure l'efficacité avec laquelle l'entreprise utilise son capital. > 15% = excellent.
+                            </div>
+                        </article>
+
+                        <!-- WACC -->
+                        <article class="metric-card quality">
+                            <div class="metric-icon" aria-hidden="true">
+                                <i class="bi bi-bank"></i>
+                            </div>
+                            <h2 class="metric-label">WACC (Coût Moyen du Capital)</h2>
+                            <div class="metric-value-large">7.8%</div>
+                            <div class="metric-change metric-negative">
+                                <i class="bi bi-arrow-down" aria-hidden="true"></i>
+                                <span>-0.4% vs année précédente</span>
+                            </div>
+                            <div class="metric-description">
+                                Weighted Average Cost of Capital. Coût moyen pondéré du capital (dette + equity). Plus bas = meilleur.
+                            </div>
+                        </article>
+
+                        <!-- Spread ROIC-WACC -->
+                        <article class="metric-card quality">
+                            <div class="metric-icon" aria-hidden="true">
+                                <i class="bi bi-graph-up"></i>
+                            </div>
+                            <h2 class="metric-label">Spread ROIC - WACC</h2>
+                            <div class="metric-value-large metric-positive">+24.6%</div>
+                            <div class="metric-change metric-positive">
+                                <i class="bi bi-arrow-up" aria-hidden="true"></i>
+                                <span>Création de valeur excellente</span>
+                            </div>
+                            <div class="metric-description">
+                                Écart entre ROIC et WACC. Mesure la création de valeur économique. > 0 = création de valeur.
+                            </div>
+                        </article>
+
+                        <!-- Marge d'exploitation -->
+                        <article class="metric-card quality">
+                            <div class="metric-icon" aria-hidden="true">
+                                <i class="bi bi-pie-chart-fill"></i>
+                            </div>
+                            <h2 class="metric-label">Marge d'exploitation</h2>
+                            <div class="metric-value-large metric-positive">29.8%</div>
+                            <div class="metric-change metric-positive">
+                                <i class="bi bi-arrow-up" aria-hidden="true"></i>
+                                <span>+1.2% vs année précédente</span>
+                            </div>
+                            <div class="metric-description">
+                                Operating Margin. Ratio résultat opérationnel / CA. Mesure l'efficacité opérationnelle de l'entreprise.
+                            </div>
+                        </article>
+
+                        <!-- Dette/EBITDA -->
+                        <article class="metric-card quality">
+                            <div class="metric-icon" aria-hidden="true">
+                                <i class="bi bi-cash-stack"></i>
+                            </div>
+                            <h2 class="metric-label">Dette Nette / EBITDA</h2>
+                            <div class="metric-value-large metric-positive">1.4x</div>
+                            <div class="metric-change metric-positive">
+                                <i class="bi bi-arrow-down" aria-hidden="true"></i>
+                                <span>Endettement maîtrisé</span>
+                            </div>
+                            <div class="metric-description">
+                                Ratio d'endettement. < 2x = faible, 2-4x = modéré, > 4x = élevé. Apple a un bilan très solide.
+                            </div>
+                        </article>
+
+                        <!-- Current Ratio -->
+                        <article class="metric-card quality">
+                            <div class="metric-icon" aria-hidden="true">
+                                <i class="bi bi-shield-check"></i>
+                            </div>
+                            <h2 class="metric-label">Current Ratio (Liquidité)</h2>
+                            <div class="metric-value-large metric-positive">1.07</div>
+                            <div class="metric-change metric-neutral">
+                                <i class="bi bi-info-circle" aria-hidden="true"></i>
+                                <span>Liquidité suffisante</span>
+                            </div>
+                            <div class="metric-description">
+                                Ratio actif circulant / passif circulant. > 1 = capacité à honorer ses engagements court terme.
+                            </div>
+                        </article>
+
+                        <!-- Asset Turnover -->
+                        <article class="metric-card quality">
+                            <div class="metric-icon" aria-hidden="true">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </div>
+                            <h2 class="metric-label">Asset Turnover</h2>
+                            <div class="metric-value-large">0.82x</div>
+                            <div class="metric-change metric-neutral">
+                                <i class="bi bi-dash-circle" aria-hidden="true"></i>
+                                <span>Efficacité des actifs stable</span>
+                            </div>
+                            <div class="metric-description">
+                                Rotation des actifs. CA / Total des actifs. Mesure l'efficacité d'utilisation des actifs pour générer du CA.
+                            </div>
+                        </article>
+
+                        <!-- Piotroski F-Score -->
+                        <article class="metric-card quality">
+                            <div class="metric-icon" aria-hidden="true">
+                                <i class="bi bi-award"></i>
+                            </div>
+                            <h2 class="metric-label">Piotroski F-Score</h2>
+                            <div class="metric-value-large metric-positive">8/9</div>
+                            <div class="metric-change metric-positive">
+                                <i class="bi bi-star-fill" aria-hidden="true"></i>
+                                <span>Santé financière excellente</span>
+                            </div>
+                            <div class="metric-description">
+                                Score de santé financière de 0 à 9. Évalue rentabilité, levier, liquidité et efficacité opérationnelle.
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer role="contentinfo">
+            <div class="container">
+                <p class="footer-text">
+                    © 2026 FinanceApp • Dashboard Premium • Conforme RGAA
+                </p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Script pour les tabs -->
+    <script>
+        function switchTab(tabName) {
+            // Masquer tous les contenus
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Désactiver tous les boutons
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(button => {
+                button.classList.remove('active');
+                button.setAttribute('aria-selected', 'false');
+            });
+
+            // Activer le contenu et le bouton sélectionnés
+            const selectedContent = document.getElementById(`tab-${tabName}-content`);
+            const selectedButton = document.querySelector(`.tab-${tabName}`);
+
+            if (selectedContent && selectedButton) {
+                selectedContent.classList.add('active');
+                selectedButton.classList.add('active');
+                selectedButton.setAttribute('aria-selected', 'true');
+            }
+
+            // Scroll smooth vers le haut des métriques
+            selectedContent.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    </script>
+</body>
+</html>

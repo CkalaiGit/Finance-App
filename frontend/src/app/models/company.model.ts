@@ -31,3 +31,17 @@ export interface CompanyDisplayDTO extends Company {
    */
   colorVariant: 'blue' | 'green' | 'purple' | 'cyan' | 'red';
 }
+
+/**
+ * Modèle métier représentant le profil complet d'une entreprise
+ */
+export interface CompanyProfileResponse {
+  symbol: string;
+  companyName: string;
+  industry: string;
+  image: string;
+  beta: number;
+  marketCap: number;
+  description: string;
+  price: number;
+}
