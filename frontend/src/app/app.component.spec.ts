@@ -4,6 +4,7 @@ import { KeycloakService } from './auth/keycloak.service';
 import { AuthService } from './auth/auth.service';
 import { AuthStoreService } from './auth/auth-store.service';
 import { ActivatedRoute } from '@angular/router';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { of } from 'rxjs';
 
@@ -38,7 +39,7 @@ describe('AppComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [AppComponent],
+      imports: [AppComponent, HttpClientTestingModule],
       providers: [
         { provide: KeycloakService, useValue: keycloakServiceMock },
         { provide: AuthService, useValue: authServiceMock },

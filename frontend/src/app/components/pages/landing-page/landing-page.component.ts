@@ -1,12 +1,12 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router'; // Indispensable pour la navigation
 
 @Component({
   selector: 'app-landing-page',
   standalone: true,
-  imports: [CommonModule, FormsModule], // CommonModule utile pour le pipe 'currency'
+  imports: [FormsModule], // CommonModule utile pour le pipe 'currency'
   templateUrl: './landing-page.component.html',
   styleUrls: ['./landing-page.component.scss']
 })

@@ -4,12 +4,14 @@ import { AuthService } from '../../../auth/auth.service';
 import { AuthStoreService } from '../../../auth/auth-store.service';
 import { KeycloakService } from '../../../auth/keycloak.service';
 import { ActivatedRoute } from '@angular/router';
-import { of } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('HeaderComponent', () => {
   let component: HeaderComponent;
   let fixture: ComponentFixture<HeaderComponent>;
+  let userSubject: BehaviorSubject<any>;
+  let isLoggedInSubject: BehaviorSubject<boolean>;
 
   const mockKeycloakInstance = {
     authenticated: true,
@@ -28,8 +30,12 @@ describe('HeaderComponent', () => {
   };
 
   const authStoreMock = {
-    user$: of({ username: 'Alice', roles: ['ADMIN'] }),
-    isLoggedIn$: of(true)
+    get user$() {
+      return userSubject.asObservable();
+    },
+    get isLoggedIn$() {
+      return isLoggedInSubject.asObservable();
+    }
   };
 
   const activatedRouteMock = {
@@ -37,6 +43,9 @@ describe('HeaderComponent', () => {
   };
 
   beforeEach(async () => {
+    userSubject = new BehaviorSubject({ username: 'Alice', roles: ['ADMIN'] });
+    isLoggedInSubject = new BehaviorSubject(true);
+
     await TestBed.configureTestingModule({
       imports: [HeaderComponent],
       providers: [
@@ -66,8 +75,8 @@ describe('HeaderComponent', () => {
   });
 
   it('ne doit pas afficher le nom si l utilisateur est déconnecté', () => {
-    authStoreMock.user$ = of(null as any);
-    authStoreMock.isLoggedIn$ = of(false);
+    userSubject.next(null);
+    isLoggedInSubject.next(false);
 
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
