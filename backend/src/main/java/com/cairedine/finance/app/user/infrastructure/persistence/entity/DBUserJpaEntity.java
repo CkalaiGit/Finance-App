@@ -43,14 +43,6 @@ public class DBUserJpaEntity {
     @Column(nullable = false)
     private Instant updatedAt;
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(
-            name = "user_watchlist",
-            joinColumns = @JoinColumn(name = "keycloak_id")
-    )
-    @Column(name = "ticker")
-    private Set<String> watchlist = new HashSet<>();
-
     public DBUserJpaEntity(String keycloakId, String email, String username, Set<String> roles) {
         this.keycloakId = keycloakId;
         this.email      = email;

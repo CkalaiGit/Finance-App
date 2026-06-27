@@ -8,9 +8,7 @@ import com.cairedine.finance.app.user.infrastructure.persistence.repository.IUse
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
 import java.util.Optional;
-import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -40,27 +38,5 @@ public class UserRepositoryAdapter implements IUserRepositoryPort {
                         () -> userRepository.save(mapper.toEntity(user))
                 );
     }
-
-    @Override
-    public void addToWatchlist(String keycloakId, String ticker) {
-        userRepository.findById(keycloakId).ifPresent(entity -> {
-            entity.getWatchlist().add(ticker.toUpperCase());
-            userRepository.save(entity);
-        });
-    }
-
-    @Override
-    public void removeFromWatchlist(String keycloakId, String ticker) {
-        userRepository.findById(keycloakId).ifPresent(entity -> {
-            entity.getWatchlist().remove(ticker.toUpperCase());
-            userRepository.save(entity);
-        });
-    }
-
-    @Override
-    public Set<String> getWatchlist(String keycloakId) {
-        return userRepository.findById(keycloakId)
-                .map(entity -> Set.copyOf(entity.getWatchlist()))
-                .orElse(Collections.emptySet());
-    }
 }
+
