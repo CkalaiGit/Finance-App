@@ -23,6 +23,7 @@ public class UserSyncServiceImpl implements IUserSyncService {
 
 
     private final IUserRepositoryPort userRepository;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -32,17 +33,23 @@ public class UserSyncServiceImpl implements IUserSyncService {
         String username   = jwt.getClaimAsString("preferred_username");
         Set<String> roles = extractRoles(jwt);
 
-        User user = userRepository.findById(keycloakId)
-                .map(existing -> {
-                    log.debug("Utilisateur mis à jour : {}", keycloakId);
-                    return existing.updateFrom(email, username, roles);
-                })
-                .orElseGet(() -> {
-                    log.info("Nouvel utilisateur : {}", keycloakId);
-                    return new User(keycloakId, email, username, roles);
-                });
+        var existingOpt = userRepository.findById(keycloakId);
+        User user;
+        boolean isNewUser;
+        if (existingOpt.isPresent()) {
+            log.debug("Utilisateur mis à jour : {}", keycloakId);
+            user = existingOpt.get().updateFrom(email, username, roles);
+            isNewUser = false;
+        } else {
+            log.info("Nouvel utilisateur : {}", keycloakId);
+            user = new User(keycloakId, email, username, roles);
+            isNewUser = true;
+        }
 
         userRepository.save(user);
+
+        // Publier l'événement de domaine après la sauvegarde
+        eventPublisher.publishEvent(new com.cairedine.finance.app.user.UserSyncedEvent(keycloakId, email, username, isNewUser));
 
         return new UserContext(
                 user.keycloakId(),

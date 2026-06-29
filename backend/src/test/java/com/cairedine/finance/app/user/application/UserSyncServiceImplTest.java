@@ -5,6 +5,7 @@ import com.cairedine.finance.app.user.domain.service.IUserSyncService;
 import com.cairedine.finance.app.user.infrastructure.persistence.adapter.UserRepositoryAdapter;
 import com.cairedine.finance.app.user.infrastructure.persistence.mapper.UserPersistenceMapper;
 import com.cairedine.finance.app.user.infrastructure.persistence.repository.IUserRepository;
+import lombok.Getter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -14,6 +15,10 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.event.EventListener;
+import java.util.ArrayList;
 
 import java.time.Instant;
 import java.util.List;
@@ -23,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @ActiveProfiles("test")
-@Import({UserSyncServiceImpl.class, UserRepositoryAdapter.class, UserPersistenceMapper.class})
+@Import({UserSyncServiceImpl.class, UserRepositoryAdapter.class, UserPersistenceMapper.class, UserSyncServiceImplTest.TestConfig.class})
 @DisplayName("UserSyncServiceImpl")
 class UserSyncServiceImplTest {
 
@@ -32,6 +37,22 @@ class UserSyncServiceImplTest {
 
     @Autowired
     private IUserRepository userRepository;
+
+    @Autowired
+    private TestEventRecorder eventRecorder;
+
+    @TestConfiguration
+    static class TestConfig {
+        @Bean
+        TestEventRecorder testEventRecorder() { return new TestEventRecorder(); }
+    }
+
+    @Getter
+    public static class TestEventRecorder {
+        private final List<Object> events = new ArrayList<>();
+        @EventListener
+        public void recordEvent(Object evt) { events.add(evt); }
+    }
 
     private Jwt buildJwt(String sub, String email, String username, List<String> roles) {
         return Jwt.withTokenValue("token")
@@ -66,6 +87,15 @@ class UserSyncServiceImplTest {
             assertThat(ctx.username()).isEqualTo("alice");
             assertThat(ctx.roles()).containsExactlyInAnyOrder("PREMIUM");
             assertThat(userRepository.count()).isEqualTo(1);
+
+            var evts = eventRecorder.getEvents();
+            Object last = evts.getLast();
+            assertThat(last).isInstanceOf(com.cairedine.finance.app.user.UserSyncedEvent.class);
+            com.cairedine.finance.app.user.UserSyncedEvent e = (com.cairedine.finance.app.user.UserSyncedEvent) last;
+            assertThat(e.isNewUser()).isTrue();
+            assertThat(e.keycloakId()).isEqualTo("uuid-alice");
+            assertThat(e.email()).isEqualTo("alice@finance.com");
+            assertThat(e.username()).isEqualTo("alice");
         }
     }
 
@@ -89,6 +119,16 @@ class UserSyncServiceImplTest {
             assertThat(ctx.email()).isEqualTo("new@finance.com");
             assertThat(ctx.username()).isEqualTo("new_alice");
             assertThat(ctx.roles()).containsExactlyInAnyOrder("PREMIUM", "FREEMIUM");
+
+            var evts = eventRecorder.getEvents();
+            Object last = evts.getLast();
+            assertThat(last).isInstanceOf(com.cairedine.finance.app.user.UserSyncedEvent.class);
+            com.cairedine.finance.app.user.UserSyncedEvent ue = (com.cairedine.finance.app.user.UserSyncedEvent) last;
+            assertThat(ue.isNewUser()).isFalse();
+            assertThat(ue.keycloakId()).isEqualTo("uuid-alice");
+            assertThat(ue.email()).isEqualTo("new@finance.com");
+            assertThat(ue.username()).isEqualTo("new_alice");
+
         }
 
         @Test
