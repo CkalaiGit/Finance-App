@@ -54,7 +54,10 @@ class WatchlistControllerE2ETest {
         watchlistRepository.deleteAll();
         userRepository.deleteAll();
 
-        // Créer un utilisateur en base pour satisfaire la contrainte FK
+        // Créer un utilisateur en base pour satisfaire la contrainte FK.
+        // En production ce rôle est assuré par le flux Keycloak → UserSyncServiceImpl
+        // qui publie un UserSyncedEvent et est traité par UserSyncEventListener.
+        // Ici on crée manuellement le DBUserJpaEntity pour simuler cet état.
         DBUserJpaEntity user = DBUserJpaEntity.builder()
             .keycloakId(KEYCLOAK_ID)
             .email("test@example.com")
