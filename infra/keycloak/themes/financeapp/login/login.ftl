@@ -1,16 +1,20 @@
 <#import "template.ftl" as layout>
-<@layout.registrationLayout; section>
+<@layout.registrationLayout title="Connexion - FinanceApp"; section>
     <#if section = "header">Connexion
     <#elseif section = "form">
         <form action="${url.loginAction}" method="post">
-            <label>Utilisateur</label>
-            <input id="username" name="username" class="pf-c-form-control" type="text" autofocus />
-            <label>Mot de passe</label>
-            <input id="password" name="password" class="pf-c-form-control" type="password" />
-            <input type="submit" value="Se connecter"/>
+            <div class="form-group">
+                <label for="username">Nom d'utilisateur ou adresse e-mail</label>
+                <input id="username" name="username" class="pf-c-form-control" type="text" autocomplete="username" required aria-required="true" autofocus />
+            </div>
+            <div class="form-group">
+                <label for="password">Mot de passe</label>
+                <input id="password" name="password" class="pf-c-form-control" type="password" autocomplete="current-password" required aria-required="true" />
+            </div>
+            <button type="submit" class="btn-submit">Se connecter</button>
         </form>
-        <div style="text-align:center; margin-top:15px">
-            <a href="${url.registrationUrl}" style="color:var(--accent-blue); font-size:14px">Créer un compte</a>
+        <div class="form-footer">
+            <a href="${url.registrationUrl}" class="link-secondary">Créer un compte</a>
         </div>
     </#if>
 </@layout.registrationLayout>
