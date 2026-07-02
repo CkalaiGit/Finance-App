@@ -106,7 +106,7 @@ label {
     margin-top: 20px;
     margin-bottom: 6px;
     text-align: left;
-    padding-left: 1rem;
+    padding-left: 0.25rem;
 }
 .form-group label {
     margin-top: 0;
