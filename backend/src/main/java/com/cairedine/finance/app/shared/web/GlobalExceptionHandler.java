@@ -25,9 +25,10 @@ public class GlobalExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
     }
 
-    @ExceptionHandler(WatchlistException.class)
+    @ExceptionHandler({WatchlistException.class, IllegalArgumentException.class, IllegalStateException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ProblemDetail handleWatchlist(WatchlistException ex) {
+    public ProblemDetail handleBadRequestExceptions(Exception ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 }
+

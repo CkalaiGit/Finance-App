@@ -47,15 +47,10 @@ public class WatchlistController {
             @Parameter(hidden = true) JwtAuthenticationToken auth) {
 
         String keycloakId = extractKeycloakId(auth);
-
-        try {
-            watchlistService.addTickerToWatchlist(keycloakId, ticker);
-            Set<String> updatedWatchlist = watchlistService.getUserWatchlist(keycloakId);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new WatchlistResponse(keycloakId, updatedWatchlist));
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        watchlistService.addTickerToWatchlist(keycloakId, ticker);
+        Set<String> updatedWatchlist = watchlistService.getUserWatchlist(keycloakId);
+        return ResponseEntity.status(HttpStatus.CREATED)
+            .body(new WatchlistResponse(keycloakId, updatedWatchlist));
     }
 
     /**
@@ -76,14 +71,9 @@ public class WatchlistController {
             @Parameter(hidden = true) JwtAuthenticationToken auth) {
 
         String keycloakId = extractKeycloakId(auth);
-
-        try {
-            watchlistService.removeTickerFromWatchlist(keycloakId, ticker);
-            Set<String> updatedWatchlist = watchlistService.getUserWatchlist(keycloakId);
-            return ResponseEntity.ok(new WatchlistResponse(keycloakId, updatedWatchlist));
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        watchlistService.removeTickerFromWatchlist(keycloakId, ticker);
+        Set<String> updatedWatchlist = watchlistService.getUserWatchlist(keycloakId);
+        return ResponseEntity.ok(new WatchlistResponse(keycloakId, updatedWatchlist));
     }
 
     /**
