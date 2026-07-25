@@ -1,5 +1,6 @@
 package com.cairedine.finance.app.user;
 
+import com.cairedine.finance.app.user.web.UserController;
 import com.cairedine.finance.app.user.domain.service.IUserSyncService;
 import com.cairedine.finance.app.user.infrastructure.security.SecurityConfig;
 import com.cairedine.finance.app.user.infrastructure.security.WebConfig;

@@ -1,4 +1,4 @@
-package com.cairedine.finance.app.user;
+package com.cairedine.finance.app.user.web;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -14,6 +14,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.cairedine.finance.app.user.UserContext;
 
 @RestController
 @RequestMapping("/api/users")
