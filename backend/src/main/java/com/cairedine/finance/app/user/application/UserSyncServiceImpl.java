@@ -1,6 +1,7 @@
 package com.cairedine.finance.app.user.application;
 
 import com.cairedine.finance.app.user.UserContext;
+import com.cairedine.finance.app.user.UserSyncedEvent;
 import com.cairedine.finance.app.user.domain.model.User;
 import com.cairedine.finance.app.user.domain.port.IUserRepositoryPort;
 import com.cairedine.finance.app.user.domain.service.IUserSyncService;
@@ -49,7 +50,7 @@ public class UserSyncServiceImpl implements IUserSyncService {
         userRepository.save(user);
 
         // Publier l'événement de domaine après la sauvegarde
-        eventPublisher.publishEvent(new com.cairedine.finance.app.user.UserSyncedEvent(keycloakId, email, username, isNewUser));
+        eventPublisher.publishEvent(new UserSyncedEvent(keycloakId, email, username, isNewUser));
 
         return new UserContext(
                 user.keycloakId(),
