@@ -11,9 +11,9 @@ import com.cairedine.finance.app.shared.exceptions.TickerNotFoundException;
 import com.cairedine.finance.app.webclient.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -34,6 +34,7 @@ public class FinancialAnalysisServiceImpl implements IFinancialAnalysisService {
     private final IMetricsCachePort metricsCache;
 
      @Override
+     @Cacheable(value = "analysis-metrics", key = "#ticker.toUpperCase()")
      public List<FullMetrics> computeMetrics(String ticker) {
          String normalizedTicker = ticker.toUpperCase();
 

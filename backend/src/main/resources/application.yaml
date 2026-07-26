@@ -11,11 +11,23 @@ spring:
     name: finance-app
 
   # ─────────────────────────────────────────────────────────────
+  # CACHE (CAFFEINE RAM)
+  # ─────────────────────────────────────────────────────────────
+  cache:
+    type: caffeine
+    cache-names:
+      - analysis-metrics
+      - company-profiles
+    caffeine:
+      spec: maximumSize=500,expireAfterWrite=1h
+
+  # ─────────────────────────────────────────────────────────────
   # VIRTUAL THREADS
   # ─────────────────────────────────────────────────────────────
   threads:
     virtual:
       enabled: true
+
 
   # ─────────────────────────────────────────────────────────────
   # DATASOURCE — PostgreSQL applicatif (app-db)

@@ -16,6 +16,7 @@ Le backend **FinanceApp** est une application financière distribuée en archite
 - **Exécution Concurrente** : **Virtual Threads** (Loom) activés (`spring.threads.virtual.enabled: true`)
 - **Sécurité & Authentification** : Spring Security 6 + OAuth2 Resource Server (**Keycloak JWT**)
 - **Client HTTP Externe** : **RestClient** synchrone (aligné et optimal pour Virtual Threads, sans WebFlux)
+- **Cache L1 (RAM)** : **Caffeine Cache** (TTL 1h, max 500 entrées) avec `@EnableCaching` et `@Cacheable`
 - **Base de Données** :
   - Production / Dev : PostgreSQL (`jdbc:postgresql://localhost:5434/financeapp`) avec pool **HikariCP**
   - Tests : Base **H2** en mémoire
