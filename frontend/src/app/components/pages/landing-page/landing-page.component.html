@@ -1,38 +1,43 @@
 <main class="landing-page" role="main" aria-labelledby="landing-title">
-  <div class="container">
-    
-    <section class="hero-section">
-      <header class="hero-header">
-        <h1 id="landing-title" class="hero-title">
-          Analysez les entreprises cotées
-        </h1>
-        <p class="hero-subtitle">
-          Recherchez et comparez les métriques financières clés
-        </p>
-      </header>
+   <div class="container">
+      <section class="hero-section">
+         <header class="hero-header">
+            <h1 id="landing-title" class="hero-title">
+               Analysez les entreprises cotées
+            </h1>
+            <p class="hero-subtitle">
+               Recherchez et comparez les métriques financières clés
+            </p>
+         </header>
 
-      <form class="search-form" role="search" aria-label="Recherche d'entreprises" (submit)="onSearch($event)">
-        <div class="search-wrapper">
-          <label for="company-search" class="sr-only">Rechercher une entreprise</label>
-          <input 
-            type="search" 
-            id="company-search"
-            name="search"
-            [(ngModel)]="searchTerm"
-            class="search-input" 
-            placeholder="Rechercher une entreprise (ex: Apple, AAPL...)"
-            autocomplete="off"
-          />
-          <button 
-            type="submit" 
-            class="search-button" 
-            aria-label="Lancer la recherche">
-            <i class="bi bi-search" aria-hidden="true"></i>
-          </button>
-        </div>
-      </form>
-    </section>
-
-
-  </div>
+         <form
+            class="search-form"
+            role="search"
+            aria-label="Recherche d'entreprises"
+            (submit)="onSearch($event)"
+         >
+            <div class="search-wrapper">
+               <label for="company-search" class="sr-only"
+                  >Rechercher une entreprise</label
+               >
+               <input
+                  type="search"
+                  id="company-search"
+                  name="search"
+                  [(ngModel)]="searchTerm"
+                  class="search-input"
+                  placeholder="Rechercher une entreprise (ex: Apple, AAPL...)"
+                  autocomplete="off"
+               />
+               <button
+                  type="submit"
+                  class="search-button"
+                  aria-label="Lancer la recherche"
+               >
+                  <i class="bi bi-search" aria-hidden="true"></i>
+               </button>
+            </div>
+         </form>
+      </section>
+   </div>
 </main>

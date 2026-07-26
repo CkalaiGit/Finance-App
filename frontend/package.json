@@ -8,7 +8,8 @@
     "watch": "ng build --watch --configuration development",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "format": "prettier --write \"src/**/*.{ts,html,scss}\""
   },
   "private": true,
   "dependencies": {
@@ -36,7 +37,8 @@
     "happy-dom": "^20.10.6",
     "jsdom": "^26.1.0",
     "typescript": "~5.9.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "prettier": "^3.3.3"
   },
   "overrides": {
     "vite": "^7.3.5",

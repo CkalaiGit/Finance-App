@@ -5,31 +5,30 @@ import { UserProfile } from '../models/user.model';
 import { firstValueFrom } from 'rxjs';
 
 describe('AuthStoreService', () => {
-  let authStoreService: AuthStoreService;
-  let authServiceMock: any;
+   let authStoreService: AuthStoreService;
+   let authServiceMock: any;
 
-  const mockUser: UserProfile = {
-    roles: ['ADMIN'], username: 'Alice',
-    email: ''
-  };
+   const mockUser: UserProfile = {
+      roles: ['ADMIN'],
+      username: 'Alice',
+      email: '',
+   };
 
-  beforeEach(() => {
-    authServiceMock = {
-      getUserProfile: vi.fn().mockReturnValue(mockUser),
-      login: vi.fn(),
-      logout: vi.fn()
-    };
-    authStoreService = new AuthStoreService(authServiceMock as AuthService);
-    // Reset call count after initialization since refreshState is called in constructor
-    authServiceMock.getUserProfile.mockClear();
-  });
+   beforeEach(() => {
+      authServiceMock = {
+         getUserProfile: vi.fn().mockReturnValue(mockUser),
+         login: vi.fn(),
+         logout: vi.fn(),
+      };
+      authStoreService = new AuthStoreService(authServiceMock as AuthService);
+      // Reset call count after initialization since refreshState is called in constructor
+      authServiceMock.getUserProfile.mockClear();
+   });
 
-  it('should initialize with user profile', async () => {
-    const user = await firstValueFrom(authStoreService.user$);
-    expect(user).toEqual(mockUser);
-    // Verify that getUserProfile is not called when subscribing to user$
-    expect(authServiceMock.getUserProfile).not.toHaveBeenCalled();
-  });
-
-
+   it('should initialize with user profile', async () => {
+      const user = await firstValueFrom(authStoreService.user$);
+      expect(user).toEqual(mockUser);
+      // Verify that getUserProfile is not called when subscribing to user$
+      expect(authServiceMock.getUserProfile).not.toHaveBeenCalled();
+   });
 });

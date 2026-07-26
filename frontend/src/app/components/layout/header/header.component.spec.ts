@@ -8,82 +8,86 @@ import { BehaviorSubject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('HeaderComponent', () => {
-  let component: HeaderComponent;
-  let fixture: ComponentFixture<HeaderComponent>;
-  let userSubject: BehaviorSubject<any>;
-  let isLoggedInSubject: BehaviorSubject<boolean>;
+   let component: HeaderComponent;
+   let fixture: ComponentFixture<HeaderComponent>;
+   let userSubject: BehaviorSubject<any>;
+   let isLoggedInSubject: BehaviorSubject<boolean>;
 
-  const mockKeycloakInstance = {
-    authenticated: true,
-    tokenParsed: { preferred_username: 'Alice' },
-    realmAccess: { roles: ['ADMIN'] }
-  };
+   const mockKeycloakInstance = {
+      authenticated: true,
+      tokenParsed: { preferred_username: 'Alice' },
+      realmAccess: { roles: ['ADMIN'] },
+   };
 
-  const keycloakServiceMock = {
-    instance: mockKeycloakInstance
-  };
+   const keycloakServiceMock = {
+      instance: mockKeycloakInstance,
+   };
 
-  const authServiceMock = {
-    login: vi.fn(),
-    logout: vi.fn(),
-    isLoggedIn: true
-  };
+   const authServiceMock = {
+      login: vi.fn(),
+      logout: vi.fn(),
+      isLoggedIn: true,
+   };
 
-  const authStoreMock = {
-    get user$() {
-      return userSubject.asObservable();
-    },
-    get isLoggedIn$() {
-      return isLoggedInSubject.asObservable();
-    }
-  };
+   const authStoreMock = {
+      get user$() {
+         return userSubject.asObservable();
+      },
+      get isLoggedIn$() {
+         return isLoggedInSubject.asObservable();
+      },
+   };
 
-  const activatedRouteMock = {
-    snapshot: { params: {}, data: {} }
-  };
+   const activatedRouteMock = {
+      snapshot: { params: {}, data: {} },
+   };
 
-  beforeEach(async () => {
-    userSubject = new BehaviorSubject({ username: 'Alice', roles: ['ADMIN'] });
-    isLoggedInSubject = new BehaviorSubject(true);
+   beforeEach(async () => {
+      userSubject = new BehaviorSubject({
+         username: 'Alice',
+         roles: ['ADMIN'],
+      });
+      isLoggedInSubject = new BehaviorSubject(true);
 
-    await TestBed.configureTestingModule({
-      imports: [HeaderComponent],
-      providers: [
-        { provide: KeycloakService, useValue: keycloakServiceMock },
-        { provide: AuthService, useValue: authServiceMock },
-        { provide: AuthStoreService, useValue: authStoreMock },
-        { provide: ActivatedRoute, useValue: activatedRouteMock }
-      ]
-    })
-      .compileComponents();
+      await TestBed.configureTestingModule({
+         imports: [HeaderComponent],
+         providers: [
+            { provide: KeycloakService, useValue: keycloakServiceMock },
+            { provide: AuthService, useValue: authServiceMock },
+            { provide: AuthStoreService, useValue: authStoreMock },
+            { provide: ActivatedRoute, useValue: activatedRouteMock },
+         ],
+      }).compileComponents();
 
-    fixture = TestBed.createComponent(HeaderComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
+      fixture = TestBed.createComponent(HeaderComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
+   it('should create', () => {
+      expect(component).toBeTruthy();
+   });
 
-  it('doit afficher le nom de l utilisateur connecté', () => {
-    fixture.detectChanges();
+   it('doit afficher le nom de l utilisateur connecté', () => {
+      fixture.detectChanges();
 
-    const compiled = fixture.nativeElement as HTMLElement;
+      const compiled = fixture.nativeElement as HTMLElement;
 
-    expect(compiled.querySelector('.username')?.textContent).toContain('Alice');
-  });
+      expect(compiled.querySelector('.username')?.textContent).toContain(
+         'Alice',
+      );
+   });
 
-  it('ne doit pas afficher le nom si l utilisateur est déconnecté', () => {
-    userSubject.next(null);
-    isLoggedInSubject.next(false);
+   it('ne doit pas afficher le nom si l utilisateur est déconnecté', () => {
+      userSubject.next(null);
+      isLoggedInSubject.next(false);
 
-    fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
-    const loginBtn = compiled.querySelector('.btn-login');
-    const userName = compiled.querySelector('.username');
+      fixture.detectChanges();
+      const compiled = fixture.nativeElement as HTMLElement;
+      const loginBtn = compiled.querySelector('.btn-login');
+      const userName = compiled.querySelector('.username');
 
-    expect(loginBtn).toBeTruthy(); // Le bouton doit être là
-    expect(userName).toBeNull()
-  });
+      expect(loginBtn).toBeTruthy(); // Le bouton doit être là
+      expect(userName).toBeNull();
+   });
 });
