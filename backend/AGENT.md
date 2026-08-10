@@ -145,3 +145,49 @@ com.cairedine.finance.app
 - **Tests WebMVC** : `@WebMvcTest(TargetController.class)` avec `@MockitoBean` (syntaxe conforme Spring Boot 4) pour simuler les dépendances.
 - **Tests JPA** : `@DataJpaTest` adossé à la base H2 en mémoire.
 - **Tests de Structure Modulith** : Utiliser `ApplicationModules.of(FinanceApp.class).verify()` pour s'assurer qu'aucun couplage illégal inter-module n'est introduit.
+
+---
+
+## 6. Concepts Métier Approfondis & Flux d'Exécution
+
+### 1. Double Ancrage Temporel des Métriques Financières
+Les métriques financières produites par le module `financialanalysis` s'appuient sur deux ancres de temps distinctes pour éviter toute incohérence comptable ou de valorisation :
+- **Growth & Quality (Ancre comptable `fiscalYearEndDate`)** : Données extraites des rapports annuels/trimestriels publiés (ex: `2024-09-28`). Elles sont figées jusqu'au prochain rapport comptable.
+- **Value & TTM (Ancre instantanée `marketDataAsOf`)** : Données issues des 12 mois glissants (TTM) et du prix du marché (ex: `Instant.now()`).
+
+### 2. Stratégie Cache-Aside (Caffeine L1)
+Pour économiser le quota d'API FMP et réduire la latence :
+1. La méthode `fetchIncomeStatements` extrait la date `fiscalYearEndDate`.
+2. Le cache Caffeine (`metricsCache.findByTickerAndFiscalYear`) est interrogé.
+3. **Hit** (~5ms) : La réponse en cache est retournée directement.
+4. **Miss** (~310ms) : Les calculs parallèles via Virtual Threads sont exécutés, le résultat est stocké en cache et retourné.
+
+### 3. Fil d'Exécution Complet (17 Étapes du Clic au `UserContext`)
+
+| Étape | Composant / Couche | Action |
+| :--- | :--- | :--- |
+| **1-3** | **Angular** (`HeaderComponent` -> `AuthService`) | Clic "Se connecter", génération PKCE (`Code Verifier` + `Code Challenge`), redirection vers Keycloak. |
+| **4-5** | **Keycloak Server** (`dev-realm`) | Saisie des identifiants, validation, redirection vers Angular avec `Authorization Code` à usage unique. |
+| **6-8** | **Angular** (`provideAppInitializer`) | Échange POST au Token Endpoint : envoi du `Code Verifier` secret. Keycloak vérifie `SHA256(verifier) == challenge` et renvoie le JWT. |
+| **9-11** | **Angular** (`authInterceptor`) | Stockage du JWT en mémoire JS (non expiré), injection automatique de l'en-tête `Authorization: Bearer <JWT>` dans chaque appel API. |
+| **12** | **Spring Security** | Interception et validation cryptographique du JWT via JWKS (`/protocol/openid-connect/certs`), vérification `iss` et `exp`. |
+| **13-15** | **Backend** (`KeycloakJwtConverter`) | Extraction des claims (`sub`, `email`, rôles), appel d'`IUserSyncService` (Upsert en BDD), instanciation du `UserContext` immuable et attachement aux *details* de la requête. |
+| **16-17** | **Backend Controllers** -> **Angular** | Exécution de la méthode du contrôleur REST avec `UserContext` disponible via `auth.getDetails()`, retour HTTP 200/201 et mise à jour dynamique de l'IHM. |
+
+---
+
+## 7. Génération de Documentation Vivante (Spring Modulith Documenter)
+
+Pour maintenir la documentation système synchronisée avec le code sans effort manuel, le projet s'appuie sur la fonctionnalité de documentation intégrée de Spring Modulith :
+
+```java
+@Test
+void createModuleDocumentation() {
+    ApplicationModules modules = ApplicationModules.of(FinanceApp.class);
+    new Documenter(modules)
+        .writeDocumentation()
+        .writeIndividualModulesAsPlantUml();
+}
+```
+Ce test génère automatiquement des diagrammes C4 et PlantUML à chaque `mvn test` dans `target/spring-modulith-docs/`.
+
