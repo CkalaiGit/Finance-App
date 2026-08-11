@@ -74,6 +74,28 @@ spring:
       enabled: false
       lifecycle-management: start-only
 
+  ai:
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY}
+        chat:
+          options:
+            model: gemini-2.0-flash
+            temperature: 0.2
+            max-output-tokens: 2048
+        embedding:
+          options:
+            model: text-embedding-004
+    vectorstore:
+      pgvector:
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
+        dimensions: 768
+
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/financeapp}
+
 # ─────────────────────────────────────────────────────────────
 # ACTUATOR
 # ─────────────────────────────────────────────────────────────
