@@ -1,5 +1,4 @@
 spring:
-
   ai:
     google:
       genai:
@@ -31,12 +30,23 @@ spring:
       - org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
       - org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration
       - org.springframework.ai.autoconfigure.vectorstore.pgvector.PgVectorStoreAutoConfiguration
+      # ── Ajout Spring AI 2.0.0 — évite les appels réseau Google en test
+      - org.springframework.ai.autoconfigure.model.googlegenai.GoogleGenAiAutoConfiguration
 
   security:
     oauth2:
       resourceserver:
         jwt:
           issuer-uri: "" # On vide l'URI pour éviter les appels réseau vers Keycloak au boot
+
 fmp:
   api-key: ***REMOVED-FMP-KEY***
   base-url: https://financialmodelingprep.com
+
+# ─────────────────────────────────────────────────────────────
+# INTELLIGENCE — chunking (valeurs neutres en test)
+# ─────────────────────────────────────────────────────────────
+intelligence:
+  chunking:
+    size: 512
+    overlap: 64

@@ -28,7 +28,6 @@ spring:
     virtual:
       enabled: true
 
-
   # ─────────────────────────────────────────────────────────────
   # DATASOURCE — PostgreSQL applicatif (app-db)
   # ─────────────────────────────────────────────────────────────
@@ -74,6 +73,9 @@ spring:
       enabled: false
       lifecycle-management: start-only
 
+  # ─────────────────────────────────────────────────────────────
+  # SPRING AI — Google Gemini + pgvector + MongoDB
+  # ─────────────────────────────────────────────────────────────
   ai:
     google:
       genai:
@@ -130,7 +132,14 @@ logging:
 # ─────────────────────────────────────────────────────────────
 # FMP
 # ─────────────────────────────────────────────────────────────
-
 fmp:
   api-key: ${FMP_API_KEY}
   base-url: https://financialmodelingprep.com
+
+# ─────────────────────────────────────────────────────────────
+# INTELLIGENCE — Module IA (chunking SEC EDGAR)
+# ─────────────────────────────────────────────────────────────
+intelligence:
+  chunking:
+    size: 512
+    overlap: 64
