@@ -7,4 +7,3 @@
     }
 )
 package com.cairedine.finance.app.intelligence;
-
