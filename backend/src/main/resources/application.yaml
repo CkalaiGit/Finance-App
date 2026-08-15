@@ -88,15 +88,7 @@ spring:
         embedding:
           options:
             model: text-embedding-004
-    vectorstore:
-      pgvector:
-        index-type: HNSW
-        distance-type: COSINE_DISTANCE
-        dimensions: 768
 
-  data:
-    mongodb:
-      uri: ${MONGODB_URI:mongodb://localhost:27017/financeapp}
 
 # ─────────────────────────────────────────────────────────────
 # ACTUATOR
@@ -143,3 +135,10 @@ intelligence:
   chunking:
     size: 512
     overlap: 64
+  sec:
+    base-url: https://data.sec.gov
+    www-url: https://www.sec.gov
+    user-agent: cairedine.finance cairedine@gmail.com
+  summarization:
+    max-sections-tokens: 80000
+  filing-ttl-days: 90
