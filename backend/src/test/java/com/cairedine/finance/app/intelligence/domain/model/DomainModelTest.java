@@ -11,53 +11,59 @@ import static org.assertj.core.api.Assertions.assertThat;
 class DomainModelTest {
 
     @Test
-    @DisplayName("Devrait instancier correctement l'enum InsightType et ses instructions")
-    void testInsightType() {
-        assertThat(InsightType.EARNINGS_SUMMARY.getPromptInstruction()).contains("résultats financiers");
-        assertThat(InsightType.RISK_FACTORS.getPromptInstruction()).contains("facteurs de risque");
-        assertThat(InsightType.CAPITAL_ALLOCATION.getPromptInstruction()).contains("allocation du capital");
+    @DisplayName("Devrait instancier correctement l'enum InsightSection et ses propriétés")
+    void testInsightSection() {
+        assertThat(InsightSection.RISK_FACTORS.sectionTitle()).isEqualTo("Risk Factors");
+        assertThat(InsightSection.MANAGEMENT_DISCUSSION.sectionTitle()).isEqualTo("Management Discussion");
+        assertThat(InsightSection.GUIDANCE.sectionTitle()).isEqualTo("Guidance");
+        assertThat(InsightSection.RISK_FACTORS.summaryInstruction()).contains("principal risks");
     }
 
     @Test
-    @DisplayName("Devrait créer un CompanyDocument à partir d'un SecFiling via la méthode factory")
-    void testCompanyDocumentFactory() {
-        SecFiling filing = new SecFiling("000123-24-001", "10-K", "2024-12-31", "<html/>", Instant.now());
-        CompanyDocument doc = CompanyDocument.from(filing, "AAPL", 12);
+    @DisplayName("Devrait vérifier SectionContent et méthode isEmpty")
+    void testSectionContentIsEmpty() {
+        SectionContent emptyContent = new SectionContent(InsightSection.RISK_FACTORS, "", 0);
+        SectionContent nullContent = new SectionContent(InsightSection.RISK_FACTORS, null, 0);
+        SectionContent validContent = new SectionContent(InsightSection.RISK_FACTORS, "Text content", 2);
 
-        assertThat(doc.ticker()).isEqualTo("AAPL");
-        assertThat(doc.source()).isEqualTo("SEC_EDGAR");
-        assertThat(doc.accessionNumber()).isEqualTo("000123-24-001");
-        assertThat(doc.formType()).isEqualTo("10-K");
-        assertThat(doc.chunkCount()).isEqualTo(12);
-        assertThat(doc.id()).isNotNull();
+        assertThat(emptyContent.isEmpty()).isTrue();
+        assertThat(nullContent.isEmpty()).isTrue();
+        assertThat(validContent.isEmpty()).isFalse();
     }
 
     @Test
-    @DisplayName("Devrait vérifier la présence de sources dans CompanyInsight")
-    void testCompanyInsightHasDocuments() {
-        CompanyInsight insightWithSources = new CompanyInsight(
+    @DisplayName("Devrait tester CompanyInsight et hasSupplyChainData")
+    void testCompanyInsight() {
+        CompanyInsight insightWithSupplyChain = new CompanyInsight(
                 "AAPL",
-                InsightType.EARNINGS_SUMMARY,
-                "Résumé",
+                "10-K",
+                "2024",
+                "0000320193-24-000106",
+                "Excellente performance globale...",
+                "Marges opérationnelles en hausse à 30.5%...",
+                List.of("Risque de change", "Pression réglementaire"),
+                "Guidance positive pour Q1 2025",
+                "Diversification des fournisseurs en cours",
+                List.of("Lancement Apple Vision Pro"),
+                Instant.now()
+        );
+
+        CompanyInsight insightWithoutSupplyChain = new CompanyInsight(
+                "AAPL",
+                "10-K",
+                "2024",
+                "0000320193-24-000106",
+                "Performance...",
+                "Marges...",
+                List.of("Risque"),
+                "Guidance",
+                null,
                 List.of("Point 1"),
-                List.of("Risque 1"),
-                "Perspectives",
-                List.of("000123-24-001"),
                 Instant.now()
         );
 
-        CompanyInsight insightWithoutSources = new CompanyInsight(
-                "AAPL",
-                InsightType.EARNINGS_SUMMARY,
-                "Résumé",
-                List.of(),
-                List.of(),
-                "Perspectives",
-                List.of(),
-                Instant.now()
-        );
-
-        assertThat(insightWithSources.hasDocuments()).isTrue();
-        assertThat(insightWithoutSources.hasDocuments()).isFalse();
+        assertThat(insightWithSupplyChain.hasSupplyChainData()).isTrue();
+        assertThat(insightWithoutSupplyChain.hasSupplyChainData()).isFalse();
+        assertThat(insightWithSupplyChain.ticker()).isEqualTo("AAPL");
     }
 }

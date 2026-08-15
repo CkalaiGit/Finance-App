@@ -1,4 +1,12 @@
 spring:
+  cache:
+    type: caffeine
+    cache-names:
+      - analysis-metrics
+      - company-profiles
+    caffeine:
+      spec: maximumSize=500,expireAfterWrite=1h,recordStats
+
   ai:
     google:
       genai:
@@ -23,12 +31,10 @@ spring:
     compose:
       enabled: false
 
-  # Désactive l'auto-configuration OAuth2 en test
+  # Désactive l'auto-configuration OAuth2 et Google GenAI en test
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration
-      # ── Ajout Spring AI 2.0.0 — évite les appels réseau Google en test
       - org.springframework.ai.autoconfigure.model.googlegenai.GoogleGenAiAutoConfiguration
 
   security:
@@ -42,9 +48,13 @@ fmp:
   base-url: https://financialmodelingprep.com
 
 # ─────────────────────────────────────────────────────────────
-# INTELLIGENCE — chunking (valeurs neutres en test)
+# INTELLIGENCE — configuration neutre pour les tests
 # ─────────────────────────────────────────────────────────────
 intelligence:
-  chunking:
-    size: 512
-    overlap: 64
+  sec:
+    base-url: https://data.sec.gov
+    www-url: https://www.sec.gov
+    user-agent: cairedine.finance test@cairedine.com
+  summarization:
+    max-sections-tokens: 80000
+    filing-ttl-days: 90

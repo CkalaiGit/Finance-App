@@ -41,6 +41,9 @@ class FinancialAnalysisE2ETest {
     @Autowired
     private IFinancialAnalysisRepository repository;
 
+    @Autowired(required = false)
+    private org.springframework.cache.CacheManager cacheManager;
+
     private RestClient restClient;
 
     @MockitoBean
@@ -52,6 +55,14 @@ class FinancialAnalysisE2ETest {
     @BeforeEach
     void setUp() {
         repository.deleteAll();
+        if (cacheManager != null) {
+            cacheManager.getCacheNames().forEach(name -> {
+                var cache = cacheManager.getCache(name);
+                if (cache != null) {
+                    cache.clear();
+                }
+            });
+        }
 
         // 1. Mock du JWT pour passer la sécurité Spring
         Jwt jwt = Jwt.withTokenValue("fake-token")
