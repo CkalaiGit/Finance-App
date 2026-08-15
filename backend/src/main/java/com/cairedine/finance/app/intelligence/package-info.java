@@ -3,7 +3,8 @@
         "shared::exceptions",
         "shared::web",
         "webclient",
-        "financialanalysis"
+        "financialanalysis",
+        "watchlist"
     }
 )
 package com.cairedine.finance.app.intelligence;
