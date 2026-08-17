@@ -4,13 +4,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
+import java.net.http.HttpClient;
 import java.time.Duration;
 
 /**
  * Configuration des clients HTTP RestClient dédiés à SEC EDGAR.
+ * Utilise java.net.http.HttpClient (JdkClientHttpRequestFactory) optimisé pour Java 25 et les Virtual Threads.
  */
 @Configuration
 public class SecRestClientConfig {
@@ -30,15 +32,18 @@ public class SecRestClientConfig {
     }
 
     private RestClient buildRestClient(String baseUrl, String userAgent) {
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(Duration.ofSeconds(10));
+        HttpClient httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(10))
+                .followRedirects(HttpClient.Redirect.NORMAL)
+                .build();
+
+        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
         requestFactory.setReadTimeout(Duration.ofSeconds(30));
 
         return RestClient.builder()
                 .baseUrl(baseUrl)
                 .requestFactory(requestFactory)
                 .defaultHeader(HttpHeaders.USER_AGENT, userAgent)
-                .defaultHeader(HttpHeaders.ACCEPT_ENCODING, "gzip, deflate")
                 .build();
     }
 }

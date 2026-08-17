@@ -1,11 +1,11 @@
 package com.cairedine.finance.app.intelligence.infrastructure.sec;
 
-import com.cairedine.finance.app.intelligence.infrastructure.sec.dto.SecCompanyTickerDto;
 import com.cairedine.finance.app.shared.exceptions.TickerNotFoundException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -22,6 +22,7 @@ import java.util.Map;
 public class CikResolverService {
 
     private final RestClient secWwwRestClient;
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private volatile Map<String, String> tickerToCik = Map.of();
 
     public CikResolverService(@Qualifier("secWwwRestClient") RestClient secWwwRestClient) {
@@ -32,18 +33,24 @@ public class CikResolverService {
     public void loadMappings() {
         log.info("Chargement du mapping officiel SEC Ticker -> CIK...");
         try {
-            Map<String, SecCompanyTickerDto> response = secWwwRestClient.get()
+            String rawJson = secWwwRestClient.get()
                     .uri("/files/company_tickers.json")
                     .retrieve()
-                    .body(new ParameterizedTypeReference<>() {});
+                    .body(String.class);
 
-            if (response != null && !response.isEmpty()) {
-                Map<String, String> map = new HashMap<>(response.size());
-                for (SecCompanyTickerDto dto : response.values()) {
-                    if (dto.ticker() != null && dto.cikStr() != null) {
-                        map.put(dto.ticker().trim().toUpperCase(), dto.formattedCik());
+            if (rawJson != null && !rawJson.isBlank()) {
+                JsonNode root = objectMapper.readTree(rawJson);
+                Map<String, String> map = new HashMap<>(root.size());
+
+                root.fields().forEachRemaining(entry -> {
+                    JsonNode node = entry.getValue();
+                    if (node.hasNonNull("ticker") && node.hasNonNull("cik_str")) {
+                        String ticker = node.get("ticker").asText().trim().toUpperCase();
+                        long cikNum = node.get("cik_str").asLong();
+                        map.put(ticker, String.format("%010d", cikNum));
                     }
-                }
+                });
+
                 this.tickerToCik = Collections.unmodifiableMap(map);
                 log.info("Mapping SEC chargé avec succès : {} entreprises référencées.", this.tickerToCik.size());
             } else {
