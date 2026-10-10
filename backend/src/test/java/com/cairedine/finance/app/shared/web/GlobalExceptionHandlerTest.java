@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -44,7 +45,8 @@ class GlobalExceptionHandlerTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
-                .andExpect(jsonPath("$.detail").value("Ticker not found : INVALID"));
+                .andExpect(jsonPath("$.detail").value("Ticker not found : INVALID"))
+                .andExpect(jsonPath("$.code").value("TICKER_NOT_FOUND"));
     }
 
     @Test
@@ -55,7 +57,8 @@ class GlobalExceptionHandlerTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.status").value(503))
-                .andExpect(jsonPath("$.detail").value("Market data unavailable for : AAPL"));
+                .andExpect(jsonPath("$.detail").value("Market data unavailable for : AAPL"))
+                .andExpect(jsonPath("$.code").value("MARKET_DATA_UNAVAILABLE"));
     }
 
     @Test
@@ -92,6 +95,63 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.detail").value("Le ticker ne peut pas être vide"))
                 .andExpect(jsonPath("$.code").value("INVALID_TICKER"));
+    }
+
+    @Test
+    @DisplayName("WatchlistException → 400 avec code WATCHLIST_ERROR")
+    void watchlistException_shouldReturn400WithCode() throws Exception {
+        mockMvc.perform(get("/test/watchlist-error")
+                        .with(jwt())
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("WATCHLIST_ERROR"));
+    }
+
+    @Test
+    @DisplayName("AccessDeniedException → 403 avec code ACCESS_DENIED")
+    void accessDeniedException_shouldReturn403WithCode() throws Exception {
+        mockMvc.perform(get("/test/access-denied")
+                        .with(jwt())
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
+    }
+
+    @Test
+    @DisplayName("AuthenticationException → 401 avec code UNAUTHENTICATED")
+    void authenticationException_shouldReturn401WithCode() throws Exception {
+        mockMvc.perform(get("/test/unauthenticated")
+                        .with(jwt())
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
+    }
+
+    @Test
+    @DisplayName("Corps invalide → 400 avec erreurs de validation")
+    void invalidRequestBody_shouldReturn400WithValidationErrors() throws Exception {
+        mockMvc.perform(post("/test/invalid-body")
+                        .with(jwt())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\" \"}")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.errors[0].field").value("name"))
+                .andExpect(jsonPath("$.errors[0].message").isNotEmpty());
+    }
+
+    @Test
+    @DisplayName("ConstraintViolationException → 400 avec code VALIDATION_ERROR")
+    void constraintViolationException_shouldReturn400WithValidationCode() throws Exception {
+        mockMvc.perform(get("/test/constraint-violation")
+                        .with(jwt())
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.errors").isArray());
     }
 
     @Test

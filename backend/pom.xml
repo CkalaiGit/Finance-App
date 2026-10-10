@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.1.0</version>
+        <version>4.1.1</version>
         <relativePath/>
     </parent>
 
@@ -20,9 +20,10 @@
 
     <properties>
         <java.version>25</java.version>
-        <spring-ai.version>2.0.0</spring-ai.version>
-        <spring-modulith.version>2.1.0</spring-modulith.version>
+        <spring-ai.version>2.0.1</spring-ai.version>
+        <spring-modulith.version>2.1.1</spring-modulith.version>
         <archunit.version>1.3.0</archunit.version>
+        <surefire.excludedGroups>live</surefire.excludedGroups>
     </properties>
 
     <dependencies>
@@ -87,7 +88,7 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>3.0.1</version>
+            <version>3.0.3</version>
         </dependency>
 
         <!-- ─────────────────────────────────────────────
@@ -278,12 +279,28 @@
                     <includes>
                         <include>**/*Test.java</include>
                         <include>**/*Tests.java</include>
+                        <include>**/*IntTest.java</include>
                     </includes>
+                    <excludedGroups>${surefire.excludedGroups}</excludedGroups>
                 </configuration>
             </plugin>
 
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>live-tests</id>
+            <activation>
+                <property>
+                    <name>groups</name>
+                    <value>live</value>
+                </property>
+            </activation>
+            <properties>
+            </properties>
+        </profile>
+    </profiles>
 
     <repositories>
         <repository>

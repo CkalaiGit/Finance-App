@@ -2,10 +2,12 @@ package com.cairedine.finance.app.intelligence.infrastructure.sec;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.web.client.RestClient;
 
 import java.util.Map;
 
+@Tag("live")
 class DebugSecJsonTest {
 
     @Test
@@ -15,6 +17,7 @@ class DebugSecJsonTest {
 
         try {
             String rawJson = client.get().uri("/files/company_tickers.json").retrieve().body(String.class);
+            assert rawJson != null;
             System.out.println("Raw JSON length: " + rawJson.length());
             System.out.println("First 300 chars: " + rawJson.substring(0, Math.min(300, rawJson.length())));
 

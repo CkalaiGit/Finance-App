@@ -14,15 +14,19 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
 import java.util.HashSet;
+import java.util.List;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -179,6 +183,20 @@ class WatchlistControllerE2ETest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.keycloakId").value(KEYCLOAK_ID))
             .andExpect(jsonPath("$.tickers", hasSize(0)));
+    }
+
+    @Test
+    @DisplayName("Devrait retourner 401 si le JWT ne contient pas de subject")
+    void shouldReturn401IfJwtHasNoSubject() throws Exception {
+        Jwt jwtWithoutSubject = Jwt.withTokenValue("token")
+            .header("alg", "none")
+            .issuer("https://issuer.example")
+            .build();
+
+        mockMvc.perform(get("/api/v1/watchlist")
+                .with(authentication(new JwtAuthenticationToken(jwtWithoutSubject, List.of()))))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.code").value("UNAUTHENTICATED"));
     }
 
     @Test

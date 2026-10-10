@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
@@ -122,7 +123,7 @@ public class WatchlistController {
         String keycloakId = jwt.getSubject();
 
         if (keycloakId == null || keycloakId.isBlank()) {
-            throw new IllegalArgumentException("keycloakId non trouvé dans le JWT");
+            throw new InsufficientAuthenticationException("keycloakId non trouvé dans le JWT");
         }
 
         return keycloakId;
@@ -150,4 +151,3 @@ public class WatchlistController {
             boolean exists) {
     }
 }
-
