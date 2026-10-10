@@ -87,8 +87,8 @@ class WatchlistControllerE2ETest {
     }
 
     @Test
-    @DisplayName("Devrait retourner 400 si le ticker existe déjà")
-    void shouldReturn400IfTickerAlreadyExists() throws Exception {
+    @DisplayName("Devrait retourner 409 si le ticker existe déjà")
+    void shouldReturn409IfTickerAlreadyExists() throws Exception {
         // Arrange : Ajouter le ticker d'abord
         WatchlistItemJpaEntity item = WatchlistItemJpaEntity.builder()
             .keycloakId(KEYCLOAK_ID)
@@ -102,7 +102,7 @@ class WatchlistControllerE2ETest {
                     .jwt(jwt -> jwt.subject(KEYCLOAK_ID))
                 )
             )
-            .andExpect(status().isBadRequest());
+            .andExpect(status().isConflict());
     }
 
     @Test
@@ -130,15 +130,15 @@ class WatchlistControllerE2ETest {
     }
 
     @Test
-    @DisplayName("Devrait retourner 400 si le ticker à supprimer n'existe pas")
-    void shouldReturn400IfTickerToDeleteNotFound() throws Exception {
+    @DisplayName("Devrait retourner 404 si le ticker à supprimer n'existe pas")
+    void shouldReturn404IfTickerToDeleteNotFound() throws Exception {
         // Act & Assert
         mockMvc.perform(delete("/api/v1/watchlist/{ticker}", TICKER_AAPL)
                 .with(jwt()
                     .jwt(jwt -> jwt.subject(KEYCLOAK_ID))
                 )
             )
-            .andExpect(status().isBadRequest());
+            .andExpect(status().isNotFound());
     }
 
     @Test

@@ -36,7 +36,8 @@ public class WatchlistController {
     @Operation(summary = "Ajouter un ticker à la watchlist")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Ticker ajouté avec succès"),
-        @ApiResponse(responseCode = "400", description = "Ticker invalide ou déjà existant"),
+        @ApiResponse(responseCode = "400", description = "Ticker invalide"),
+        @ApiResponse(responseCode = "409", description = "Ticker déjà existant dans la watchlist"),
         @ApiResponse(responseCode = "401", description = "Non authentifié"),
         @ApiResponse(responseCode = "500", description = "Erreur serveur")
     })
@@ -60,7 +61,7 @@ public class WatchlistController {
     @Operation(summary = "Supprimer un ticker de la watchlist")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Ticker supprimé avec succès"),
-        @ApiResponse(responseCode = "400", description = "Ticker n'existe pas dans la watchlist"),
+        @ApiResponse(responseCode = "404", description = "Ticker n'existe pas dans la watchlist"),
         @ApiResponse(responseCode = "401", description = "Non authentifié"),
         @ApiResponse(responseCode = "500", description = "Erreur serveur")
     })

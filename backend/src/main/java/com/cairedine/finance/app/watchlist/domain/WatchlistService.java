@@ -1,5 +1,8 @@
 package com.cairedine.finance.app.watchlist.domain;
 
+import com.cairedine.finance.app.shared.exceptions.InvalidTickerException;
+import com.cairedine.finance.app.shared.exceptions.TickerAlreadyInWatchlistException;
+import com.cairedine.finance.app.shared.exceptions.TickerNotInWatchlistException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,12 +23,12 @@ public class WatchlistService {
      */
     public void addTickerToWatchlist(String keycloakId, String ticker) {
         if (ticker == null || ticker.isBlank()) {
-            throw new IllegalArgumentException("Le ticker ne peut pas être vide");
+            throw new InvalidTickerException("Le ticker ne peut pas être vide");
         }
 
         // Vérifier que le ticker n'existe pas déjà
         if (watchlistRepository.existsTickerInWatchlist(keycloakId, ticker)) {
-            throw new IllegalStateException(String.format("Le ticker %s existe déjà dans la watchlist", ticker));
+            throw new TickerAlreadyInWatchlistException(ticker);
         }
 
         watchlistRepository.addTickerToWatchlist(keycloakId, ticker);
@@ -36,12 +39,12 @@ public class WatchlistService {
      */
     public void removeTickerFromWatchlist(String keycloakId, String ticker) {
         if (ticker == null || ticker.isBlank()) {
-            throw new IllegalArgumentException("Le ticker ne peut pas être vide");
+            throw new InvalidTickerException("Le ticker ne peut pas être vide");
         }
 
         // Vérifier que le ticker existe
         if (!watchlistRepository.existsTickerInWatchlist(keycloakId, ticker)) {
-            throw new IllegalStateException(String.format("Le ticker %s n'existe pas dans la watchlist", ticker));
+            throw new TickerNotInWatchlistException(ticker);
         }
 
         watchlistRepository.removeTickerFromWatchlist(keycloakId, ticker);

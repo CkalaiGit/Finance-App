@@ -1,5 +1,5 @@
 @ApplicationModule(
-    allowedDependencies = {"user"}
+    allowedDependencies = {"user", "shared::exceptions"}
 )
 package com.cairedine.finance.app.watchlist;
 

@@ -1,5 +1,8 @@
 package com.cairedine.finance.app.watchlist.domain;
 
+import com.cairedine.finance.app.shared.exceptions.InvalidTickerException;
+import com.cairedine.finance.app.shared.exceptions.TickerAlreadyInWatchlistException;
+import com.cairedine.finance.app.shared.exceptions.TickerNotInWatchlistException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -46,24 +49,25 @@ class WatchlistServiceTest {
     }
 
     @Test
-    @DisplayName("Devrait lever une exception si le ticker existe déjà")
-    void shouldThrowExceptionIfTickerAlreadyExists() {
+    @DisplayName("Devrait lever TickerAlreadyInWatchlistException si le ticker existe déjà")
+    void shouldThrowTickerAlreadyInWatchlistExceptionIfTickerAlreadyExists() {
         // Arrange
         when(watchlistRepository.existsTickerInWatchlist(KEYCLOAK_ID, TICKER_AAPL))
             .thenReturn(true);
 
         // Act & Assert
         assertThatThrownBy(() -> watchlistService.addTickerToWatchlist(KEYCLOAK_ID, TICKER_AAPL))
-            .isInstanceOf(IllegalStateException.class)
+            .isInstanceOf(TickerAlreadyInWatchlistException.class)
             .hasMessageContaining("existe déjà");
     }
 
     @Test
-    @DisplayName("Devrait lever une exception si le ticker est vide")
-    void shouldThrowExceptionIfTickerIsEmpty() {
+    @DisplayName("Devrait lever InvalidTickerException si le ticker est vide")
+    void shouldThrowInvalidTickerExceptionIfTickerIsEmpty() {
         // Act & Assert
         assertThatThrownBy(() -> watchlistService.addTickerToWatchlist(KEYCLOAK_ID, ""))
-            .isInstanceOf(IllegalArgumentException.class);
+            .isInstanceOf(InvalidTickerException.class)
+            .hasMessageContaining("ticker ne peut pas être vide");
     }
 
     @Test
@@ -81,15 +85,15 @@ class WatchlistServiceTest {
     }
 
     @Test
-    @DisplayName("Devrait lever une exception si le ticker n'existe pas")
-    void shouldThrowExceptionIfTickerNotFound() {
+    @DisplayName("Devrait lever TickerNotInWatchlistException si le ticker n'existe pas")
+    void shouldThrowTickerNotInWatchlistExceptionIfTickerNotFound() {
         // Arrange
         when(watchlistRepository.existsTickerInWatchlist(KEYCLOAK_ID, TICKER_AAPL))
             .thenReturn(false);
 
         // Act & Assert
         assertThatThrownBy(() -> watchlistService.removeTickerFromWatchlist(KEYCLOAK_ID, TICKER_AAPL))
-            .isInstanceOf(IllegalStateException.class)
+            .isInstanceOf(TickerNotInWatchlistException.class)
             .hasMessageContaining("n'existe pas");
     }
 

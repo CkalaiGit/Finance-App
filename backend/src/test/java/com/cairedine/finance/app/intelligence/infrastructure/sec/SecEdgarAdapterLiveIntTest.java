@@ -13,7 +13,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 class SecEdgarAdapterLiveIntTest {
 
     private SecEdgarAdapter adapter;
-    private CikResolverService cikResolver;
 
     @BeforeEach
     void setUp() {
@@ -23,8 +22,8 @@ class SecEdgarAdapterLiveIntTest {
         RestClient secDataClient = config.secDataRestClient("https://data.sec.gov", userAgent);
         RestClient secWwwClient = config.secWwwRestClient("https://www.sec.gov", userAgent);
 
-        this.cikResolver = new CikResolverService(secWwwClient);
-        this.cikResolver.loadMappings();
+        CikResolverService cikResolver = new CikResolverService(secWwwClient);
+        cikResolver.loadMappings();
 
         this.adapter = new SecEdgarAdapter(secDataClient, secWwwClient, cikResolver);
     }
