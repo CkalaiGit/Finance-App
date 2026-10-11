@@ -7,7 +7,6 @@ import com.cairedine.finance.app.financialanalysis.domain.model.QualityMetrics;
 import com.cairedine.finance.app.financialanalysis.domain.model.ValueMetrics;
 import com.cairedine.finance.app.financialanalysis.domain.port.IFinancialAnalysisService;
 import com.cairedine.finance.app.financialanalysis.domain.port.IMetricsCachePort;
-import com.cairedine.finance.app.shared.exceptions.MarketDataUnavailableException;
 import com.cairedine.finance.app.shared.exceptions.TickerNotFoundException;
 import com.cairedine.finance.app.webclient.*;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +20,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 
 import static com.cairedine.finance.app.financialanalysis.domain.FinancialMath.calculateCAGR;
@@ -34,128 +35,132 @@ public class FinancialAnalysisServiceImpl implements IFinancialAnalysisService {
     private final IMarketDataPort marketDataPort;
     private final IMetricsCachePort metricsCache;
 
-     @Override
-     @Cacheable(value = "analysis-metrics", key = "#ticker.toUpperCase()")
-     public List<FullMetrics> computeMetrics(String ticker) {
-         String normalizedTicker = ticker.toUpperCase();
+    /**
+     * Caffeine protège le quota FMP pendant une heure ; la table JPA conserve l'historique
+     * persistant des métriques par exercice.
+     */
+    @Override
+    @Cacheable(value = "analysis-metrics", key = "#ticker.toUpperCase()")
+    public List<FullMetrics> computeMetrics(String ticker) {
+        String normalizedTicker = ticker.toUpperCase();
+        List<IncomeStatementRecord> incomeStatements =
+                marketDataPort.fetchIncomeStatements(normalizedTicker, 4);
 
-         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-             var incomeFuture = CompletableFuture.supplyAsync(
-                     () -> marketDataPort.fetchIncomeStatements(normalizedTicker, 4), executor);
+        if (incomeStatements.isEmpty()) {
+            throw new TickerNotFoundException(normalizedTicker);
+        }
 
-             List<IncomeStatementRecord> incomeStatements = incomeFuture.join();
-             if (incomeStatements.isEmpty()) {
-                 throw new TickerNotFoundException(normalizedTicker);
-             }
+        String currentFiscalYearEndDate = incomeStatements.getFirst().date();
 
-             String currentFiscalYearEndDate = incomeStatements.getFirst().date();
+        if (metricsCache.findByTickerAndFiscalYear(normalizedTicker, currentFiscalYearEndDate).isEmpty()) {
+            FullMetrics calculated = calculateMetricsFromApi(normalizedTicker, incomeStatements);
+            try {
+                metricsCache.save(normalizedTicker, calculated);
+            } catch (DataIntegrityViolationException e) {
+                log.info("Les métriques pour {} à la date {} ont déjà été calculées et sauvées par une autre requête concurrentielle.",
+                        normalizedTicker, currentFiscalYearEndDate);
+            }
+        }
 
-             if (metricsCache.findByTickerAndFiscalYear(normalizedTicker, currentFiscalYearEndDate).isEmpty()) {
-                 FullMetrics calculated = calculateMetricsFromApi(normalizedTicker, incomeStatements);
-                 try {
-                     metricsCache.save(normalizedTicker, calculated);
-                 } catch (DataIntegrityViolationException e) {
-                    log.info("Les métriques pour {} à la date {} ont déjà été calculées et sauvées par une autre requête concurrentielle.",
-                             normalizedTicker, currentFiscalYearEndDate);
-                 }
-             }
+        return metricsCache.findAllByTicker(normalizedTicker);
+    }
 
-             // 3. Return the full history
-             return metricsCache.findAllByTicker(normalizedTicker);
+    private FullMetrics calculateMetricsFromApi(String ticker, List<IncomeStatementRecord> preFetchedIncome) {
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
 
-         } catch (Exception e) {
-             throw translate(e, "Error computing historical metrics for " + ticker);
-         }
-     }
+            var cashFlowFuture = CompletableFuture.supplyAsync(
+                    () -> marketDataPort.fetchCashFlowStatements(ticker, 2), executor);
 
-     private FullMetrics calculateMetricsFromApi(String ticker, List<IncomeStatementRecord> preFetchedIncome) {
-         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var keyMetricsFuture = CompletableFuture.supplyAsync(
+                    () -> marketDataPort.fetchKeyMetricsTtm(ticker), executor);
 
-             var cashFlowFuture = CompletableFuture.supplyAsync(
-                     () -> marketDataPort.fetchCashFlowStatements(ticker, 2), executor);
+            var analystEstimatesFuture = CompletableFuture.supplyAsync(
+                    () -> marketDataPort.fetchAnalystEstimates(ticker), executor);
 
-             var keyMetricsFuture = CompletableFuture.supplyAsync(
-                     () -> marketDataPort.fetchKeyMetricsTtm(ticker), executor);
+            List<CashFlowRecord> cashFlowStatements = join(cashFlowFuture);
+            Optional<KeyMetricsRecord> keyMetricsOpt = join(keyMetricsFuture);
+            List<AnalystEstimateRecord> analystEstimates = join(analystEstimatesFuture);
 
-             var analystEstimatesFuture = CompletableFuture.supplyAsync(
-                     () -> marketDataPort.fetchAnalystEstimates(ticker), executor);
+            if (preFetchedIncome.size() < 4 || cashFlowStatements.size() < 2) {
+                throw new TickerNotFoundException(ticker + " (Insufficient data)");
+            }
 
-             List<CashFlowRecord> cashFlowStatements = cashFlowFuture.join();
-             Optional<KeyMetricsRecord> keyMetricsOpt = keyMetricsFuture.join();
-             List<AnalystEstimateRecord> analystEstimates = analystEstimatesFuture.join();
+            IncomeStatementRecord ttmIncome = preFetchedIncome.getFirst();
+            CashFlowRecord ttmCashFlow = cashFlowStatements.getFirst();
+            String fiscalYearEndDate = ttmIncome.date();
+            Instant marketDataAsOf = Instant.now();
 
-             if (preFetchedIncome.size() < 4 || cashFlowStatements.size() < 2) {
-                 throw new TickerNotFoundException(ticker + " (Insufficient data)");
-             }
+            // Growth
+            BigDecimal revenueGrowth3Y = calculateCAGR(ttmIncome.revenue(), preFetchedIncome.get(3).revenue());
+            BigDecimal ebitdaGrowth3Y = calculateCAGR(ttmIncome.ebitda(), preFetchedIncome.get(3).ebitda());
+            BigDecimal epsGrowth3Y = calculateCAGR(ttmIncome.eps(), preFetchedIncome.get(3).eps());
+            BigDecimal fcfGrowth = calculateGrowth(ttmCashFlow.freeCashFlow(), cashFlowStatements.get(1).freeCashFlow());
+            GrowthMetrics growth = new GrowthMetrics(revenueGrowth3Y, ebitdaGrowth3Y, epsGrowth3Y, fcfGrowth);
 
-             IncomeStatementRecord ttmIncome = preFetchedIncome.getFirst();
-             CashFlowRecord ttmCashFlow = cashFlowStatements.getFirst();
-             String fiscalYearEndDate = ttmIncome.date();
-             Instant marketDataAsOf = Instant.now();
+            // Value & Quality base from KeyMetrics
+            BigDecimal roic = BigDecimal.ZERO;
+            BigDecimal netDebtToEbitda = BigDecimal.ZERO;
+            BigDecimal enterpriseValue = BigDecimal.ZERO;
+            BigDecimal peRatioTTM = BigDecimal.ZERO;
+            BigDecimal evToSales = BigDecimal.ZERO;
 
-             // Growth
-             BigDecimal revenueGrowth3Y = calculateCAGR(ttmIncome.revenue(), preFetchedIncome.get(3).revenue());
-             BigDecimal ebitdaGrowth3Y = calculateCAGR(ttmIncome.ebitda(), preFetchedIncome.get(3).ebitda());
-             BigDecimal epsGrowth3Y = calculateCAGR(ttmIncome.eps(), preFetchedIncome.get(3).eps());
-             BigDecimal fcfGrowth = calculateGrowth(ttmCashFlow.freeCashFlow(), cashFlowStatements.get(1).freeCashFlow());
-             GrowthMetrics growth = new GrowthMetrics(revenueGrowth3Y, ebitdaGrowth3Y, epsGrowth3Y, fcfGrowth);
+            if (keyMetricsOpt.isPresent()) {
+                KeyMetricsRecord km = keyMetricsOpt.get();
+                roic = FinancialMath.safeValue(km.returnOnInvestedCapitalTTM());
+                netDebtToEbitda = FinancialMath.safeValue(km.netDebtToEbitda());
+                enterpriseValue = FinancialMath.safeValue(km.enterpriseValueTTM());
+                peRatioTTM = FinancialMath.safeValue(km.peRatioTTM());
+                evToSales = FinancialMath.safeValue(km.evToSalesTTM());
+            }
 
-             // Value & Quality base from KeyMetrics
-             BigDecimal roic = BigDecimal.ZERO;
-             BigDecimal netDebtToEbitda = BigDecimal.ZERO;
-             BigDecimal enterpriseValue = BigDecimal.ZERO;
-             BigDecimal peRatioTTM = BigDecimal.ZERO;
-             BigDecimal evToSales = BigDecimal.ZERO;
+            // Value
+            // EV (instantanée, TTM boursier) / EBIT (comptable, dernière clôture)
+            // Ratio cohérent en convention marché — EV et EBIT doivent couvrir 12 mois TTM
+            // KeyMetrics FMP retourne un EV TTM aligné sur les 12 derniers mois.
+            BigDecimal evToEbit = FinancialMath.calculateRatio(enterpriseValue, ttmIncome.operatingIncome());
+            BigDecimal epsGrowthForward = BigDecimal.ZERO;
+            if (analystEstimates.size() >= 2) {
+                BigDecimal epsNext = analystEstimates.get(0).epsAvg();
+                BigDecimal epsCurrent = analystEstimates.get(1).epsAvg();
+                epsGrowthForward = calculateGrowth(epsNext, epsCurrent);
+            }
+            BigDecimal pegRatioForward = FinancialMath.calculatePegRatio(peRatioTTM, epsGrowthForward);
+            ValueMetrics value = new ValueMetrics(evToEbit, peRatioTTM, pegRatioForward, evToSales);
 
-             if (keyMetricsOpt.isPresent()) {
-                 KeyMetricsRecord km = keyMetricsOpt.get();
-                 roic = FinancialMath.safeValue(km.returnOnInvestedCapitalTTM());
-                 netDebtToEbitda = FinancialMath.safeValue(km.netDebtToEbitda());
-                 enterpriseValue = FinancialMath.safeValue(km.enterpriseValueTTM());
-                 peRatioTTM = FinancialMath.safeValue(km.peRatioTTM());
-                 evToSales = FinancialMath.safeValue(km.evToSalesTTM());
-             }
+            // Quality
+            BigDecimal operatingMargin = FinancialMath.calculateRatio(ttmIncome.operatingIncome(), ttmIncome.revenue());
+            BigDecimal freeCashFlowMargin = FinancialMath.calculateRatio(ttmCashFlow.freeCashFlow(), ttmIncome.revenue());
+            BigDecimal sgaToRevenue = FinancialMath.calculateRatio(ttmIncome.sellingGeneralAndAdministrativeExpenses(), ttmIncome.revenue());
+            QualityMetrics quality = new QualityMetrics(roic, operatingMargin, netDebtToEbitda, freeCashFlowMargin, sgaToRevenue);
 
-             // Value
-             // EV (instantanée, TTM boursier) / EBIT (comptable, dernière clôture)
-             // Ratio cohérent en convention marché — EV et EBIT doivent couvrir 12 mois TTM
-             // KeyMetrics FMP retourne un EV TTM aligné sur les 12 derniers mois.
-             BigDecimal evToEbit = FinancialMath.calculateRatio(enterpriseValue, ttmIncome.operatingIncome());
-             BigDecimal epsGrowthForward = BigDecimal.ZERO;
-             if (analystEstimates.size() >= 2) {
-                 BigDecimal epsNext = analystEstimates.get(0).epsAvg();
-                 BigDecimal epsCurrent = analystEstimates.get(1).epsAvg();
-                 epsGrowthForward = calculateGrowth(epsNext, epsCurrent);
-             }
-             BigDecimal pegRatioForward = FinancialMath.calculatePegRatio(peRatioTTM, epsGrowthForward);
-             ValueMetrics value = new ValueMetrics(evToEbit, peRatioTTM, pegRatioForward, evToSales);
+            return new FullMetrics(growth, value, quality, fiscalYearEndDate, marketDataAsOf);
+        }
+    }
 
-             // Quality
-             BigDecimal operatingMargin = FinancialMath.calculateRatio(ttmIncome.operatingIncome(), ttmIncome.revenue());
-             BigDecimal freeCashFlowMargin = FinancialMath.calculateRatio(ttmCashFlow.freeCashFlow(), ttmIncome.revenue());
-             BigDecimal sgaToRevenue = FinancialMath.calculateRatio(ttmIncome.sellingGeneralAndAdministrativeExpenses(), ttmIncome.revenue());
-             QualityMetrics quality = new QualityMetrics(roic, operatingMargin, netDebtToEbitda, freeCashFlowMargin, sgaToRevenue);
+    private static <T> T join(CompletableFuture<T> future) {
+        try {
+            return future.join();
+        } catch (CompletionException exception) {
+            throw unwrap(exception);
+        }
+    }
 
-             return new FullMetrics(growth, value, quality, fiscalYearEndDate, marketDataAsOf);
-
-         } catch (Exception e) {
-             throw translate(e, "Error calculating current metrics for " + ticker);
-         }
-     }
-
-     /**
-      * Déballe l'exception d'origine (CompletionException des CompletableFuture) et relance
-      * les exceptions métier telles quelles, pour que le GlobalExceptionHandler leur attribue
-      * le bon code HTTP (404 pour un ticker inconnu, 503 si la source de données est indisponible).
-      * Toute autre erreur est enveloppée dans une RuntimeException avec le contexte.
-      */
-     private static RuntimeException translate(Exception e, String context) {
-         Throwable cause = e.getCause() != null ? e.getCause() : e;
-         if (cause instanceof TickerNotFoundException tnf) return tnf;
-         if (cause instanceof MarketDataUnavailableException mdu) return mdu;
-         return new RuntimeException(context, cause);
-     }
-
-
+    private static RuntimeException unwrap(Throwable exception) {
+        if (exception instanceof CompletionException || exception instanceof ExecutionException) {
+            Throwable cause = exception.getCause();
+            if (cause instanceof RuntimeException runtimeException) {
+                return runtimeException;
+            }
+            if (cause instanceof Error error) {
+                throw error;
+            }
+            return exception instanceof RuntimeException runtimeException
+                    ? runtimeException
+                    : new CompletionException(exception);
+        }
+        if (exception instanceof RuntimeException runtimeException) return runtimeException;
+        if (exception instanceof Error error) throw error;
+        return new CompletionException(exception);
+    }
 
 }

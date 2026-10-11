@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataAccessResourceFailureException;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -279,6 +280,7 @@ class FinancialAnalysisServiceImplTest {
         when(marketDataPort.fetchIncomeStatements(TICKER, 4)).thenThrow(new MarketDataUnavailableException(TICKER));
 
         assertThrows(MarketDataUnavailableException.class, () -> financialAnalysisService.computeMetrics(TICKER));
+        verify(marketDataPort, times(1)).fetchIncomeStatements(TICKER, 4);
     }
 
     @Test
@@ -289,5 +291,20 @@ class FinancialAnalysisServiceImplTest {
         when(marketDataPort.fetchCashFlowStatements(TICKER, 2)).thenThrow(new MarketDataUnavailableException(TICKER));
 
         assertThrows(MarketDataUnavailableException.class, () -> financialAnalysisService.computeMetrics(TICKER));
+    }
+
+    @Test
+    @DisplayName("Une erreur d'accès aux données remonte sans être enveloppée")
+    void shouldPropagateDataAccessExceptionFromMetricsCache() {
+        DataAccessResourceFailureException expected =
+                new DataAccessResourceFailureException("Database unavailable");
+        when(marketDataPort.fetchIncomeStatements(TICKER, 4)).thenReturn(incomeStatements4);
+        when(metricsCache.findByTickerAndFiscalYear(TICKER, "2023")).thenThrow(expected);
+
+        DataAccessResourceFailureException actual = assertThrows(
+                DataAccessResourceFailureException.class,
+                () -> financialAnalysisService.computeMetrics(TICKER));
+
+        assertSame(expected, actual);
     }
 }

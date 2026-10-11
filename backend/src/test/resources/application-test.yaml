@@ -1,11 +1,8 @@
 spring:
   cache:
-    type: caffeine
+    type: none
     cache-names:
       - analysis-metrics
-      - company-profiles
-    caffeine:
-      spec: maximumSize=500,expireAfterWrite=1h,recordStats
 
   ai:
     google:
@@ -27,15 +24,6 @@ spring:
         dialect: org.hibernate.dialect.H2Dialect
         format_sql: true
 
-  docker:
-    compose:
-      enabled: false
-
-  # Désactive l'auto-configuration OAuth2 et Google GenAI en test
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration
-      - org.springframework.ai.autoconfigure.model.googlegenai.GoogleGenAiAutoConfiguration
 
   security:
     oauth2:

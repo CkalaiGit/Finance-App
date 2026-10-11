@@ -17,7 +17,6 @@ spring:
     type: caffeine
     cache-names:
       - analysis-metrics
-      - company-profiles
     caffeine:
       spec: maximumSize=500,expireAfterWrite=1h
 
