@@ -57,7 +57,7 @@ public class CikResolverService {
                 log.warn("La réponse du fichier SEC company_tickers.json est vide.");
             }
         } catch (Exception e) {
-            log.error("Erreur lors du chargement des mappings SEC company_tickers.json : {}", e.getMessage());
+            log.error("Erreur lors du chargement des mappings SEC company_tickers.json", e);
         }
     }
 

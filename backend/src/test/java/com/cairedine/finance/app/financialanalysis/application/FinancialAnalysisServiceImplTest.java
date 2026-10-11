@@ -2,6 +2,7 @@ package com.cairedine.finance.app.financialanalysis.application;
 
 import com.cairedine.finance.app.financialanalysis.domain.model.FullMetrics;
 import com.cairedine.finance.app.financialanalysis.domain.port.IMetricsCachePort;
+import com.cairedine.finance.app.shared.exceptions.MarketDataUnavailableException;
 import com.cairedine.finance.app.shared.exceptions.TickerNotFoundException;
 import com.cairedine.finance.app.webclient.*;
 import org.junit.jupiter.api.DisplayName;
@@ -270,5 +271,23 @@ class FinancialAnalysisServiceImplTest {
             metrics.quality().operatingMargin().compareTo(BigDecimal.ZERO) == 0 &&
             metrics.quality().freeCashFlowMargin().compareTo(BigDecimal.ZERO) == 0
         ));
+    }
+
+    @Test
+    @DisplayName("La source de données indisponible doit remonter en MarketDataUnavailableException (503), pas en RuntimeException (500)")
+    void shouldPropagateMarketDataUnavailableFromIncomeFetch() {
+        when(marketDataPort.fetchIncomeStatements(TICKER, 4)).thenThrow(new MarketDataUnavailableException(TICKER));
+
+        assertThrows(MarketDataUnavailableException.class, () -> financialAnalysisService.computeMetrics(TICKER));
+    }
+
+    @Test
+    @DisplayName("La source indisponible lors du calcul asynchrone doit remonter en MarketDataUnavailableException (503)")
+    void shouldPropagateMarketDataUnavailableFromAsyncCashFlowFetch() {
+        when(marketDataPort.fetchIncomeStatements(TICKER, 4)).thenReturn(incomeStatements4);
+        when(metricsCache.findByTickerAndFiscalYear(TICKER, "2023")).thenReturn(Optional.empty());
+        when(marketDataPort.fetchCashFlowStatements(TICKER, 2)).thenThrow(new MarketDataUnavailableException(TICKER));
+
+        assertThrows(MarketDataUnavailableException.class, () -> financialAnalysisService.computeMetrics(TICKER));
     }
 }

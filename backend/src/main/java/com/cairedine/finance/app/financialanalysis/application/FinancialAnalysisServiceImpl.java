@@ -7,6 +7,7 @@ import com.cairedine.finance.app.financialanalysis.domain.model.QualityMetrics;
 import com.cairedine.finance.app.financialanalysis.domain.model.ValueMetrics;
 import com.cairedine.finance.app.financialanalysis.domain.port.IFinancialAnalysisService;
 import com.cairedine.finance.app.financialanalysis.domain.port.IMetricsCachePort;
+import com.cairedine.finance.app.shared.exceptions.MarketDataUnavailableException;
 import com.cairedine.finance.app.shared.exceptions.TickerNotFoundException;
 import com.cairedine.finance.app.webclient.*;
 import lombok.RequiredArgsConstructor;
@@ -63,9 +64,7 @@ public class FinancialAnalysisServiceImpl implements IFinancialAnalysisService {
              return metricsCache.findAllByTicker(normalizedTicker);
 
          } catch (Exception e) {
-             Throwable cause = e.getCause() != null ? e.getCause() : e;
-             if (cause instanceof TickerNotFoundException tnf) throw tnf;
-             throw new RuntimeException("Error computing historical metrics for " + ticker, cause);
+             throw translate(e, "Error computing historical metrics for " + ticker);
          }
      }
 
@@ -140,10 +139,21 @@ public class FinancialAnalysisServiceImpl implements IFinancialAnalysisService {
              return new FullMetrics(growth, value, quality, fiscalYearEndDate, marketDataAsOf);
 
          } catch (Exception e) {
-             Throwable cause = e.getCause() != null ? e.getCause() : e;
-             if (cause instanceof TickerNotFoundException tnf) throw tnf;
-             throw new RuntimeException("Error calculating current metrics for " + ticker, cause);
+             throw translate(e, "Error calculating current metrics for " + ticker);
          }
+     }
+
+     /**
+      * Déballe l'exception d'origine (CompletionException des CompletableFuture) et relance
+      * les exceptions métier telles quelles, pour que le GlobalExceptionHandler leur attribue
+      * le bon code HTTP (404 pour un ticker inconnu, 503 si la source de données est indisponible).
+      * Toute autre erreur est enveloppée dans une RuntimeException avec le contexte.
+      */
+     private static RuntimeException translate(Exception e, String context) {
+         Throwable cause = e.getCause() != null ? e.getCause() : e;
+         if (cause instanceof TickerNotFoundException tnf) return tnf;
+         if (cause instanceof MarketDataUnavailableException mdu) return mdu;
+         return new RuntimeException(context, cause);
      }
 
 
