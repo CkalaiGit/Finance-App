@@ -3,36 +3,32 @@ package com.cairedine.finance.app.user.application;
 import com.cairedine.finance.app.user.UserContext;
 import com.cairedine.finance.app.user.UserSyncedEvent;
 import com.cairedine.finance.app.user.domain.model.User;
+import com.cairedine.finance.app.user.domain.model.UserClaims;
 import com.cairedine.finance.app.user.domain.port.IUserRepositoryPort;
 import com.cairedine.finance.app.user.domain.service.IUserSyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserSyncServiceImpl implements IUserSyncService {
 
-
     private final IUserRepositoryPort userRepository;
-    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
-    public UserContext syncAndBuildContext(Jwt jwt) {
-        String keycloakId = jwt.getSubject();
-        String email      = jwt.getClaimAsString("email");
-        String username   = jwt.getClaimAsString("preferred_username");
-        Set<String> roles = extractRoles(jwt);
+    public UserContext syncAndBuildContext(UserClaims claims) {
+        String keycloakId = claims.keycloakId();
+        String email      = claims.email();
+        String username   = claims.username();
+        Set<String> roles = claims.roles();
 
         var existingOpt = userRepository.findById(keycloakId);
         User user;
@@ -58,21 +54,5 @@ public class UserSyncServiceImpl implements IUserSyncService {
                 user.username(),
                 user.roles()
         );
-    }
-
-    @SuppressWarnings("unchecked")
-    private Set<String> extractRoles(Jwt jwt) {
-        Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
-        if (realmAccess == null || !realmAccess.containsKey("roles")) {
-            return Collections.emptySet();
-        }
-        Object rolesObj = realmAccess.get("roles");
-        if (!(rolesObj instanceof List)) {
-            return Collections.emptySet();
-        }
-        return ((List<Object>) rolesObj).stream()
-                .filter(r -> r instanceof String)
-                .map(r -> (String) r)
-                .collect(Collectors.toUnmodifiableSet());
     }
 }

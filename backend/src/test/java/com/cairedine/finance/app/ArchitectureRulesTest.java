@@ -18,14 +18,6 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  *   &lt;module&gt;/domain/       → modèles, ports, règles métier. Java pur (aucun framework).
  *   &lt;module&gt;/application/  → services de cas d'usage. @Service autorisé ici.
  *   &lt;module&gt;/infrastructure/ → adapters web/, persistence/, security/, event/...
- * NOTE : le module "intelligence" est exclu des règles de @RestController et @Service
- * car il est encore en cours de structuration. La dette technique est documentée ci-dessous.
- * DETTE TECHNIQUE — intelligence :
- *   - InsightController est dans infrastructure/web/ (conforme) mais le module entier
- *     a des dépendances croisées à corriger dans un prochain ticket.
- *   - IUserSyncService dans user/domain/service/ importe org.springframework.security.oauth2.jwt.Jwt,
- *     ce qui est une violation Spring dans le domaine. Non modifié ici car cela nécessite
- *     de créer un type domaine propre pour le JWT et de mettre à jour KeycloakJwtConverter.
  */
 @DisplayName("Architecture Rules")
 class ArchitectureRulesTest {
@@ -54,8 +46,6 @@ class ArchitectureRulesTest {
         void domainShouldNotDependOnSpring() {
             ArchRule rule = noClasses()
                     .that().resideInAPackage("..domain..")
-                    // user/domain/service/IUserSyncService importe Jwt Spring : dette technique documentée
-                    .and().resideOutsideOfPackage("..user.domain.service..")
                     .should().dependOnClassesThat()
                     .resideInAPackage("org.springframework..");
 
@@ -107,10 +97,6 @@ class ArchitectureRulesTest {
         @Test
         @DisplayName("Les @RestController résident dans ..infrastructure.web..")
         void restControllersShouldResideInInfrastructureWeb() {
-            // Intelligence est exclu car InsightController est déjà en infrastructure/web/
-            // et conforme — pas besoin d'exception ici.
-            // Seul le module intelligence global est exclu si de futurs contrôleurs
-            // venaient à être ajoutés hors de infrastructure/web/.
             ArchRule rule = classes()
                     .that().areAnnotatedWith(org.springframework.web.bind.annotation.RestController.class)
                     .should().resideInAPackage("..infrastructure.web..");
@@ -132,8 +118,6 @@ class ArchitectureRulesTest {
         void servicesShouldResideInApplicationOrInfrastructure() {
             ArchRule rule = classes()
                     .that().areAnnotatedWith(org.springframework.stereotype.Service.class)
-                    // Exclure le module intelligence (dette technique : structure à finaliser)
-                    .and().resideOutsideOfPackage("..intelligence..")
                     .should().resideInAnyPackage("..application..", "..infrastructure..");
 
             rule.check(importedClasses);

@@ -1,6 +1,7 @@
 package com.cairedine.finance.app.user.application;
 
 import com.cairedine.finance.app.user.UserContext;
+import com.cairedine.finance.app.user.domain.model.UserClaims;
 import com.cairedine.finance.app.user.domain.service.IUserSyncService;
 import com.cairedine.finance.app.user.infrastructure.persistence.adapter.UserRepositoryAdapter;
 import com.cairedine.finance.app.user.infrastructure.persistence.mapper.UserPersistenceMapper;
@@ -13,16 +14,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.event.EventListener;
-import java.util.ArrayList;
 
-import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -54,18 +53,6 @@ class UserSyncServiceImplTest {
         public void recordEvent(Object evt) { events.add(evt); }
     }
 
-    private Jwt buildJwt(String sub, String email, String username, List<String> roles) {
-        return Jwt.withTokenValue("token")
-                .header("alg", "RS256")
-                .claim("sub", sub)
-                .claim("email", email)
-                .claim("preferred_username", username)
-                .claim("realm_access", Map.of("roles", roles))
-                .issuedAt(Instant.now())
-                .expiresAt(Instant.now().plusSeconds(3600))
-                .build();
-    }
-
     @BeforeEach
     void setUp() {
         userRepository.deleteAll();
@@ -78,9 +65,9 @@ class UserSyncServiceImplTest {
         @Test
         @DisplayName("doit creer un utilisateur et retourner le bon UserContext")
         void doitCreerUserEtRetournerContext() {
-            var jwt = buildJwt("uuid-alice", "alice@finance.com", "alice", List.of("PREMIUM"));
+            var claims = new UserClaims("uuid-alice", "alice@finance.com", "alice", Set.of("PREMIUM"));
 
-            UserContext ctx = userSyncService.syncAndBuildContext(jwt);
+            UserContext ctx = userSyncService.syncAndBuildContext(claims);
 
             assertThat(ctx.id()).isEqualTo("uuid-alice");
             assertThat(ctx.email()).isEqualTo("alice@finance.com");
@@ -105,16 +92,16 @@ class UserSyncServiceImplTest {
 
         @BeforeEach
         void setUp() {
-            var jwt = buildJwt("uuid-alice", "old@finance.com", "old_alice", List.of("FREEMIUM"));
-            userSyncService.syncAndBuildContext(jwt);
+            var oldClaims = new UserClaims("uuid-alice", "old@finance.com", "old_alice", Set.of("FREEMIUM"));
+            userSyncService.syncAndBuildContext(oldClaims);
         }
 
         @Test
         @DisplayName("doit mettre a jour et retourner le UserContext mis a jour")
         void doitMettreAJourEtRetournerContextMisAJour() {
-            var jwt = buildJwt("uuid-alice", "new@finance.com", "new_alice", List.of("PREMIUM", "FREEMIUM"));
+            var newClaims = new UserClaims("uuid-alice", "new@finance.com", "new_alice", Set.of("PREMIUM", "FREEMIUM"));
 
-            UserContext ctx = userSyncService.syncAndBuildContext(jwt);
+            UserContext ctx = userSyncService.syncAndBuildContext(newClaims);
 
             assertThat(ctx.email()).isEqualTo("new@finance.com");
             assertThat(ctx.username()).isEqualTo("new_alice");
@@ -128,37 +115,29 @@ class UserSyncServiceImplTest {
             assertThat(ue.keycloakId()).isEqualTo("uuid-alice");
             assertThat(ue.email()).isEqualTo("new@finance.com");
             assertThat(ue.username()).isEqualTo("new_alice");
-
         }
 
         @Test
         @DisplayName("ne doit pas creer un doublon en base")
         void neDoisPasCreerDoublon() {
-            var jwt = buildJwt("uuid-alice", "new@finance.com", "new_alice", List.of("PREMIUM"));
+            var newClaims = new UserClaims("uuid-alice", "new@finance.com", "new_alice", Set.of("PREMIUM"));
 
-            userSyncService.syncAndBuildContext(jwt);
+            userSyncService.syncAndBuildContext(newClaims);
 
             assertThat(userRepository.count()).isEqualTo(1);
         }
     }
 
     @Nested
-    @DisplayName("Extraction des roles depuis le JWT")
-    class ExtractionRoles {
+    @DisplayName("Gestion des rôles dans UserClaims")
+    class GestionRoles {
 
         @Test
-        @DisplayName("doit retourner roles vide si realm_access absent")
-        void doitGererAbsenceRealmAccess() {
-            var jwt = Jwt.withTokenValue("token")
-                    .header("alg", "RS256")
-                    .claim("sub", "uuid-norole")
-                    .claim("email", "norole@finance.com")
-                    .claim("preferred_username", "norole")
-                    .issuedAt(Instant.now())
-                    .expiresAt(Instant.now().plusSeconds(3600))
-                    .build();
+        @DisplayName("doit retourner roles vide si null")
+        void doitGererRolesNull() {
+            var claims = new UserClaims("uuid-norole", "norole@finance.com", "norole", null);
 
-            UserContext ctx = userSyncService.syncAndBuildContext(jwt);
+            UserContext ctx = userSyncService.syncAndBuildContext(claims);
 
             assertThat(ctx.roles()).isEmpty();
         }
@@ -166,9 +145,9 @@ class UserSyncServiceImplTest {
         @Test
         @DisplayName("doit retourner roles vide si la liste est vide")
         void doitGererListeRolesVide() {
-            var jwt = buildJwt("uuid-empty", "empty@finance.com", "empty", List.of());
+            var claims = new UserClaims("uuid-empty", "empty@finance.com", "empty", Set.of());
 
-            UserContext ctx = userSyncService.syncAndBuildContext(jwt);
+            UserContext ctx = userSyncService.syncAndBuildContext(claims);
 
             assertThat(ctx.roles()).isEmpty();
         }
