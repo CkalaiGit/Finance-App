@@ -1,4 +1,4 @@
-package com.cairedine.finance.app.financialanalysis.infrastructure.web.controller;
+package com.cairedine.finance.app.financialanalysis.infrastructure.web;
 
 import com.cairedine.finance.app.financialanalysis.infrastructure.web.dto.CompanyProfileResponse;
 import com.cairedine.finance.app.financialanalysis.infrastructure.web.mapper.CompanyProfileWebMapper;
@@ -34,6 +34,7 @@ import java.util.Optional;
  * - Les clients peuvent récupérer UNIQUEMENT le profil s'ils le souhaitent
  * - Pas de surcharge de données inutiles
  * - Endpoint réutilisable dans d'autres contextes (recherche, autocomplete, etc.)
+ * Déplacé de infrastructure/web/controller/ vers infrastructure/web/ pour uniformisation.
  */
 @Slf4j
 @RestController
@@ -79,4 +80,3 @@ public class CompanyProfileController {
         return ResponseEntity.ok(response);
     }
 }
-

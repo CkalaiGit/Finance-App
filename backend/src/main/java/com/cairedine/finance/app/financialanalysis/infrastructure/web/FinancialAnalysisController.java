@@ -1,4 +1,4 @@
-package com.cairedine.finance.app.financialanalysis.infrastructure.web.controller;
+package com.cairedine.finance.app.financialanalysis.infrastructure.web;
 
 import com.cairedine.finance.app.financialanalysis.domain.port.IFinancialAnalysisService;
 import com.cairedine.finance.app.financialanalysis.infrastructure.web.dto.FullMetricsResponse;
@@ -20,6 +20,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * Contrôleur REST pour les métriques d'analyse financière.
+ * Déplacé de infrastructure/web/controller/ vers infrastructure/web/ pour uniformisation.
+ */
 @RestController
 @RequestMapping("/api/v1/analysis")
 @RequiredArgsConstructor

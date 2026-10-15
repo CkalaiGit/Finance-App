@@ -1,6 +1,6 @@
-package com.cairedine.finance.app.watchlist.web;
+package com.cairedine.finance.app.watchlist.infrastructure.web;
 
-import com.cairedine.finance.app.watchlist.domain.WatchlistService;
+import com.cairedine.finance.app.watchlist.application.WatchlistService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -21,6 +21,7 @@ import java.util.Set;
  * Contrôleur REST pour la gestion de la watchlist.
  * La sécurité est assurée par l'extraction du keycloakId du JWT.
  * Aucun ID utilisateur n'est accepté en paramètre.
+ * Déplacé de watchlist/web/ vers watchlist/infrastructure/web/ pour uniformisation.
  */
 @RestController
 @RequestMapping("/api/v1/watchlist")

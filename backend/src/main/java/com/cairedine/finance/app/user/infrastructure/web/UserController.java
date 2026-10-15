@@ -1,4 +1,4 @@
-package com.cairedine.finance.app.user.web;
+package com.cairedine.finance.app.user.infrastructure.web;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -16,6 +16,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.cairedine.finance.app.user.UserContext;
 
+/**
+ * Contrôleur REST pour le profil utilisateur.
+ * Déplacé de user/web/ vers user/infrastructure/web/ pour uniformisation des conventions de packages.
+ */
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor

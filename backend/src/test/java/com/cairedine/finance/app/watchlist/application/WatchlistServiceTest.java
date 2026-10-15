@@ -1,8 +1,9 @@
-package com.cairedine.finance.app.watchlist.domain;
+package com.cairedine.finance.app.watchlist.application;
 
 import com.cairedine.finance.app.shared.exceptions.InvalidTickerException;
 import com.cairedine.finance.app.shared.exceptions.TickerAlreadyInWatchlistException;
 import com.cairedine.finance.app.shared.exceptions.TickerNotInWatchlistException;
+import com.cairedine.finance.app.watchlist.domain.IWatchlistRepositoryPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -150,4 +151,3 @@ class WatchlistServiceTest {
         assertThat(result).isFalse();
     }
 }
-

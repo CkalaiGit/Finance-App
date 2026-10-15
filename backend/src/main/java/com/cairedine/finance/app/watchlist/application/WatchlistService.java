@@ -1,16 +1,18 @@
-package com.cairedine.finance.app.watchlist.domain;
+package com.cairedine.finance.app.watchlist.application;
 
 import com.cairedine.finance.app.shared.exceptions.InvalidTickerException;
 import com.cairedine.finance.app.shared.exceptions.TickerAlreadyInWatchlistException;
 import com.cairedine.finance.app.shared.exceptions.TickerNotInWatchlistException;
+import com.cairedine.finance.app.watchlist.domain.IWatchlistRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Set;
 
 /**
- * Service de domaine orchestrant la logique métier de la watchlist.
- * N'a pas de dépendance directe aux détails d'implémentation.
+ * Service de cas d'usage orchestrant la logique métier de la watchlist.
+ * Déplacé de watchlist/domain/ vers watchlist/application/ pour respecter la pureté du domaine :
+ * le domaine ne dépend d'aucun framework, @Service appartient à la couche application.
  */
 @Service
 @RequiredArgsConstructor
@@ -67,4 +69,3 @@ public class WatchlistService {
         return watchlistRepository.existsTickerInWatchlist(keycloakId, ticker);
     }
 }
-
