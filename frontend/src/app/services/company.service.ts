@@ -7,6 +7,7 @@ import {
    CompanyDisplayDTO,
    CompanyProfileResponse,
 } from '../models/company.model';
+import { environment } from '../../environments/environment';
 
 /**
  * Service de gestion des entreprises
@@ -52,7 +53,7 @@ export class CompanyService {
       // Extensible : ajoutez vos secteurs ici
    };
 
-   private readonly baseUrl = 'http://localhost:8081/api/v1/companies';
+   private readonly baseUrl = `${environment.apiUrl}/companies`;
 
    constructor(private readonly http: HttpClient) {}
 
@@ -93,7 +94,7 @@ export class CompanyService {
    getCompanyProfile(ticker: string): Observable<CompanyProfileResponse> {
       return this.http
          .get<CompanyProfileResponse>(
-            `http://localhost:8081/api/v1/company-profile/${ticker.toUpperCase()}`,
+            `${environment.apiUrl}/company-profile/${ticker.toUpperCase()}`,
          )
          .pipe(catchError(this.handleError.bind(this)));
    }

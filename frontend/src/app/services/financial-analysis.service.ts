@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { FullMetrics } from '../models/analysis.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({
    providedIn: 'root',
 })
 export class FinancialAnalysisService {
-   private readonly baseUrl = 'http://localhost:8081/api/v1/analysis';
+   private readonly baseUrl = `${environment.apiUrl}/analysis`;
 
    constructor(private readonly http: HttpClient) {}
 

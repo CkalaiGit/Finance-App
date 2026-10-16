@@ -6,12 +6,13 @@ import {
    WatchlistResponse,
    TickerExistsResponse,
 } from '../models/watchlist.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({
    providedIn: 'root',
 })
 export class WatchlistService {
-   private readonly baseUrl = 'http://localhost:8081/api/v1/watchlist';
+   private readonly baseUrl = `${environment.apiUrl}/watchlist`;
 
    constructor(private readonly http: HttpClient) {}
 

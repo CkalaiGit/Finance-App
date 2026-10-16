@@ -3,6 +3,7 @@ import { RouterOutlet } from '@angular/router';
 import { HeaderComponent } from './components/layout/header/header.component';
 import { HttpClient } from '@angular/common/http';
 import { UserProfile } from './models/user.model';
+import { environment } from '../environments/environment';
 
 @Component({
    selector: 'app-root',
@@ -17,7 +18,7 @@ export class AppComponent implements OnInit {
 
    ngOnInit(): void {
       this.http
-         .get<UserProfile>('http://localhost:8081/api/users/me')
+         .get<UserProfile>(`${environment.apiUrl.replace('/v1', '')}/users/me`)
          .subscribe({
             next: (ctx) => console.log('[/me] UserContext reçu :', ctx),
             error: (err) => console.error('[/me] Erreur :', err),

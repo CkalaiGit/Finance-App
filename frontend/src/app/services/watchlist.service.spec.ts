@@ -10,12 +10,13 @@ import {
    WatchlistResponse,
    TickerExistsResponse,
 } from '../models/watchlist.model';
+import { environment } from '../../environments/environment';
 
 describe('WatchlistService', () => {
    let service: WatchlistService;
    let httpMock: HttpTestingController;
 
-   const baseUrl = 'http://localhost:8081/api/v1/watchlist';
+   const baseUrl = `${environment.apiUrl}/watchlist`;
 
    beforeEach(() => {
       TestBed.configureTestingModule({
