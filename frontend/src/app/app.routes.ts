@@ -34,6 +34,7 @@ export const routes: Routes = [
          import('./components/pages/company-details/company-details.component').then(
             (m) => m.CompanyDetailsComponent,
          ),
+      canActivate: [authGuard],
       title: 'FinanceApp - Détails Entreprise',
    },
    {
