@@ -1,12 +1,18 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
-import { Observable, of } from 'rxjs';
 import {
-   switchMap,
+   ChangeDetectionStrategy,
+   ChangeDetectorRef,
+   Component,
+   inject,
+} from '@angular/core';
+import { AsyncPipe, CurrencyPipe } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
+import { Observable, forkJoin, of } from 'rxjs';
+import {
    catchError,
-   map,
    distinctUntilChanged,
+   map,
+   shareReplay,
+   switchMap,
 } from 'rxjs/operators';
 import { FinancialAnalysisService } from '../../../services/financial-analysis.service';
 import { CompanyService } from '../../../services/company.service';
@@ -17,55 +23,62 @@ import { CompanyProfileResponse } from '../../../models/company.model';
 @Component({
    selector: 'app-company-details',
    standalone: true,
-   imports: [CommonModule],
+   imports: [AsyncPipe, CurrencyPipe],
    templateUrl: './company-details.component.html',
    styleUrls: ['./company-details.component.scss'],
    changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CompanyDetailsComponent implements OnInit {
-   activeTab: 'growth' | 'value' | 'quality' = 'growth';
+export class CompanyDetailsComponent {
+   private readonly route = inject(ActivatedRoute);
+   private readonly analysisService = inject(FinancialAnalysisService);
+   private readonly companyService = inject(CompanyService);
+   private readonly watchlistService = inject(WatchlistService);
+   private readonly cdr = inject(ChangeDetectorRef);
 
-   metrics$!: Observable<FullMetrics | null>;
-   companyProfile$!: Observable<CompanyProfileResponse | null>;
+   activeTab: 'growth' | 'value' | 'quality' = 'growth';
 
    currentTicker = '';
    isInWatchlist = false;
    isTogglingWatchlist = false;
 
-   constructor(
-      private readonly route: ActivatedRoute,
-      private readonly analysisService: FinancialAnalysisService,
-      private readonly companyService: CompanyService,
-      private readonly watchlistService: WatchlistService,
-      private readonly cdr: ChangeDetectorRef,
-   ) {}
+   private readonly data$: Observable<{
+      ticker: string;
+      companyProfile: CompanyProfileResponse | null;
+      metrics: FullMetrics | null;
+   }> = this.route.paramMap.pipe(
+      map((params) => params.get('ticker')?.trim().toUpperCase() || ''),
+      distinctUntilChanged(),
+      switchMap((ticker) => {
+         this.currentTicker = ticker;
+         if (!ticker) {
+            this.isInWatchlist = false;
+            return of({ ticker: '', companyProfile: null, metrics: null });
+         }
+         this.checkWatchlistStatus(ticker);
+         return forkJoin({
+            companyProfile: this.companyService
+               .getCompanyProfile(ticker)
+               .pipe(catchError(() => of(null))),
+            metrics: this.analysisService
+               .getMetrics(ticker)
+               .pipe(catchError(() => of(null))),
+         }).pipe(
+            map(({ companyProfile, metrics }) => ({
+               ticker,
+               companyProfile,
+               metrics,
+            })),
+         );
+      }),
+      shareReplay({ bufferSize: 1, refCount: true }),
+   );
 
-   ngOnInit(): void {
-      this.route.paramMap
-         .pipe(
-            map((params) => params.get('ticker') || ''),
-            distinctUntilChanged(),
-            switchMap((ticker) => {
-               this.currentTicker = ticker;
-               this.isInWatchlist = false;
-               if (!ticker) {
-                  this.metrics$ = of(null);
-                  this.companyProfile$ = of(null);
-                  return of(null);
-               }
-               this.metrics$ = this.analysisService
-                  .getMetrics(ticker)
-                  .pipe(catchError(() => of(null)));
-               this.companyProfile$ = this.companyService
-                  .getCompanyProfile(ticker)
-                  .pipe(catchError(() => of(null)));
+   readonly companyProfile$: Observable<CompanyProfileResponse | null> =
+      this.data$.pipe(map((data) => data.companyProfile));
 
-               this.checkWatchlistStatus(ticker);
-               return of(ticker);
-            }),
-         )
-         .subscribe();
-   }
+   readonly metrics$: Observable<FullMetrics | null> = this.data$.pipe(
+      map((data) => data.metrics),
+   );
 
    private checkWatchlistStatus(ticker: string): void {
       this.watchlistService
@@ -92,7 +105,10 @@ export class CompanyDetailsComponent implements OnInit {
       action$
          .pipe(
             catchError((err) => {
-               console.error('Erreur lors de la modification de la watchlist:', err);
+               console.error(
+                  'Erreur lors de la modification de la watchlist:',
+                  err,
+               );
                return of(null);
             }),
          )
@@ -121,4 +137,3 @@ export class CompanyDetailsComponent implements OnInit {
       return `${value.toFixed(2)}x`;
    }
 }
-
