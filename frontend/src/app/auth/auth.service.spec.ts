@@ -5,12 +5,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('AuthService', () => {
    let service: AuthService;
-   let keycloakServiceMock: any;
+   let keycloakServiceMock: {
+      instance: {
+         authenticated: boolean;
+         tokenParsed: null;
+         realmAccess: { roles: string[] };
+      };
+   };
 
    const mockKeycloakInstance = {
       authenticated: false,
       tokenParsed: null,
-      realmAccess: { roles: [] },
+      realmAccess: { roles: [] as string[] },
    };
 
    beforeEach(() => {

@@ -6,11 +6,12 @@ import { KeycloakService } from '../../../auth/keycloak.service';
 import { ActivatedRoute } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { UserProfile } from '../../../models/user.model';
 
 describe('HeaderComponent', () => {
    let component: HeaderComponent;
    let fixture: ComponentFixture<HeaderComponent>;
-   let userSubject: BehaviorSubject<any>;
+   let userSubject: BehaviorSubject<UserProfile | null>;
    let isLoggedInSubject: BehaviorSubject<boolean>;
 
    const mockKeycloakInstance = {
@@ -43,8 +44,9 @@ describe('HeaderComponent', () => {
    };
 
    beforeEach(async () => {
-      userSubject = new BehaviorSubject({
+      userSubject = new BehaviorSubject<UserProfile | null>({
          username: 'Alice',
+         email: 'alice@example.com',
          roles: ['ADMIN'],
       });
       isLoggedInSubject = new BehaviorSubject(true);

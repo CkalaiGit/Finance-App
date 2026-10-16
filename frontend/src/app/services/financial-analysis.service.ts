@@ -12,14 +12,14 @@ export class FinancialAnalysisService {
 
    constructor(private readonly http: HttpClient) {}
 
-   getMetrics(ticker: string): Observable<FullMetrics> {
+   getMetrics(ticker: string): Observable<FullMetrics | null> {
       return this.http
          .get<FullMetrics[]>(`${this.baseUrl}/${ticker.toUpperCase()}`)
          .pipe(
             map((metricsList) =>
                metricsList && metricsList.length > 0
                   ? metricsList[0]
-                  : (null as any),
+                  : null,
             ),
          );
    }

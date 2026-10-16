@@ -6,7 +6,11 @@ import { firstValueFrom } from 'rxjs';
 
 describe('AuthStoreService', () => {
    let authStoreService: AuthStoreService;
-   let authServiceMock: any;
+   let authServiceMock: {
+      getUserProfile: ReturnType<typeof vi.fn>;
+      login: ReturnType<typeof vi.fn>;
+      logout: ReturnType<typeof vi.fn>;
+   };
 
    const mockUser: UserProfile = {
       roles: ['ADMIN'],
@@ -20,7 +24,7 @@ describe('AuthStoreService', () => {
          login: vi.fn(),
          logout: vi.fn(),
       };
-      authStoreService = new AuthStoreService(authServiceMock as AuthService);
+      authStoreService = new AuthStoreService(authServiceMock as unknown as AuthService);
       // Reset call count after initialization since refreshState is called in constructor
       authServiceMock.getUserProfile.mockClear();
    });

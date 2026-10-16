@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { describe, beforeEach, it, expect, vi } from 'vitest';
 import { WatchlistComponent } from './watchlist.component';
 import { WatchlistService } from '../../../services/watchlist.service';
@@ -8,13 +8,22 @@ import { FinancialAnalysisService } from '../../../services/financial-analysis.s
 import { AuthStoreService } from '../../../auth/auth-store.service';
 import { WatchlistResponse } from '../../../models/watchlist.model';
 import { FullMetrics } from '../../../models/analysis.model';
+import { UserProfile } from '../../../models/user.model';
 
 describe('WatchlistComponent', () => {
    let component: WatchlistComponent;
    let fixture: ComponentFixture<WatchlistComponent>;
-   let mockWatchlistService: any;
-   let mockAnalysisService: any;
-   let mockAuthStoreService: any;
+   let mockWatchlistService: {
+      getWatchlist: ReturnType<typeof vi.fn>;
+      addTicker: ReturnType<typeof vi.fn>;
+      removeTicker: ReturnType<typeof vi.fn>;
+   };
+   let mockAnalysisService: {
+      getMetrics: ReturnType<typeof vi.fn>;
+   };
+   let mockAuthStoreService: {
+      user$: Observable<UserProfile | null>;
+   };
 
    const sampleWatchlistResponse: WatchlistResponse = {
       keycloakId: 'user-123',
