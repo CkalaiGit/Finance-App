@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TestBed } from '@angular/core/testing';
 import { AuthStoreService } from './auth-store.service';
 import { AuthService } from './auth.service';
 import { UserProfile } from '../models/user.model';
@@ -24,7 +25,13 @@ describe('AuthStoreService', () => {
          login: vi.fn(),
          logout: vi.fn(),
       };
-      authStoreService = new AuthStoreService(authServiceMock as unknown as AuthService);
+      TestBed.configureTestingModule({
+         providers: [
+            AuthStoreService,
+            { provide: AuthService, useValue: authServiceMock },
+         ],
+      });
+      authStoreService = TestBed.inject(AuthStoreService);
       // Reset call count after initialization since refreshState is called in constructor
       authServiceMock.getUserProfile.mockClear();
    });

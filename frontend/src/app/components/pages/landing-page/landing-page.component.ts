@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router'; // Indispensable pour la navigation
@@ -12,12 +12,10 @@ import { Router } from '@angular/router'; // Indispensable pour la navigation
    changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LandingPageComponent {
+   private readonly router = inject(Router);
+
    // Terme de recherche (lié si tu utilises [(ngModel)] dans ton input)
    searchTerm: string = '';
-
-   constructor(
-      private readonly router: Router, // Injecté pour gérer les clics
-   ) {}
 
    // --- INTERACTIONS UTILISATEUR ---
 

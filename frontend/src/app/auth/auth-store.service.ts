@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { AuthService } from './auth.service';
@@ -8,6 +8,7 @@ import { UserProfile } from '../models/user.model';
    providedIn: 'root',
 })
 export class AuthStoreService {
+   private readonly authService = inject(AuthService);
    private readonly userSubject$ = new BehaviorSubject<UserProfile | null>(
       null,
    );
@@ -19,7 +20,7 @@ export class AuthStoreService {
       map((user) => !!user),
    );
 
-   constructor(private readonly authService: AuthService) {
+   constructor() {
       this.refreshState();
    }
 

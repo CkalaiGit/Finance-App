@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -15,7 +15,7 @@ import { environment } from '../../environments/environment';
    providedIn: 'root',
 })
 export class CompanyService {
-   constructor(private readonly http: HttpClient) {}
+   private readonly http = inject(HttpClient);
 
    /**
     * Récupère le profil complet d'une entreprise

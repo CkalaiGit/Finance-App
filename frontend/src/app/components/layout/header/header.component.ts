@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common'; // Requis pour le pipe async
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthStoreService } from '../../../auth/auth-store.service'; // Point 1 : Service dédié pour la gestion de l'état d'authentification
@@ -12,7 +12,7 @@ import { AuthStoreService } from '../../../auth/auth-store.service'; // Point 1 
    changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HeaderComponent {
-   constructor(public readonly authStore: AuthStoreService) {}
+   readonly authStore = inject(AuthStoreService);
 
    mobileMenuOpen = false;
 

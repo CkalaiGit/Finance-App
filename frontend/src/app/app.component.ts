@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { HeaderComponent } from './components/layout/header/header.component';
 import { HttpClient } from '@angular/common/http';
@@ -14,7 +14,7 @@ import { environment } from '../environments/environment';
    changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent implements OnInit {
-   constructor(private readonly http: HttpClient) {}
+   private readonly http = inject(HttpClient);
 
    ngOnInit(): void {
       this.http
