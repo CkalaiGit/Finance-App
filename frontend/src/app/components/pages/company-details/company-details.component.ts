@@ -5,13 +5,14 @@ import {
    inject,
 } from '@angular/core';
 import { AsyncPipe, CurrencyPipe } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Observable, forkJoin, of } from 'rxjs';
 import {
    catchError,
    distinctUntilChanged,
    map,
    shareReplay,
+   startWith,
    switchMap,
 } from 'rxjs/operators';
 import { FinancialAnalysisService } from '../../../services/financial-analysis.service';
@@ -19,11 +20,19 @@ import { CompanyService } from '../../../services/company.service';
 import { WatchlistService } from '../../../services/watchlist.service';
 import { FullMetrics } from '../../../models/analysis.model';
 import { CompanyProfileResponse } from '../../../models/company.model';
+import { ApiError } from '../../../models/api-error.model';
+
+export interface CompanyDetailsState {
+   loading: boolean;
+   error: ApiError | null;
+   companyProfile: CompanyProfileResponse | null;
+   metrics: FullMetrics | null;
+}
 
 @Component({
    selector: 'app-company-details',
    standalone: true,
-   imports: [AsyncPipe, CurrencyPipe],
+   imports: [AsyncPipe, CurrencyPipe, RouterLink],
    templateUrl: './company-details.component.html',
    styleUrls: ['./company-details.component.scss'],
    changeDetection: ChangeDetectionStrategy.OnPush,
@@ -41,43 +50,80 @@ export class CompanyDetailsComponent {
    isInWatchlist = false;
    isTogglingWatchlist = false;
 
-   private readonly data$: Observable<{
-      ticker: string;
-      companyProfile: CompanyProfileResponse | null;
-      metrics: FullMetrics | null;
-   }> = this.route.paramMap.pipe(
+   readonly state$: Observable<CompanyDetailsState> = this.route.paramMap.pipe(
       map((params) => params.get('ticker')?.trim().toUpperCase() || ''),
       distinctUntilChanged(),
       switchMap((ticker) => {
          this.currentTicker = ticker;
          if (!ticker) {
             this.isInWatchlist = false;
-            return of({ ticker: '', companyProfile: null, metrics: null });
+            return of<CompanyDetailsState>({
+               loading: false,
+               error: null,
+               companyProfile: null,
+               metrics: null,
+            });
          }
+
          this.checkWatchlistStatus(ticker);
+
          return forkJoin({
-            companyProfile: this.companyService
-               .getCompanyProfile(ticker)
-               .pipe(catchError(() => of(null))),
+            companyProfile: this.companyService.getCompanyProfile(ticker),
             metrics: this.analysisService
                .getMetrics(ticker)
                .pipe(catchError(() => of(null))),
          }).pipe(
             map(({ companyProfile, metrics }) => ({
-               ticker,
+               loading: false,
+               error: null,
                companyProfile,
                metrics,
             })),
+            startWith<CompanyDetailsState>({
+               loading: true,
+               error: null,
+               companyProfile: null,
+               metrics: null,
+            }),
+            catchError((err: unknown) => {
+               const apiErr: ApiError =
+                  err &&
+                  typeof err === 'object' &&
+                  'title' in err &&
+                  'detail' in err
+                     ? (err as ApiError)
+                     : {
+                          status: 500,
+                          title: 'Erreur',
+                          detail:
+                             (err as Error)?.message ||
+                             'Impossible de charger les données de l’entreprise.',
+                       };
+               return of<CompanyDetailsState>({
+                  loading: false,
+                  error: apiErr,
+                  companyProfile: null,
+                  metrics: null,
+               });
+            }),
          );
       }),
       shareReplay({ bufferSize: 1, refCount: true }),
    );
 
    readonly companyProfile$: Observable<CompanyProfileResponse | null> =
-      this.data$.pipe(map((data) => data.companyProfile));
+      this.state$.pipe(map((s) => s.companyProfile));
 
-   readonly metrics$: Observable<FullMetrics | null> = this.data$.pipe(
-      map((data) => data.metrics),
+   readonly metrics$: Observable<FullMetrics | null> = this.state$.pipe(
+      map((s) => s.metrics),
+   );
+
+   readonly loading$: Observable<boolean> = this.state$.pipe(
+      map((s) => s.loading),
+   );
+
+   readonly error$: Observable<ApiError | null> = this.state$.pipe(
+      map((s) => s.error),
    );
 
    private checkWatchlistStatus(ticker: string): void {

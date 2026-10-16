@@ -9,6 +9,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 
 import { routes } from './app.routes';
 import { authInterceptor } from './auth/auth.interceptor';
+import { errorInterceptor } from './interceptors/error.interceptor';
 import { KeycloakService } from './auth/keycloak.service';
 
 export const appConfig: ApplicationConfig = {
@@ -18,8 +19,8 @@ export const appConfig: ApplicationConfig = {
 
       provideRouter(routes),
 
-      // Configuration du client HTTP avec ton intercepteur
-      provideHttpClient(withInterceptors([authInterceptor])),
+      // Configuration du client HTTP avec tes intercepteurs
+      provideHttpClient(withInterceptors([authInterceptor, errorInterceptor])),
 
       // INITIALISATION CRITIQUE :
       // On lance Keycloak AVANT que l'app ne démarre

@@ -1,7 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { CompanyProfileResponse } from '../models/company.model';
 import { environment } from '../../environments/environment';
 
@@ -24,17 +23,8 @@ export class CompanyService {
     * @returns Observable de CompanyProfileResponse
     */
    getCompanyProfile(ticker: string): Observable<CompanyProfileResponse> {
-      return this.http
-         .get<CompanyProfileResponse>(
-            `${environment.apiUrl}/company-profile/${ticker.toUpperCase()}`,
-         )
-         .pipe(catchError(this.handleError.bind(this)));
-   }
-
-   private handleError(error: HttpErrorResponse): Observable<never> {
-      console.error('Erreur API:', error);
-      return throwError(
-         () => new Error('Erreur lors du chargement des données'),
+      return this.http.get<CompanyProfileResponse>(
+         `${environment.apiUrl}/company-profile/${ticker.toUpperCase()}`,
       );
    }
 }

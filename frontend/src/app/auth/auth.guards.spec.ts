@@ -5,7 +5,7 @@ import {
    RouterStateSnapshot,
    UrlTree,
 } from '@angular/router';
-import { of, firstValueFrom, isObservable } from 'rxjs';
+import { of, firstValueFrom, isObservable, Observable } from 'rxjs';
 import { describe, beforeEach, it, expect, vi } from 'vitest';
 import { authGuard, roleGuard } from './auth.guards';
 import { AuthStoreService } from './auth-store.service';
@@ -16,7 +16,7 @@ describe('Auth Guards', () => {
       login: ReturnType<typeof vi.fn>;
    };
    let authStoreMock: {
-      isLoggedIn$: ReturnType<typeof of<boolean>>;
+      isLoggedIn$: Observable<boolean>;
       hasRole: ReturnType<typeof vi.fn>;
    };
    let routerMock: {
