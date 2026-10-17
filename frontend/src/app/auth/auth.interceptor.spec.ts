@@ -13,6 +13,7 @@ import { authInterceptor } from './auth.interceptor';
 import { AuthService } from './auth.service';
 import { KeycloakService } from './keycloak.service';
 import { environment } from '../../environments/environment';
+import { firstValueFrom } from 'rxjs';
 import { ApiError } from '../models/api-error.model';
 
 describe('authInterceptor', () => {
@@ -98,14 +99,12 @@ describe('authInterceptor', () => {
       );
 
       let caughtError: ApiError | null = null;
-      http.get(`${environment.apiUrl}/watchlist`).subscribe({
-         next: () => expect.unreachable('Should have failed'),
-         error: (err: ApiError) => {
-            caughtError = err;
-         },
-      });
-
-      await Promise.resolve();
+      try {
+         await firstValueFrom(http.get(`${environment.apiUrl}/watchlist`));
+         expect.unreachable('Should have failed');
+      } catch (err) {
+         caughtError = err as ApiError;
+      }
 
       expect(authServiceMock.login).toHaveBeenCalled();
       expect(caughtError).toBeTruthy();
