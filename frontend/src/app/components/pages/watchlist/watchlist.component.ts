@@ -15,6 +15,7 @@ import { FinancialAnalysisService } from '../../../services/financial-analysis.s
 import { AuthStoreService } from '../../../auth/auth-store.service';
 import { UserProfile } from '../../../models/user.model';
 import { FullMetrics } from '../../../models/analysis.model';
+import { ApiError } from '../../../models/api-error.model';
 
 export interface WatchlistItem {
    ticker: string;
@@ -97,12 +98,9 @@ export class WatchlistComponent implements OnInit {
                this.isLoading = false;
                this.cdr.markForCheck();
             },
-            error: (err) => {
-               console.error(
-                  'Erreur lors du chargement de la watchlist:',
-                  err,
-               );
-               this.errorMessage = 'Impossible de charger votre watchlist.';
+            error: (err: ApiError) => {
+               this.errorMessage =
+                  err.detail || 'Impossible de charger votre watchlist.';
                this.isLoading = false;
                this.cdr.markForCheck();
             },
@@ -142,10 +140,9 @@ export class WatchlistComponent implements OnInit {
             // Recharger la watchlist complète avec les métriques
             this.loadWatchlist();
          },
-         error: (err) => {
-            console.error("Erreur lors de l'ajout du ticker:", err);
+         error: (err: ApiError) => {
             this.errorMessage =
-               err.message || "Erreur lors de l'ajout du ticker.";
+               err.detail || "Erreur lors de l'ajout du ticker.";
             this.isSubmitting = false;
             this.cdr.markForCheck();
          },
@@ -162,11 +159,10 @@ export class WatchlistComponent implements OnInit {
       this.cdr.markForCheck();
 
       this.watchlistService.removeTicker(ticker).subscribe({
-         error: (err) => {
-            console.error('Erreur lors de la suppression du ticker:', err);
+         error: (err: ApiError) => {
             this.items = previousItems; // Rollback
             this.errorMessage =
-               err.message || 'Erreur lors de la suppression du ticker.';
+               err.detail || 'Erreur lors de la suppression du ticker.';
             this.cdr.markForCheck();
          },
       });

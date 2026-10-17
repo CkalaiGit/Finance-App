@@ -3,7 +3,7 @@ import {
    provideHttpClientTesting,
    HttpTestingController,
 } from '@angular/common/http/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { describe, beforeEach, afterEach, it, expect } from 'vitest';
 import { WatchlistService } from './watchlist.service';
 import {
@@ -11,6 +11,8 @@ import {
    TickerExistsResponse,
 } from '../models/watchlist.model';
 import { environment } from '../../environments/environment';
+import { errorInterceptor } from '../interceptors/error.interceptor';
+import { ApiError } from '../models/api-error.model';
 
 describe('WatchlistService', () => {
    let service: WatchlistService;
@@ -22,7 +24,7 @@ describe('WatchlistService', () => {
       TestBed.configureTestingModule({
          providers: [
             WatchlistService,
-            provideHttpClient(),
+            provideHttpClient(withInterceptors([errorInterceptor])),
             provideHttpClientTesting(),
          ],
       });
@@ -99,15 +101,25 @@ describe('WatchlistService', () => {
       req.flush(mockResponse);
    });
 
-   it('should handle HTTP error gracefully', () => {
-      service.getWatchlist().subscribe({
-         next: () => expect.fail('Should have failed'),
-         error: (error) => {
-            expect(error.message).toBeTruthy();
+   it('should let an ApiError returned by HttpClient bubble up with its detail', () => {
+      const problemDetail = {
+         type: 'about:blank',
+         title: 'Bad Request',
+         status: 400,
+         detail: 'Ticker déjà présent dans la watchlist',
+         instance: `${baseUrl}/AAPL`,
+      };
+
+      service.addTicker('AAPL').subscribe({
+         next: () => expect.unreachable('Should have failed'),
+         error: (err: ApiError) => {
+            expect(err.status).toBe(400);
+            expect(err.title).toBe('Bad Request');
+            expect(err.detail).toBe('Ticker déjà présent dans la watchlist');
          },
       });
 
-      const req = httpMock.expectOne(baseUrl);
-      req.flush('Error', { status: 500, statusText: 'Server Error' });
+      const req = httpMock.expectOne(`${baseUrl}/AAPL`);
+      req.flush(problemDetail, { status: 400, statusText: 'Bad Request' });
    });
 });

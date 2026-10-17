@@ -1,7 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import {
    WatchlistResponse,
    TickerExistsResponse,
@@ -19,9 +18,7 @@ export class WatchlistService {
     * Récupère la watchlist complète de l'utilisateur authentifié
     */
    getWatchlist(): Observable<WatchlistResponse> {
-      return this.http
-         .get<WatchlistResponse>(this.baseUrl)
-         .pipe(catchError(this.handleError.bind(this)));
+      return this.http.get<WatchlistResponse>(this.baseUrl);
    }
 
    /**
@@ -30,9 +27,10 @@ export class WatchlistService {
     */
    addTicker(ticker: string): Observable<WatchlistResponse> {
       const cleanTicker = ticker.trim().toUpperCase();
-      return this.http
-         .post<WatchlistResponse>(`${this.baseUrl}/${cleanTicker}`, {})
-         .pipe(catchError(this.handleError.bind(this)));
+      return this.http.post<WatchlistResponse>(
+         `${this.baseUrl}/${cleanTicker}`,
+         {},
+      );
    }
 
    /**
@@ -41,9 +39,9 @@ export class WatchlistService {
     */
    removeTicker(ticker: string): Observable<WatchlistResponse> {
       const cleanTicker = ticker.trim().toUpperCase();
-      return this.http
-         .delete<WatchlistResponse>(`${this.baseUrl}/${cleanTicker}`)
-         .pipe(catchError(this.handleError.bind(this)));
+      return this.http.delete<WatchlistResponse>(
+         `${this.baseUrl}/${cleanTicker}`,
+      );
    }
 
    /**
@@ -52,15 +50,8 @@ export class WatchlistService {
     */
    checkExists(ticker: string): Observable<TickerExistsResponse> {
       const cleanTicker = ticker.trim().toUpperCase();
-      return this.http
-         .get<TickerExistsResponse>(`${this.baseUrl}/${cleanTicker}/exists`)
-         .pipe(catchError(this.handleError.bind(this)));
-   }
-
-   private handleError(error: HttpErrorResponse): Observable<never> {
-      console.error('Erreur API Watchlist:', error);
-      return throwError(
-         () => new Error(error.error?.message || 'Erreur API Watchlist'),
+      return this.http.get<TickerExistsResponse>(
+         `${this.baseUrl}/${cleanTicker}/exists`,
       );
    }
 }
