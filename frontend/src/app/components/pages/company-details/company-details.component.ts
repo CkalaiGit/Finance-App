@@ -25,6 +25,8 @@ import { ApiError } from '../../../models/api-error.model';
 export interface CompanyDetailsState {
    loading: boolean;
    error: ApiError | null;
+   profileError: ApiError | null;
+   metricsError: ApiError | null;
    companyProfile: CompanyProfileResponse | null;
    metrics: FullMetrics | null;
 }
@@ -60,6 +62,8 @@ export class CompanyDetailsComponent {
             return of<CompanyDetailsState>({
                loading: false,
                error: null,
+               profileError: null,
+               metricsError: null,
                companyProfile: null,
                metrics: null,
             });
@@ -68,43 +72,49 @@ export class CompanyDetailsComponent {
          this.checkWatchlistStatus(ticker);
 
          return forkJoin({
-            companyProfile: this.companyService.getCompanyProfile(ticker),
-            metrics: this.analysisService
-               .getMetrics(ticker)
-               .pipe(catchError(() => of(null))),
+            profileResult: this.companyService.getCompanyProfile(ticker).pipe(
+               map((companyProfile) => ({
+                  companyProfile,
+                  error: null as ApiError | null,
+               })),
+               catchError((err: unknown) =>
+                  of({
+                     companyProfile: null,
+                     error: this.toApiError(
+                        err,
+                        'Impossible de charger les données de l’entreprise.',
+                     ),
+                  }),
+               ),
+            ),
+            metricsResult: this.analysisService.getMetrics(ticker).pipe(
+               map((metrics) => ({ metrics, error: null as ApiError | null })),
+               catchError((err: unknown) =>
+                  of({
+                     metrics: null,
+                     error: this.toApiError(
+                        err,
+                        'Impossible de charger les métriques financières.',
+                     ),
+                  }),
+               ),
+            ),
          }).pipe(
-            map(({ companyProfile, metrics }) => ({
+            map(({ profileResult, metricsResult }) => ({
                loading: false,
-               error: null,
-               companyProfile,
-               metrics,
+               error: profileResult.error,
+               profileError: profileResult.error,
+               metricsError: metricsResult.error,
+               companyProfile: profileResult.companyProfile,
+               metrics: metricsResult.metrics,
             })),
             startWith<CompanyDetailsState>({
                loading: true,
                error: null,
+               profileError: null,
+               metricsError: null,
                companyProfile: null,
                metrics: null,
-            }),
-            catchError((err: unknown) => {
-               const apiErr: ApiError =
-                  err &&
-                  typeof err === 'object' &&
-                  'title' in err &&
-                  'detail' in err
-                     ? (err as ApiError)
-                     : {
-                          status: 500,
-                          title: 'Erreur',
-                          detail:
-                             (err as Error)?.message ||
-                             'Impossible de charger les données de l’entreprise.',
-                       };
-               return of<CompanyDetailsState>({
-                  loading: false,
-                  error: apiErr,
-                  companyProfile: null,
-                  metrics: null,
-               });
             }),
          );
       }),
@@ -125,6 +135,35 @@ export class CompanyDetailsComponent {
    readonly error$: Observable<ApiError | null> = this.state$.pipe(
       map((s) => s.error),
    );
+
+   readonly profileError$: Observable<ApiError | null> = this.state$.pipe(
+      map((s) => s.profileError),
+   );
+
+   readonly metricsError$: Observable<ApiError | null> = this.state$.pipe(
+      map((s) => s.metricsError),
+   );
+
+   private toApiError(err: unknown, defaultDetail: string): ApiError {
+      if (
+         err &&
+         typeof err === 'object' &&
+         'title' in err &&
+         'detail' in err
+      ) {
+         const apiErr = err as ApiError;
+         return {
+            status: typeof apiErr.status === 'number' ? apiErr.status : 500,
+            title: apiErr.title || 'Erreur',
+            detail: apiErr.detail || defaultDetail,
+         };
+      }
+      return {
+         status: 500,
+         title: 'Erreur',
+         detail: (err as Error)?.message || defaultDetail,
+      };
+   }
 
    private checkWatchlistStatus(ticker: string): void {
       this.watchlistService

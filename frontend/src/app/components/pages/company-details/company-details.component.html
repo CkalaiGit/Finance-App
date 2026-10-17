@@ -16,20 +16,7 @@
                </h1>
             </div>
          </div>
-      } @else if (state.error) {
-         <!-- ÉTAT ERREUR -->
-         <div class="company-header" data-testid="error-state">
-            <div class="text-center py-4">
-               <i
-                  class="bi bi-exclamation-triangle-fill"
-                  style="font-size: 2.5rem; color: var(--accent-red)"
-               ></i>
-               <h2 class="mt-2" style="color: var(--accent-red)">{{ state.error.title }}</h2>
-               <p class="text-muted mt-1">{{ state.error.detail }}</p>
-               <a routerLink="/home" class="btn-secondary mt-3 d-inline-block">Retour à l'accueil</a>
-            </div>
-         </div>
-      } @else if (!state.companyProfile) {
+      } @else if (!state.companyProfile && !state.profileError) {
          <!-- ÉTAT VIDE -->
          <div class="company-header" data-testid="empty-state">
             <div class="text-center py-4">
@@ -43,9 +30,22 @@
             </div>
          </div>
       } @else {
-         <!-- ÉTAT DONNÉES -->
-         <!-- HEADER ENTREPRISE -->
-         <div class="company-header" data-testid="data-state">
+         @if (state.profileError) {
+            <!-- ÉTAT ERREUR PROFIL -->
+            <div class="company-header" data-testid="error-state">
+               <div class="text-center py-4">
+                  <i
+                     class="bi bi-exclamation-triangle-fill"
+                     style="font-size: 2.5rem; color: var(--accent-red)"
+                  ></i>
+                  <h2 class="mt-2" style="color: var(--accent-red)">{{ state.profileError.title }}</h2>
+                  <p class="text-muted mt-1">{{ state.profileError.detail }}</p>
+                  <a routerLink="/home" class="btn-secondary mt-3 d-inline-block">Retour à l'accueil</a>
+               </div>
+            </div>
+         } @else if (state.companyProfile) {
+            <!-- HEADER ENTREPRISE -->
+            <div class="company-header" data-testid="data-state">
             @if (state.companyProfile.image) {
                <img
                   [src]="state.companyProfile.image"
@@ -106,7 +106,8 @@
             @if (state.companyProfile.description) {
                <p class="company-description">{{ state.companyProfile.description }}</p>
             }
-         </div>
+            </div>
+         }
 
          <!-- TABS NAVIGATION -->
          <div class="tabs-container">
@@ -302,10 +303,31 @@
                   </div>
                </div>
             </div>
+         } @else if (state.metricsError) {
+            @if (state.metricsError.status === 404) {
+               <div class="tab-content active" data-testid="metrics-unavailable">
+                  <div class="text-center py-4">
+                     <i class="bi bi-info-circle" style="font-size: 2.5rem; color: var(--text-muted)"></i>
+                     <h3 class="mt-2 text-muted">Données indisponibles</h3>
+                     <p class="text-muted mt-1">{{ state.metricsError.detail || 'Données indisponibles pour ce symbole.' }}</p>
+                  </div>
+               </div>
+            } @else {
+               <div class="tab-content active" data-testid="metrics-error">
+                  <div class="text-center py-4">
+                     <i class="bi bi-exclamation-triangle-fill" style="font-size: 2.5rem; color: var(--accent-red)"></i>
+                     <h3 class="mt-2" style="color: var(--accent-red)">{{ state.metricsError.title }}</h3>
+                     <p class="text-muted mt-1">{{ state.metricsError.detail }}</p>
+                  </div>
+               </div>
+            }
          } @else {
-            <div class="text-center mt-4 text-muted">
-               <i class="bi bi-hourglass-split" style="font-size: 2rem"></i>
-               <p class="mt-2">Chargement des données d'analyse...</p>
+            <div class="tab-content active" data-testid="metrics-unavailable">
+               <div class="text-center py-4">
+                  <i class="bi bi-info-circle" style="font-size: 2.5rem; color: var(--text-muted)"></i>
+                  <h3 class="mt-2 text-muted">Données indisponibles</h3>
+                  <p class="text-muted mt-1">Données indisponibles pour cette entreprise.</p>
+               </div>
             </div>
          }
       }

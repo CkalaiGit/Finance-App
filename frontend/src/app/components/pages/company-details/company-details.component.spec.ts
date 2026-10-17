@@ -134,4 +134,72 @@ describe('CompanyDetailsComponent', () => {
       expect(emptyStateEl).toBeTruthy();
       expect(compiled.textContent).toContain('Aucune entreprise trouvée');
    });
+
+   it('should display metrics error with title and detail when metrics service fails with non-404 error', async () => {
+      const error: ApiError = {
+         status: 500,
+         title: 'Erreur Métriques',
+         detail: 'Calcul des ratios impossible',
+      };
+      analysisServiceMock.getMetrics.mockReturnValue(throwError(() => error));
+
+      fixture = TestBed.createComponent(CompanyDetailsComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const metricsErrorEl = compiled.querySelector('[data-testid="metrics-error"]');
+      expect(metricsErrorEl).toBeTruthy();
+      expect(compiled.textContent).toContain('Erreur Métriques');
+      expect(compiled.textContent).toContain('Calcul des ratios impossible');
+      // Company profile should not be hidden by metrics error
+      expect(compiled.querySelector('.company-name-large')?.textContent).toContain('Apple Inc.');
+   });
+
+   it('should display "Données indisponibles" when metrics service returns 404', async () => {
+      const error: ApiError = {
+         status: 404,
+         title: 'Non trouvé',
+         detail: 'Métriques financières indisponibles',
+      };
+      analysisServiceMock.getMetrics.mockReturnValue(throwError(() => error));
+
+      fixture = TestBed.createComponent(CompanyDetailsComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const unavailableEl = compiled.querySelector('[data-testid="metrics-unavailable"]');
+      expect(unavailableEl).toBeTruthy();
+      expect(compiled.textContent).toContain('Données indisponibles');
+      // Company profile should still be visible
+      expect(compiled.querySelector('.company-name-large')?.textContent).toContain('Apple Inc.');
+   });
+
+   it('should display profile error while still displaying metrics when company profile fails', async () => {
+      const error: ApiError = {
+         status: 500,
+         title: 'Erreur Profil',
+         detail: 'Impossible de joindre le profil',
+      };
+      companyServiceMock.getCompanyProfile.mockReturnValue(throwError(() => error));
+
+      fixture = TestBed.createComponent(CompanyDetailsComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const profileErrorEl = compiled.querySelector('[data-testid="error-state"]');
+      expect(profileErrorEl).toBeTruthy();
+      expect(compiled.textContent).toContain('Erreur Profil');
+      expect(compiled.textContent).toContain('Impossible de joindre le profil');
+      // Metrics should not be hidden by profile failure
+      expect(compiled.querySelector('.metric-card')).toBeTruthy();
+   });
 });
