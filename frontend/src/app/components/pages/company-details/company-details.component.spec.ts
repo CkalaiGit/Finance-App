@@ -199,7 +199,86 @@ describe('CompanyDetailsComponent', () => {
       expect(profileErrorEl).toBeTruthy();
       expect(compiled.textContent).toContain('Erreur Profil');
       expect(compiled.textContent).toContain('Impossible de joindre le profil');
-      // Metrics should not be hidden by profile failure
       expect(compiled.querySelector('.metric-card')).toBeTruthy();
+   });
+
+   it('should make only one watchlist status request per ticker', async () => {
+      fixture = TestBed.createComponent(CompanyDetailsComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(watchlistServiceMock.checkExists).toHaveBeenCalledTimes(1);
+      expect(watchlistServiceMock.checkExists).toHaveBeenCalledWith('AAPL');
+
+      paramMapSubject.next(convertToParamMap({ ticker: 'MSFT' }));
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(watchlistServiceMock.checkExists).toHaveBeenCalledTimes(2);
+      expect(watchlistServiceMock.checkExists).toHaveBeenLastCalledWith('MSFT');
+   });
+
+   it('should not leak subscriptions upon component destruction when ticker changes', async () => {
+      fixture = TestBed.createComponent(CompanyDetailsComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(watchlistServiceMock.checkExists).toHaveBeenCalledTimes(1);
+
+      fixture.destroy();
+
+      paramMapSubject.next(convertToParamMap({ ticker: 'NVDA' }));
+
+      expect(watchlistServiceMock.checkExists).toHaveBeenCalledTimes(1);
+      expect(watchlistServiceMock.checkExists).not.toHaveBeenCalledWith('NVDA');
+   });
+
+   it('should display explicit error state when checkExists fails instead of silent false', async () => {
+      const error: ApiError = {
+         status: 500,
+         title: 'Erreur Watchlist',
+         detail: 'Service indisponible',
+      };
+      watchlistServiceMock.checkExists.mockReturnValue(throwError(() => error));
+
+      fixture = TestBed.createComponent(CompanyDetailsComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.textContent).toContain('Erreur watchlist');
+   });
+
+   it('should toggle watchlist by returning an Observable and updating state through stream', async () => {
+      fixture = TestBed.createComponent(CompanyDetailsComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      let stateSnapshot: CompanyDetailsState | undefined;
+      component.state$.subscribe((s) => (stateSnapshot = s));
+
+      expect(stateSnapshot?.watchlist.inWatchlist).toBe(false);
+
+      const addObs$ = component.toggleWatchlist('AAPL', false);
+      expect(addObs$).toBeTruthy();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(watchlistServiceMock.addTicker).toHaveBeenCalledWith('AAPL');
+      expect(stateSnapshot?.watchlist.inWatchlist).toBe(true);
+
+      const removeObs$ = component.toggleWatchlist('AAPL', true);
+      expect(removeObs$).toBeTruthy();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(watchlistServiceMock.removeTicker).toHaveBeenCalledWith('AAPL');
+      expect(stateSnapshot?.watchlist.inWatchlist).toBe(false);
    });
 });

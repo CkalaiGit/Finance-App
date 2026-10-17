@@ -1,19 +1,21 @@
 import {
    ChangeDetectionStrategy,
-   ChangeDetectorRef,
    Component,
    inject,
 } from '@angular/core';
 import { AsyncPipe, CurrencyPipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { Observable, forkJoin, of } from 'rxjs';
+import { Observable, Subject, combineLatest, forkJoin, merge, of } from 'rxjs';
 import {
    catchError,
    distinctUntilChanged,
+   filter,
    map,
    shareReplay,
    startWith,
    switchMap,
+   take,
+   tap,
 } from 'rxjs/operators';
 import { FinancialAnalysisService } from '../../../services/financial-analysis.service';
 import { CompanyService } from '../../../services/company.service';
@@ -21,6 +23,18 @@ import { WatchlistService } from '../../../services/watchlist.service';
 import { FullMetrics } from '../../../models/analysis.model';
 import { CompanyProfileResponse } from '../../../models/company.model';
 import { ApiError } from '../../../models/api-error.model';
+import { WatchlistResponse } from '../../../models/watchlist.model';
+
+export interface WatchlistStatus {
+   inWatchlist: boolean;
+   loading: boolean;
+   error: ApiError | null;
+}
+
+interface WatchlistOverride {
+   ticker: string;
+   status: WatchlistStatus;
+}
 
 export interface CompanyDetailsState {
    loading: boolean;
@@ -29,6 +43,7 @@ export interface CompanyDetailsState {
    metricsError: ApiError | null;
    companyProfile: CompanyProfileResponse | null;
    metrics: FullMetrics | null;
+   watchlist: WatchlistStatus;
 }
 
 @Component({
@@ -44,21 +59,16 @@ export class CompanyDetailsComponent {
    private readonly analysisService = inject(FinancialAnalysisService);
    private readonly companyService = inject(CompanyService);
    private readonly watchlistService = inject(WatchlistService);
-   private readonly cdr = inject(ChangeDetectorRef);
 
    activeTab: 'growth' | 'value' | 'quality' = 'growth';
 
-   currentTicker = '';
-   isInWatchlist = false;
-   isTogglingWatchlist = false;
+   private readonly watchlistOverrides$ = new Subject<WatchlistOverride>();
 
    readonly state$: Observable<CompanyDetailsState> = this.route.paramMap.pipe(
       map((params) => params.get('ticker')?.trim().toUpperCase() || ''),
       distinctUntilChanged(),
       switchMap((ticker) => {
-         this.currentTicker = ticker;
          if (!ticker) {
-            this.isInWatchlist = false;
             return of<CompanyDetailsState>({
                loading: false,
                error: null,
@@ -66,47 +76,82 @@ export class CompanyDetailsComponent {
                metricsError: null,
                companyProfile: null,
                metrics: null,
+               watchlist: {
+                  inWatchlist: false,
+                  loading: false,
+                  error: null,
+               },
             });
          }
 
-         this.checkWatchlistStatus(ticker);
-
-         return forkJoin({
-            profileResult: this.companyService.getCompanyProfile(ticker).pipe(
-               map((companyProfile) => ({
-                  companyProfile,
+         const initialWatchlist$: Observable<WatchlistStatus> = this.watchlistService
+            .checkExists(ticker)
+            .pipe(
+               map((res) => ({
+                  inWatchlist: res.exists,
+                  loading: false,
                   error: null as ApiError | null,
                })),
                catchError((err: unknown) =>
                   of({
-                     companyProfile: null,
+                     inWatchlist: false,
+                     loading: false,
                      error: this.toApiError(
                         err,
-                        'Impossible de charger les données de l’entreprise.',
+                        'Impossible de vérifier la présence dans la watchlist.',
                      ),
                   }),
                ),
+            );
+
+         const watchlist$: Observable<WatchlistStatus> = merge(
+            initialWatchlist$,
+            this.watchlistOverrides$.pipe(
+               filter((override) => override.ticker === ticker),
+               map((override) => override.status),
             ),
-            metricsResult: this.analysisService.getMetrics(ticker).pipe(
-               map((metrics) => ({ metrics, error: null as ApiError | null })),
-               catchError((err: unknown) =>
-                  of({
-                     metrics: null,
-                     error: this.toApiError(
-                        err,
-                        'Impossible de charger les métriques financières.',
-                     ),
-                  }),
+         );
+
+         return combineLatest({
+            data: forkJoin({
+               profileResult: this.companyService.getCompanyProfile(ticker).pipe(
+                  map((companyProfile) => ({
+                     companyProfile,
+                     error: null as ApiError | null,
+                  })),
+                  catchError((err: unknown) =>
+                     of({
+                        companyProfile: null,
+                        error: this.toApiError(
+                           err,
+                           'Impossible de charger les données de l’entreprise.',
+                        ),
+                     }),
+                  ),
                ),
-            ),
+               metricsResult: this.analysisService.getMetrics(ticker).pipe(
+                  map((metrics) => ({ metrics, error: null as ApiError | null })),
+                  catchError((err: unknown) =>
+                     of({
+                        metrics: null,
+                        error: this.toApiError(
+                           err,
+                           'Impossible de charger les métriques financières.',
+                        ),
+                     }),
+                  ),
+               ),
+            }),
+            watchlist: watchlist$,
          }).pipe(
-            map(({ profileResult, metricsResult }) => ({
+            map(({ data, watchlist }) => ({
                loading: false,
-               error: profileResult.error,
-               profileError: profileResult.error,
-               metricsError: metricsResult.error,
-               companyProfile: profileResult.companyProfile,
-               metrics: metricsResult.metrics,
+               error: data.profileResult.error,
+               profileError: data.profileResult.error,
+               metricsError: data.metricsResult.error,
+               companyProfile: data.profileResult.companyProfile,
+               metrics: data.metricsResult.metrics,
+               watchlist,
             })),
             startWith<CompanyDetailsState>({
                loading: true,
@@ -115,6 +160,11 @@ export class CompanyDetailsComponent {
                metricsError: null,
                companyProfile: null,
                metrics: null,
+               watchlist: {
+                  inWatchlist: false,
+                  loading: true,
+                  error: null,
+               },
             }),
          );
       }),
@@ -144,6 +194,18 @@ export class CompanyDetailsComponent {
       map((s) => s.metricsError),
    );
 
+   readonly watchlist$: Observable<WatchlistStatus> = this.state$.pipe(
+      map((s) => s.watchlist),
+   );
+
+   readonly isInWatchlist$: Observable<boolean> = this.watchlist$.pipe(
+      map((w) => w.inWatchlist),
+   );
+
+   readonly isTogglingWatchlist$: Observable<boolean> = this.watchlist$.pipe(
+      map((w) => w.loading),
+   );
+
    private toApiError(err: unknown, defaultDetail: string): ApiError {
       if (
          err &&
@@ -165,47 +227,73 @@ export class CompanyDetailsComponent {
       };
    }
 
-   private checkWatchlistStatus(ticker: string): void {
-      this.watchlistService
-         .checkExists(ticker)
-         .pipe(catchError(() => of({ ticker, exists: false })))
-         .subscribe({
-            next: (res) => {
-               this.isInWatchlist = res.exists;
-               this.cdr.markForCheck();
-            },
+   toggleWatchlist(
+      ticker?: string,
+      currentlyInWatchlist?: boolean,
+   ): Observable<WatchlistResponse | null> {
+      let targetTicker = ticker;
+      let targetInWatchlist = currentlyInWatchlist;
+
+      if (!targetTicker) {
+         this.state$.pipe(take(1)).subscribe((state) => {
+            targetTicker = state.companyProfile?.symbol || '';
+            targetInWatchlist = state.watchlist.inWatchlist;
          });
-   }
+      }
 
-   toggleWatchlist(): void {
-      if (!this.currentTicker || this.isTogglingWatchlist) return;
+      if (!targetTicker) {
+         return of(null);
+      }
 
-      this.isTogglingWatchlist = true;
-      this.cdr.markForCheck();
+      const inWatchlist = !!targetInWatchlist;
+      const cleanTicker = targetTicker;
 
-      const action$ = this.isInWatchlist
-         ? this.watchlistService.removeTicker(this.currentTicker)
-         : this.watchlistService.addTicker(this.currentTicker);
+      this.watchlistOverrides$.next({
+         ticker: cleanTicker,
+         status: {
+            inWatchlist,
+            loading: true,
+            error: null,
+         },
+      });
 
-      action$
-         .pipe(
-            catchError((err) => {
-               console.error(
-                  'Erreur lors de la modification de la watchlist:',
-                  err,
-               );
-               return of(null);
-            }),
-         )
-         .subscribe({
-            next: (res) => {
-               if (res) {
-                  this.isInWatchlist = !this.isInWatchlist;
-               }
-               this.isTogglingWatchlist = false;
-               this.cdr.markForCheck();
+      const action$ = inWatchlist
+         ? this.watchlistService.removeTicker(cleanTicker)
+         : this.watchlistService.addTicker(cleanTicker);
+
+      const result$ = action$.pipe(
+         tap({
+            next: () => {
+               this.watchlistOverrides$.next({
+                  ticker: cleanTicker,
+                  status: {
+                     inWatchlist: !inWatchlist,
+                     loading: false,
+                     error: null,
+                  },
+               });
             },
-         });
+            error: (err: unknown) => {
+               this.watchlistOverrides$.next({
+                  ticker: cleanTicker,
+                  status: {
+                     inWatchlist,
+                     loading: false,
+                     error: this.toApiError(
+                        err,
+                        'Erreur lors de la modification de la watchlist.',
+                     ),
+                  },
+               });
+            },
+         }),
+         shareReplay({ bufferSize: 1, refCount: true }),
+      );
+
+      // Déclenche l'action pour les appels depuis les handlers d'événements du template
+      result$.pipe(take(1)).subscribe({ error: () => {} });
+
+      return result$;
    }
 
    switchTab(tab: 'growth' | 'value' | 'quality'): void {

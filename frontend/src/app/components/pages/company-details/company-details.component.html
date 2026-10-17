@@ -60,14 +60,17 @@
                <button
                   type="button"
                   class="btn-secondary watchlist-toggle-btn"
-                  [class.in-watchlist]="isInWatchlist"
-                  (click)="toggleWatchlist()"
-                  [disabled]="isTogglingWatchlist"
+                  [class.in-watchlist]="state.watchlist.inWatchlist"
+                  (click)="toggleWatchlist(state.companyProfile.symbol, state.watchlist.inWatchlist)"
+                  [disabled]="state.watchlist.loading"
                >
-                  @if (isTogglingWatchlist) {
+                  @if (state.watchlist.loading) {
                      <i class="bi bi-arrow-repeat spin-icon"></i>
                      <span>Mise à jour...</span>
-                  } @else if (isInWatchlist) {
+                  } @else if (state.watchlist.error) {
+                     <i class="bi bi-exclamation-circle" style="color: var(--accent-red)"></i>
+                     <span style="color: var(--accent-red)">Erreur watchlist</span>
+                  } @else if (state.watchlist.inWatchlist) {
                      <i class="bi bi-star-fill text-yellow"></i>
                      <span>Retirer de la watchlist</span>
                   } @else {
