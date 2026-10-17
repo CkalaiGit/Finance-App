@@ -5,9 +5,9 @@ import {
    OnInit,
    inject,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Observable, forkJoin, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import { WatchlistService } from '../../../services/watchlist.service';
@@ -25,7 +25,7 @@ export interface WatchlistItem {
 @Component({
    selector: 'app-watchlist',
    standalone: true,
-   imports: [CommonModule, FormsModule, RouterModule],
+   imports: [AsyncPipe, FormsModule, RouterLink],
    templateUrl: './watchlist.component.html',
    styleUrls: ['./watchlist.component.scss'],
    changeDetection: ChangeDetectionStrategy.OnPush,

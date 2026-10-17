@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common'; // Requis pour le pipe async
+import { AsyncPipe } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { AuthStoreService } from '../../../auth/auth-store.service'; // Point 1 : Service dédié pour la gestion de l'état d'authentification
+import { AuthStoreService } from '../../../auth/auth-store.service';
 
 @Component({
    selector: 'app-header',
    standalone: true,
-   imports: [CommonModule, RouterLink, RouterLinkActive],
+   imports: [AsyncPipe, RouterLink, RouterLinkActive],
    templateUrl: './header.component.html',
    styleUrls: ['./header.component.scss'],
    changeDetection: ChangeDetectionStrategy.OnPush,
