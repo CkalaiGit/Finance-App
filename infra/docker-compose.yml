@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
 
   # ─────────────────────────────────────────────────────────────
@@ -50,8 +48,8 @@ services:
       KC_CACHE_THEME_TEMPLATES: "false"
     command: start-dev --import-realm
     volumes:
-      - "C:\\dev\\Projet-App-Finance\\infra-keycloak\\keycloak\\realm-dev.json:/opt/keycloak/data/import/realm.json:ro"
-      - "C:\\dev\\Projet-App-Finance\\infra-keycloak\\keycloak\\themes:/opt/keycloak/themes:rw"
+      - ./keycloak/realm-dev.json:/opt/keycloak/data/import/realm.json:ro
+      - ./keycloak/themes:/opt/keycloak/themes:rw
     ports:
       - "8080:8080"
     networks:
