@@ -16,6 +16,8 @@ Dashboard financier moderne construit avec **Angular 20** (standalone components
 
 ## 🛠️ Installation & Démarrage
 
+Pour démarrer l'ensemble du projet (Keycloak, bases de données, backend), suivre le guide du dépôt d'infrastructure : https://github.com/CkalaiGit/Infra-KC_projet_finance#readme
+
 ### Prérequis
 - Node.js 20+
 - Backend Spring Boot lancé sur `http://localhost:8081`
