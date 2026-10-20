@@ -2,6 +2,10 @@
   "realm": "dev-realm",
   "loginTheme": "financeapp",
   "enabled": true,
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": false,
+  "verifyEmail": false,
+  "resetPasswordAllowed": true,
   "users": [
     {
       "username": "warren",
