@@ -14,7 +14,7 @@ export interface UserContext {
 @Injectable({ providedIn: 'root' })
 export class UserService {
    private readonly http = inject(HttpClient);
-   private readonly apiUrl = `${environment.apiUrl.replace('/v1', '')}/users`;
+   private readonly apiUrl = `${environment.apiUrl}/users`;
 
    getMe(): Observable<UserContext> {
       return this.http.get<UserContext>(`${this.apiUrl}/me`);

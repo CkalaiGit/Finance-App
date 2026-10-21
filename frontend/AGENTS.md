@@ -59,7 +59,7 @@ Base URL : `http://localhost:8081`
 | `GET` | `/api/v1/companies/:ticker` | Fiche synthétique d'une entreprise | Publique / Authentifié |
 | `GET` | `/api/v1/company-profile/:ticker` | Profil complet (logo, secteur, prix, cap) | Authentifié |
 | `GET` | `/api/v1/analysis/:ticker` | Métriques financières (Growth, Value, Quality) | Authentifié (PREMIUM) |
-| `GET` | `/api/users/me` | Context utilisateur (`UserContext`) | Authentifié |
+| `GET` | `/api/v1/users/me` | Context utilisateur (`UserContext`) | Authentifié |
 | `GET` | `/api/v1/watchlist` | Récupère la watchlist de l'utilisateur | Authentifié |
 | `POST` | `/api/v1/watchlist/:ticker` | Ajoute un ticker à la watchlist | Authentifié |
 | `DELETE` | `/api/v1/watchlist/:ticker` | Supprime un ticker de la watchlist | Authentifié |

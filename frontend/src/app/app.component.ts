@@ -18,7 +18,7 @@ export class AppComponent implements OnInit {
 
    ngOnInit(): void {
       this.http
-         .get<UserProfile>(`${environment.apiUrl.replace('/v1', '')}/users/me`)
+         .get<UserProfile>(`${environment.apiUrl}/users/me`)
          .subscribe({
             next: (ctx) => console.log('[/me] UserContext reçu :', ctx),
             error: (err) => console.error('[/me] Erreur :', err),

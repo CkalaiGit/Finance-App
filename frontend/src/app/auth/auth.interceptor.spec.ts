@@ -15,6 +15,7 @@ import { KeycloakService } from './keycloak.service';
 import { environment } from '../../environments/environment';
 import { firstValueFrom } from 'rxjs';
 import { ApiError } from '../models/api-error.model';
+import { UserService } from '../user/user.service';
 
 describe('authInterceptor', () => {
    let http: HttpClient;
@@ -66,6 +67,18 @@ describe('authInterceptor', () => {
 
       const req = httpMock.expectOne(`${environment.apiUrl}/companies/AAPL`);
       expect(req.request.headers.has('Authorization')).toBe(true);
+      expect(req.request.headers.get('Authorization')).toBe(
+         'Bearer mock-jwt-token',
+      );
+      req.flush({});
+   });
+
+   it('should send Authorization header on /users/me via UserService (regression: URL sans /v1)', async () => {
+      TestBed.inject(UserService).getMe().subscribe();
+
+      await Promise.resolve();
+
+      const req = httpMock.expectOne(`${environment.apiUrl}/users/me`);
       expect(req.request.headers.get('Authorization')).toBe(
          'Bearer mock-jwt-token',
       );
