@@ -6,7 +6,7 @@
 KEYCLOAK_URL="http://localhost:8080"
 REALM="dev-realm"
 CLIENT_ID="frontend-client"
-USER="alice"
+USER="warren"
 PASS="password"
 
 echo "Récupération du token pour l'utilisateur : $USER sur $REALM..."

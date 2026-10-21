@@ -29,11 +29,11 @@ flowchart LR
     KC -->|JDBC| KCDB
 ```
 
-Docker Compose démarre les trois conteneurs d'infrastructure : `keycloak`, `keycloak-db` et `app-db`. Le frontend et le backend ont leurs propres dépôts et se lancent séparément, comme décrit dans les sections ci-dessous.
+Ce dépôt contient le point d'entrée unique : `docker compose up --build -d` lance les cinq services de l'application (`keycloak`, `keycloak-db`, `app-db`, `backend`, `frontend`). Le backend et le frontend sont construits à partir de leurs propres dépôts, situés à côté de celui-ci.
 
 ## Démarrage rapide
 
-Prérequis : Docker (Docker Desktop sous Windows et macOS, Docker Engine avec Compose v2 sous Linux). Les ports 8080, 5433 et 5434 doivent être libres.
+Prérequis : Docker uniquement (Docker Desktop sous Windows et macOS, Docker Engine avec Compose v2 sous Linux). Les ports 4200, 5434, 8080 et 8081 doivent être libres.
 
 **1. Cloner les dépôts**
 
@@ -52,11 +52,11 @@ projet/
 └── frontend-financeHub/       # application Angular
 ```
 
-Pour démarrer l'infrastructure seule, seul `Infra-KC_projet_finance/` est nécessaire.
+Pour un démarrage complet, les trois dépôts sont nécessaires.
 
-**2. Copier le fichier d'environnement (facultatif)**
+**2. Créer le fichier `.env`**
 
-Les valeurs par défaut du `docker-compose.yml` correspondent à `.env.example`. Cette copie n'est nécessaire que si vous voulez pouvoir modifier ces valeurs.
+Le fichier `.env.example` contient les valeurs de développement. Copiez-le en `.env` (ce fichier est ignoré par Git) :
 
 Bash :
 ```bash
@@ -68,14 +68,16 @@ PowerShell :
 Copy-Item .env.example .env
 ```
 
-**3. Clés d'API (uniquement pour le backend)**
+**3. Renseigner les clés d'API (obligatoires)**
 
-- `FMP_API_KEY` : données de marché. Clé gratuite disponible sur https://site.financialmodelingprep.com/developer/docs (quotas limités).
-- `GEMINI_API_KEY` : module IA. Clé gratuite disponible sur https://aistudio.google.com/apikey (quotas limités).
+Dans `.env`, renseignez :
 
-Docker Compose ne lit pas ces variables : elles sont passées au backend au moment de son lancement (voir « Lancer en mode développement »). Cette étape n'est pas nécessaire pour démarrer l'infrastructure.
+- `FMP_API_KEY` : données de marché. Clé disponible sur https://site.financialmodelingprep.com/developer/docs (quotas limités).
+- `GEMINI_API_KEY` : module IA. Clé disponible sur https://aistudio.google.com/apikey (quotas limités).
 
-**4. Démarrer l'infrastructure**
+Sans ces deux clés, `docker compose` refuse de démarrer et affiche le message `FMP_API_KEY manquante : renseignez-la dans .env` (ou l'équivalent pour Gemini).
+
+**4. Démarrer l'application**
 
 Depuis le dossier `Infra-KC_projet_finance/` :
 
@@ -83,7 +85,7 @@ Depuis le dossier `Infra-KC_projet_finance/` :
 docker compose up --build -d
 ```
 
-Le premier lancement télécharge les images `postgres:17` et `quay.io/keycloak/keycloak:26.0`, ce qui prend quelques minutes selon la connexion. Au démarrage, Keycloak importe le realm `dev-realm` ; l'import dure environ 20 secondes.
+Le premier lancement construit les images du backend (Maven) et du frontend (npm), et télécharge `postgres:17` et `quay.io/keycloak/keycloak:26.0`. Il dure plusieurs minutes selon la machine et la connexion. Les lancements suivants sont beaucoup plus rapides.
 
 Vérifier l'état :
 
@@ -91,18 +93,19 @@ Vérifier l'état :
 docker compose ps
 ```
 
-`app-db` et `keycloak-db` passent à `healthy`. Keycloak n'a pas de healthcheck : la console est prête quand `http://localhost:8080` répond.
+Les cinq services doivent passer à `healthy`. Le backend ne démarre qu'une fois `app-db` et `keycloak` prêts, et le frontend n'attend que le backend.
 
 ## URLs
 
 | Service | URL | Lancé par |
 |---|---|---|
-| Application Angular | http://localhost:4200 | `npm start` dans `frontend-financeHub` |
-| API Spring Boot | http://localhost:8081/api/v1 | `.\mvnw.cmd spring-boot:run` (ou `./mvnw`) dans `finance-app-backend` |
-| Swagger UI | http://localhost:8081/swagger-ui.html | backend |
-| Console Keycloak | http://localhost:8080 | `docker compose` |
-| Keycloak (base) | localhost:5433 | `docker compose` |
-| app-db (PostgreSQL) | localhost:5434 | `docker compose` |
+| Application Angular | http://localhost:4200 | `docker compose` (conteneur `frontend`) |
+| API Spring Boot | http://localhost:8081/api/v1 | `docker compose` (conteneur `backend`) |
+| Swagger UI | http://localhost:8081/swagger-ui.html | `docker compose` (backend) |
+| Console Keycloak | http://localhost:8080 | `docker compose` (conteneur `keycloak`) |
+| app-db (PostgreSQL) | localhost:5434 | `docker compose` (conteneur `app-db`) |
+
+La base Keycloak n'est pas exposée sur l'hôte. Le port 5434 de `app-db` reste disponible pour lancer le backend hors Docker.
 
 Base applicative : base `financeapp`, utilisateur `financeapp`, mot de passe `financeapp` (valeurs par défaut).
 
@@ -142,16 +145,17 @@ docker compose ps
 docker compose logs app-db
 docker compose logs keycloak-db
 docker compose logs keycloak
+docker compose logs backend
+docker compose logs frontend
 ```
 
-**Clé d'API manquante**
+**Clé d'API manquante ou vide**
 
-Le backend démarre sans `FMP_API_KEY` ni `GEMINI_API_KEY`. Les appels aux données de marché échouent alors :
+Compose refuse de démarrer tant que `FMP_API_KEY` ou `GEMINI_API_KEY` est absente ou vide dans `.env`. Renseignez la clé puis relancez `docker compose up --build -d`.
 
-- réponse HTTP `503` avec le code `MARKET_DATA_UNAVAILABLE` ;
-- dans les logs du backend : `FMP configuration failure: status=401, endpoint=/stable/profile, symbol=AAPL`.
+**Ancien `.env`**
 
-Les appels Gemini échouent seulement à l'usage, pas au démarrage.
+Les variables `KEYCLOAK_ADMIN` et `KEYCLOAK_ADMIN_PASSWORD` sont remplacées par `KC_BOOTSTRAP_ADMIN_USERNAME` et `KC_BOOTSTRAP_ADMIN_PASSWORD` (Keycloak 26). Si votre `.env` a été créé avant ce changement, renommez-les, ajoutez `FMP_API_KEY`, `GEMINI_API_KEY` et `CORS_ALLOWED_ORIGINS` (voir `.env.example`).
 
 **Réinitialisation complète**
 
@@ -175,6 +179,8 @@ En mode développement, seules les bases et Keycloak tournent dans Docker. Le ba
 ```bash
 docker compose up keycloak-db keycloak app-db -d
 ```
+
+Compose valide tout le fichier avant de lancer des services : les clés `FMP_API_KEY` et `GEMINI_API_KEY` doivent donc être présentes dans `.env` même pour ce mode. Elles n'ont pas besoin d'être valides ; le backend lancé sur l'hôte utilise celles de son propre terminal.
 
 Backend (dans `finance-app-backend/`), avec les clés d'API dans l'environnement du terminal :
 
