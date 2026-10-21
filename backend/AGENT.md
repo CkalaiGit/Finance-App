@@ -67,7 +67,7 @@ Tous les endpoints respectent les principes RESTful et retournent des réponses 
 
 | Méthode | Endpoint | Description | Sécurité / Rôles | DTO de Réponse |
 | :--- | :--- | :--- | :--- | :--- |
-| `GET` | `/api/users/me` | Récupère le profil et les rôles de l'utilisateur connecté | Authentifié | `UserContext` |
+| `GET` | `/api/v1/users/me` | Récupère le profil et les rôles de l'utilisateur connecté | Authentifié | `UserContext` |
 | `GET` | `/api/v1/company-profile/{ticker}` | Récupère les données statiques d'entreprise (description, secteur, prix, mktCap) | Authentifié | `CompanyProfileResponse` |
 | `GET` | `/api/v1/analysis/{ticker}` | Calcule et retourne la série temporelle des métriques d'analyse financière (Growth, Value, Quality) | Authentifié (Accès complet soumis au rôle `PREMIUM`) | `List<FullMetricsResponse>` |
 | `GET` | `/api/v1/watchlist` | Récupère la liste des tickers surveillés par l'utilisateur connecté | Authentifié | `WatchlistResponse` |
@@ -93,7 +93,7 @@ com.cairedine.finance.app
 ├── user/                                  # Module Gestion Utilisateur & Auth
 │   ├── UserContext.java                   # [API Publique] Record de contexte utilisateur
 │   ├── UserSyncedEvent.java               # [API Publique] Événement de synchronisation user
-│   ├── UserController.java                # REST Endpoint /api/users/me
+│   ├── UserController.java                # REST Endpoint /api/v1/users/me
 │   ├── application/                       # Services applicatifs (UserSyncServiceImpl)
 │   ├── domain/                            # Ports et modèle métier User
 │   └── infrastructure/                    # JPA Entities, Repositories, Security & Keycloak Config

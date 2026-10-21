@@ -21,7 +21,7 @@ import com.cairedine.finance.app.user.UserContext;
  * Déplacé de user/web/ vers user/infrastructure/web/ pour uniformisation des conventions de packages.
  */
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
 @Tag(name = "Utilisateur", description = "Endpoints de gestion du profil utilisateur et de l'authentification")
 public class UserController {

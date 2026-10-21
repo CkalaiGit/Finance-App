@@ -58,7 +58,7 @@ class UserControllerTest {
     }
 
     @Nested
-    @DisplayName("GET /api/users/me")
+    @DisplayName("GET /api/v1/users/me")
     class GetMe {
 
         @Test
@@ -66,7 +66,7 @@ class UserControllerTest {
         void doitRetourner200AvecUserContext() throws Exception {
             var ctx = new UserContext("uuid-alice", "alice@finance.com", "alice", Set.of("PREMIUM"));
 
-            mockMvc.perform(get("/api/users/me")
+            mockMvc.perform(get("/api/v1/users/me")
                             .with(authentication(buildAuthToken(ctx))))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value("uuid-alice"))
@@ -77,7 +77,7 @@ class UserControllerTest {
         @Test
         @DisplayName("doit retourner 401 sans JWT")
         void doitRetourner401SansJwt() throws Exception {
-            mockMvc.perform(get("/api/users/me"))
+            mockMvc.perform(get("/api/v1/users/me"))
                     .andExpect(status().isUnauthorized());
         }
     }
