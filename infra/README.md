@@ -77,6 +77,8 @@ Dans `.env`, renseignez :
 
 Sans ces deux clés, `docker compose` refuse de démarrer et affiche le message `FMP_API_KEY manquante : renseignez-la dans .env` (ou l'équivalent pour Gemini).
 
+Si vos dossiers ne portent pas les noms des dépôts GitHub, ajoutez aussi dans `.env` les chemins vers le backend et le frontend, relatifs à `Infra-KC_projet_finance/` (exemple : `BACKEND_PATH=../Back` et `FRONTEND_PATH=../Front`). Sinon, laissez-les absents.
+
 **4. Démarrer l'application**
 
 Depuis le dossier `Infra-KC_projet_finance/` :

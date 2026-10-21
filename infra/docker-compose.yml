@@ -109,7 +109,7 @@ services:
   # Il n'est pas redéfini ici pour n'avoir qu'une seule source de vérité.
   backend:
     build:
-      context: ../finance-app-backend
+      context: ${BACKEND_PATH:-../finance-app-backend}
     container_name: backend
     depends_on:
       app-db:
@@ -136,7 +136,7 @@ services:
   # utilisées par le navigateur, pas par le conteneur. Ne pas les remplacer.
   frontend:
     build:
-      context: ../frontend-financeHub
+      context: ${FRONTEND_PATH:-../frontend-financeHub}
     container_name: frontend
     depends_on:
       backend:
