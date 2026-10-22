@@ -1,0 +1,16 @@
+# Secrets : ne jamais versionner
+.env
+
+# Dépendances et builds
+node_modules/
+dist/
+.angular/
+target/
+
+# Fichiers IDE et agents (non utiles au projet)
+.idea/
+.antigravity/
+.agents/
+
+# Logs
+*.log
