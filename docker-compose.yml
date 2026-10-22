@@ -53,8 +53,8 @@ services:
       KC_CACHE_THEME_TEMPLATES: "false"
     command: start-dev --import-realm
     volumes:
-      - ./keycloak/realm-dev.json:/opt/keycloak/data/import/realm.json:ro
-      - ./keycloak/themes:/opt/keycloak/themes:rw
+      - ./infra/keycloak/realm-dev.json:/opt/keycloak/data/import/realm.json:ro
+      - ./infra/keycloak/themes:/opt/keycloak/themes:rw
     ports:
       - "8080:8080"
     networks:
@@ -109,7 +109,7 @@ services:
   # Il n'est pas redéfini ici pour n'avoir qu'une seule source de vérité.
   backend:
     build:
-      context: ${BACKEND_PATH:-../finance-app-backend}
+      context: ./backend
     container_name: backend
     depends_on:
       app-db:
@@ -136,7 +136,7 @@ services:
   # utilisées par le navigateur, pas par le conteneur. Ne pas les remplacer.
   frontend:
     build:
-      context: ${FRONTEND_PATH:-../frontend-financeHub}
+      context: ./frontend
     container_name: frontend
     depends_on:
       backend:
