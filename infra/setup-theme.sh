@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Le thème est écrit dans infra/keycloak/themes, quel que soit le dossier de lancement
+cd "$(dirname "$0")" || exit 1
+
 # Définition du chemin de base
 THEME_DIR="keycloak/themes/financeapp/login"
 

@@ -2,7 +2,7 @@
 
 FinanceHub est une application d'analyse financière : un frontend Angular, une API Spring Boot qui agrège des données de marché (FMP) et des filings SEC, et une authentification OIDC portée par Keycloak.
 
-Ce dépôt contient la partie infrastructure : Keycloak, son realm `dev-realm` avec son thème, et les bases PostgreSQL.
+Ce dossier (`infra/`) contient la partie infrastructure : Keycloak, son realm `dev-realm` avec son thème, et les bases PostgreSQL.
 
 > **Avertissement** : tous les mots de passe et secrets de ce dépôt sont destinés uniquement au développement local. Ne pas les utiliser en production.
 
@@ -29,30 +29,20 @@ flowchart LR
     KC -->|JDBC| KCDB
 ```
 
-Ce dépôt contient le point d'entrée unique : `docker compose up --build -d` lance les cinq services de l'application (`keycloak`, `keycloak-db`, `app-db`, `backend`, `frontend`). Le backend et le frontend sont construits à partir de leurs propres dépôts, situés à côté de celui-ci.
+Le point d'entrée unique est le `docker-compose.yml` à la racine du monorepo : `docker compose up --build -d` lance les cinq services de l'application (`keycloak`, `keycloak-db`, `app-db`, `backend`, `frontend`). Le backend et le frontend sont construits à partir des dossiers `backend/` et `frontend/` du même monorepo.
 
 ## Démarrage rapide
 
 Prérequis : Docker uniquement (Docker Desktop sous Windows et macOS, Docker Engine avec Compose v2 sous Linux). Les ports 4200, 5434, 8080 et 8081 doivent être libres.
 
-**1. Cloner les dépôts**
+**1. Cloner le monorepo**
 
 ```bash
-git clone https://github.com/CkalaiGit/Infra-KC_projet_finance.git
-git clone https://github.com/CkalaiGit/finance-app-backend.git
-git clone https://github.com/CkalaiGit/frontend-financeHub.git
+git clone <url-du-monorepo> financehub
+cd financehub
 ```
 
-Arborescence attendue (les noms de dossiers sont ceux créés par `git clone`) :
-
-```
-projet/
-├── Infra-KC_projet_finance/   # ce dépôt : Keycloak, bases de données
-├── finance-app-backend/       # API Spring Boot
-└── frontend-financeHub/       # application Angular
-```
-
-Pour un démarrage complet, les trois dépôts sont nécessaires.
+Le monorepo contient le backend (`backend/`), le frontend (`frontend/`) et cette infrastructure (`infra/`). Aucun autre dépôt n'est nécessaire.
 
 **2. Créer le fichier `.env`**
 
@@ -77,11 +67,9 @@ Dans `.env`, renseignez :
 
 Sans ces deux clés, `docker compose` refuse de démarrer et affiche le message `FMP_API_KEY manquante : renseignez-la dans .env` (ou l'équivalent pour Gemini).
 
-Si vos dossiers ne portent pas les noms des dépôts GitHub, ajoutez aussi dans `.env` les chemins vers le backend et le frontend, relatifs à `Infra-KC_projet_finance/` (exemple : `BACKEND_PATH=../Back` et `FRONTEND_PATH=../Front`). Sinon, laissez-les absents.
-
 **4. Démarrer l'application**
 
-Depuis le dossier `Infra-KC_projet_finance/` :
+Depuis la racine du monorepo (`financehub/`) :
 
 ```bash
 docker compose up --build -d
@@ -184,7 +172,7 @@ docker compose up keycloak-db keycloak app-db -d
 
 Compose valide tout le fichier avant de lancer des services : les clés `FMP_API_KEY` et `GEMINI_API_KEY` doivent donc être présentes dans `.env` même pour ce mode. Elles n'ont pas besoin d'être valides ; le backend lancé sur l'hôte utilise celles de son propre terminal.
 
-Backend (dans `finance-app-backend/`), avec les clés d'API dans l'environnement du terminal :
+Backend (dans `backend/`), avec les clés d'API dans l'environnement du terminal :
 
 Bash :
 ```bash
@@ -200,7 +188,7 @@ $env:GEMINI_API_KEY = "votre_cle_gemini"
 .\mvnw.cmd spring-boot:run
 ```
 
-Frontend (dans `frontend-financeHub/`) :
+Frontend (dans `frontend/`) :
 
 ```bash
 npm install

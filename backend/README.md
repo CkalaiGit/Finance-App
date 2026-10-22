@@ -4,7 +4,7 @@ API REST de FinanceHub : données de marché (FMP), filings SEC, analyses financ
 
 ## Démarrage
 
-Pour démarrer l'ensemble du projet (Keycloak, bases de données, frontend), suivre le guide du dépôt d'infrastructure : https://github.com/CkalaiGit/Infra-KC_projet_finance#readme
+Pour démarrer l'ensemble du projet (Keycloak, bases de données, frontend), suivre le guide de démarrage à la racine du monorepo : [README.md](../README.md)
 
 Lancement local, avec Keycloak et `app-db` démarrés par Docker Compose :
 

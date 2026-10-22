@@ -47,10 +47,10 @@ spring:
 
 ### Conversion JWT & Propagation des Rôles (`KeycloakJwtConverter`)
 L'authentification est 100% **stateless** via Token JWT bearer.
-Le converter personnalisé [`KeycloakJwtConverter`](file:///c:/dev/Projet-App-Finance/backend-financeHub/src/main/java/com/cairedine/finance/app/user/infrastructure/security/KeycloakJwtConverter.java) intercepte chaque requête authentifiée :
+Le converter personnalisé [`KeycloakJwtConverter`](./src/main/java/com/cairedine/finance/app/user/infrastructure/security/KeycloakJwtConverter.java) intercepte chaque requête authentifiée :
 1. Extrait le token JWT émis par Keycloak.
 2. Synchronise automatiquement l'utilisateur avec la base locale PostgreSQL via `IUserSyncService`.
-3. Construit un objet immuable [`UserContext`](file:///c:/dev/Projet-App-Finance/backend-financeHub/src/main/java/com/cairedine/finance/app/user/UserContext.java).
+3. Construit un objet immuable [`UserContext`](./src/main/java/com/cairedine/finance/app/user/UserContext.java).
 4. Mappe les rôles (`PREMIUM`, `FREEMIUM`) en authorities Spring Security sous le format `ROLE_<ROLE_NAME>` (ex: `ROLE_PREMIUM`, `ROLE_FREEMIUM`).
 5. Stocke le `UserContext` dans les *details* du `JwtAuthenticationToken`.
 

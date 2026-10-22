@@ -1,6 +1,6 @@
 # Backend Antigravity Rules — Finance App Backend
 
-Refer to [AGENT.md](file:///c:/dev/Projet-App-Finance/backend-financeHub/AGENT.md) and [.antigravity/rules.md](file:///c:/dev/Projet-App-Finance/backend-financeHub/.antigravity/rules.md) for full architectural guidelines.
+Refer to [AGENT.md](../AGENT.md) and [.antigravity/rules.md](../.antigravity/rules.md) for full architectural guidelines.
 
 ## Quick Rules Summary:
 - Java 25 + Spring Boot 4.0.6 + Spring Modulith 2.0.3.
