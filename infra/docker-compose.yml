@@ -1,0 +1,154 @@
+# Point d'entrée unique : `docker compose up --build -d` lance Keycloak, les bases,
+# le backend et le frontend. Seul Docker est requis sur la machine hôte.
+# Les variables sont lues dans .env (voir .env.example).
+name: financehub
+
+services:
+
+  # ─────────────────────────────────────────────────────────────
+  # BASE DE DONNÉES KEYCLOAK
+  # ─────────────────────────────────────────────────────────────
+  keycloak-db:
+    image: postgres:17
+    container_name: keycloak-db
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-keycloak}
+      POSTGRES_USER: ${POSTGRES_USER:-keycloak}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-keycloak}
+    volumes:
+      - keycloak_data:/var/lib/postgresql/data
+    networks:
+      - finance-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-keycloak}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────────────────────
+  # KEYCLOAK
+  # ─────────────────────────────────────────────────────────────
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: keycloak
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: keycloak-db
+      KC_DB_URL_DATABASE: ${POSTGRES_DB:-keycloak}
+      KC_DB_USERNAME: ${POSTGRES_USER:-keycloak}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-keycloak}
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:-admin}
+      # Issuer des tokens : toujours l'URL vue par le navigateur, quelle que soit
+      # la origine de la requête (navigateur ou backend sur le réseau Docker)
+      KC_HOSTNAME: http://localhost:8080
+      KC_HTTP_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+      KC_LOG_LEVEL: info
+      KC_CACHE_THEME_RESOURCES: "false"
+      KC_CACHE_THEME_TEMPLATES: "false"
+    command: start-dev --import-realm
+    volumes:
+      - ./keycloak/realm-dev.json:/opt/keycloak/data/import/realm.json:ro
+      - ./keycloak/themes:/opt/keycloak/themes:rw
+    ports:
+      - "8080:8080"
+    networks:
+      - finance-net
+    # Les endpoints de santé Keycloak 26 sont sur le port de management 9000.
+    # L'image n'a ni curl ni wget : on interroge via /dev/tcp de bash.
+    # "UP" seul ne suffit pas : chaque check de "checks" contient aussi "status": "UP",
+    # donc on exige le statut HTTP 200 ET le statut global en premier niveau.
+    healthcheck:
+      test:
+        - CMD
+        - bash
+        - -c
+        - |
+          exec 3<>/dev/tcp/127.0.0.1/9000 || exit 1
+          printf 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3
+          response=$$(cat <&3)
+          [[ $$response == "HTTP/1.1 200"* && $$response == *'"status": "UP"'* ]]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+  # ─────────────────────────────────────────────────────────────
+  # BASE DE DONNÉES APPLICATIVE
+  # ─────────────────────────────────────────────────────────────
+  app-db:
+    image: postgres:17
+    container_name: app-db
+    restart: always
+    environment:
+      POSTGRES_DB: ${APP_DB:-financeapp}
+      POSTGRES_USER: ${APP_DB_USER:-financeapp}
+      POSTGRES_PASSWORD: ${APP_DB_PASSWORD:-financeapp}
+    volumes:
+      - app_db_data:/var/lib/postgresql/data
+    ports:
+      # Exposé pour lancer le backend hors Docker (profil par défaut, localhost:5434)
+      - "5434:5432"
+    networks:
+      - finance-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${APP_DB_USER:-financeapp}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────────────────────
+  # BACKEND SPRING BOOT
+  # ─────────────────────────────────────────────────────────────
+  # Le healthcheck est défini dans le Dockerfile du backend (curl sur /actuator/health).
+  # Il n'est pas redéfini ici pour n'avoir qu'une seule source de vérité.
+  backend:
+    build:
+      context: ${BACKEND_PATH:-../finance-app-backend}
+    container_name: backend
+    depends_on:
+      app-db:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      APP_DB: ${APP_DB:-financeapp}
+      APP_DB_USER: ${APP_DB_USER:-financeapp}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:-financeapp}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:4200}
+      FMP_API_KEY: "${FMP_API_KEY:?FMP_API_KEY manquante : renseignez-la dans .env}"
+      GEMINI_API_KEY: "${GEMINI_API_KEY:?GEMINI_API_KEY manquante : renseignez-la dans .env}"
+    ports:
+      - "8081:8081"
+    networks:
+      - finance-net
+
+  # ─────────────────────────────────────────────────────────────
+  # FRONTEND ANGULAR (nginx)
+  # ─────────────────────────────────────────────────────────────
+  # environment.ts pointe vers localhost:8081 et localhost:8080 : ces URLs sont
+  # utilisées par le navigateur, pas par le conteneur. Ne pas les remplacer.
+  frontend:
+    build:
+      context: ${FRONTEND_PATH:-../frontend-financeHub}
+    container_name: frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "4200:80"
+    networks:
+      - finance-net
+
+volumes:
+  keycloak_data:
+  app_db_data:
+
+networks:
+  finance-net:
