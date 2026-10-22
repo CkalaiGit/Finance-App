@@ -1,0 +1,9 @@
+node_modules
+dist
+.angular
+.git
+.idea
+.antigravity
+coverage
+*.md
+financial-mockup-tabs.html

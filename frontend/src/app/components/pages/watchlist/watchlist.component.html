@@ -1,0 +1,301 @@
+<div class="container mt-4">
+   <!-- HEADER WATCHLIST -->
+   <div class="watchlist-header">
+      <div class="header-icon-container">
+         <i class="bi bi-star-fill star-icon"></i>
+      </div>
+      <h1 class="watchlist-title">Ma Watchlist</h1>
+      <p class="watchlist-subtitle">
+         @if (user$ | async; as user) {
+            Suivez en temps réel les performances financières des entreprises de {{ user.username }}.
+         } @else {
+            Suivez en temps réel la santé financière de vos entreprises préférées.
+         }
+      </p>
+
+      <!-- FORMULAIRE D'AJOUT INLINE (Au-dessus du tableau) -->
+      <form class="add-ticker-form mt-4" (ngSubmit)="addTicker()">
+         <div class="input-group">
+            <i class="bi bi-search search-icon"></i>
+            <input
+               type="text"
+               class="form-control"
+               placeholder="Entrer un ticker (ex: AAPL, MSFT...)"
+               [ngModel]="newTicker"
+               (ngModelChange)="onTickerInput($event)"
+               name="tickerInput"
+               maxlength="10"
+               [disabled]="isSubmitting"
+            />
+            <button
+               type="submit"
+               class="btn-primary add-btn"
+               [disabled]="!newTicker.trim() || isSubmitting"
+            >
+               @if (isSubmitting) {
+                  <i class="bi bi-arrow-repeat spin-icon"></i>
+               } @else {
+                  <i class="bi bi-plus-lg"></i>
+               }
+               <span>Ajouter</span>
+            </button>
+         </div>
+      </form>
+
+      <!-- MESSAGE D'ERREUR CONTEXTUEL -->
+      @if (errorMessage) {
+         <div class="alert-error mt-3" role="alert">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>{{ errorMessage }}</span>
+         </div>
+      }
+   </div>
+
+   <!-- ÉTAT DE CHARGEMENT -->
+   @if (isLoading) {
+      <div class="text-center loading-container">
+         <i class="bi bi-hourglass-split loading-icon"></i>
+         <p class="loading-text">Chargement des données d'analyse...</p>
+      </div>
+   } @else {
+      <!-- ÉTAT VIDE -->
+      @if (items.length === 0) {
+         <div class="empty-state">
+            <div class="empty-icon-container">
+               <i class="bi bi-bookmark-star"></i>
+            </div>
+            <h2 class="empty-title">Votre watchlist est vide</h2>
+            <p class="empty-description">
+               Vous n'avez pas encore ajouté d'entreprise à votre liste de suivi.
+               Saisissez un symbole boursier ci-dessus ou parcourez nos analyses pour commencer.
+            </p>
+            <a routerLink="/home" class="btn-primary cta-btn">
+               <i class="bi bi-house-door"></i>
+               <span>Découvrir les entreprises</span>
+            </a>
+         </div>
+      } @else {
+         <!-- NAVIGATION DES TABS -->
+         <div class="tabs-container">
+            <div class="tabs-nav">
+               <button
+                  class="tab-button tab-growth"
+                  [class.active]="activeTab === 'growth'"
+                  (click)="switchTab('growth')"
+                  aria-label="Croissance"
+               >
+                  <i class="bi bi-graph-up-arrow"></i> Croissance
+               </button>
+               <button
+                  class="tab-button tab-value"
+                  [class.active]="activeTab === 'value'"
+                  (click)="switchTab('value')"
+                  aria-label="Valorisation"
+               >
+                  <i class="bi bi-tags"></i> Valorisation
+               </button>
+               <button
+                  class="tab-button tab-quality"
+                  [class.active]="activeTab === 'quality'"
+                  (click)="switchTab('quality')"
+                  aria-label="Qualité"
+               >
+                  <i class="bi bi-shield-check"></i> Qualité
+               </button>
+            </div>
+         </div>
+
+         <!-- CONTENU CROISSANCE -->
+         <div class="tab-content" [class.active]="activeTab === 'growth'">
+            <div class="table-responsive">
+               <table class="finance-table">
+                  <thead>
+                     <tr>
+                        <th>Entreprise</th>
+                        <th>CA (3A)</th>
+                        <th>EBITDA (3A)</th>
+                        <th>BNA (3A)</th>
+                        <th>FCF</th>
+                        <th class="text-end">Action</th>
+                     </tr>
+                  </thead>
+                  <tbody>
+                     @for (item of items; track item.ticker) {
+                        <tr>
+                           <td>
+                              <a
+                                 [routerLink]="['/details', item.ticker]"
+                                 class="ticker-link"
+                              >
+                                 <i class="bi bi-star-fill text-warning me-2"></i>
+                                 <span class="ticker-symbol">{{ item.ticker }}</span>
+                              </a>
+                           </td>
+                           <td>
+                              <span class="metric-val">
+                                 {{ formatPercent(item.metrics?.growth?.revenueGrowth3Y) }}
+                              </span>
+                           </td>
+                           <td>
+                              <span class="metric-val">
+                                 {{ formatPercent(item.metrics?.growth?.ebitdaGrowth3Y) }}
+                              </span>
+                           </td>
+                           <td>
+                              <span class="metric-val">
+                                 {{ formatPercent(item.metrics?.growth?.epsGrowth3Y) }}
+                              </span>
+                           </td>
+                           <td>
+                              <span class="metric-val">
+                                 {{ formatPercent(item.metrics?.growth?.fcfGrowth) }}
+                              </span>
+                           </td>
+                           <td class="text-end">
+                              <button
+                                 type="button"
+                                 class="delete-btn"
+                                 (click)="removeTicker($event, item.ticker)"
+                                 title="Supprimer de la watchlist"
+                                 [attr.aria-label]="'Supprimer ' + item.ticker"
+                              >
+                                 <i class="bi bi-trash"></i>
+                              </button>
+                           </td>
+                        </tr>
+                     }
+                  </tbody>
+               </table>
+            </div>
+         </div>
+
+         <!-- CONTENU VALORISATION -->
+         <div class="tab-content" [class.active]="activeTab === 'value'">
+            <div class="table-responsive">
+               <table class="finance-table">
+                  <thead>
+                     <tr>
+                        <th>Entreprise</th>
+                        <th>EV / EBIT</th>
+                        <th>P/E (TTM)</th>
+                        <th>PEG Ratio</th>
+                        <th>EV / Sales</th>
+                        <th class="text-end">Action</th>
+                     </tr>
+                  </thead>
+                  <tbody>
+                     @for (item of items; track item.ticker) {
+                        <tr>
+                           <td>
+                              <a
+                                 [routerLink]="['/details', item.ticker]"
+                                 class="ticker-link"
+                              >
+                                 <i class="bi bi-star-fill text-warning me-2"></i>
+                                 <span class="ticker-symbol">{{ item.ticker }}</span>
+                              </a>
+                           </td>
+                           <td>
+                              <span class="metric-val">
+                                 {{ formatRatio(item.metrics?.value?.evToEbit) }}
+                              </span>
+                           </td>
+                           <td>
+                              <span class="metric-val">
+                                 {{ formatRatio(item.metrics?.value?.peRatioTTM) }}
+                              </span>
+                           </td>
+                           <td>
+                              <span class="metric-val">
+                                 {{ formatRatio(item.metrics?.value?.pegRatioForward) }}
+                              </span>
+                           </td>
+                           <td>
+                              <span class="metric-val">
+                                 {{ formatRatio(item.metrics?.value?.evToSales) }}
+                              </span>
+                           </td>
+                           <td class="text-end">
+                              <button
+                                 type="button"
+                                 class="delete-btn"
+                                 (click)="removeTicker($event, item.ticker)"
+                                 title="Supprimer de la watchlist"
+                                 [attr.aria-label]="'Supprimer ' + item.ticker"
+                              >
+                                 <i class="bi bi-trash"></i>
+                              </button>
+                           </td>
+                        </tr>
+                     }
+                  </tbody>
+               </table>
+            </div>
+         </div>
+
+         <!-- CONTENU QUALITÉ -->
+         <div class="tab-content" [class.active]="activeTab === 'quality'">
+            <div class="table-responsive">
+               <table class="finance-table">
+                  <thead>
+                     <tr>
+                        <th>Entreprise</th>
+                        <th>ROIC</th>
+                        <th>Marge Op.</th>
+                        <th>Dette / EBITDA</th>
+                        <th>Marge FCF</th>
+                        <th class="text-end">Action</th>
+                     </tr>
+                  </thead>
+                  <tbody>
+                     @for (item of items; track item.ticker) {
+                        <tr>
+                           <td>
+                              <a
+                                 [routerLink]="['/details', item.ticker]"
+                                 class="ticker-link"
+                              >
+                                 <i class="bi bi-star-fill text-warning me-2"></i>
+                                 <span class="ticker-symbol">{{ item.ticker }}</span>
+                              </a>
+                           </td>
+                           <td>
+                              <span class="metric-val">
+                                 {{ formatPercent(item.metrics?.quality?.roic) }}
+                              </span>
+                           </td>
+                           <td>
+                              <span class="metric-val">
+                                 {{ formatPercent(item.metrics?.quality?.operatingMargin) }}
+                              </span>
+                           </td>
+                           <td>
+                              <span class="metric-val">
+                                 {{ formatRatio(item.metrics?.quality?.netDebtToEbitda) }}
+                              </span>
+                           </td>
+                           <td>
+                              <span class="metric-val">
+                                 {{ formatPercent(item.metrics?.quality?.freeCashFlowMargin) }}
+                              </span>
+                           </td>
+                           <td class="text-end">
+                              <button
+                                 type="button"
+                                 class="delete-btn"
+                                 (click)="removeTicker($event, item.ticker)"
+                                 title="Supprimer de la watchlist"
+                                 [attr.aria-label]="'Supprimer ' + item.ticker"
+                              >
+                                 <i class="bi bi-trash"></i>
+                              </button>
+                           </td>
+                        </tr>
+                     }
+                  </tbody>
+               </table>
+            </div>
+         </div>
+      }
+   }
+</div>

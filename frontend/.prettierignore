@@ -1,0 +1,12 @@
+# Artifacts and environments
+node_modules/
+dist/
+.angular/
+tmp/
+out-tsc/
+coverage/
+.idea/
+.vscode/
+package.json
+package-lock.json
+*.md

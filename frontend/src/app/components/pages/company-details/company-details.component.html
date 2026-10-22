@@ -1,0 +1,338 @@
+<div class="container mt-4">
+   @if (state$ | async; as state) {
+      @if (state.loading) {
+         <!-- ÉTAT CHARGEMENT -->
+         <div class="company-header" data-testid="loading-state">
+            <div class="text-center">
+               <i
+                  class="bi bi-hourglass-split spin-icon"
+                  style="font-size: 2.5rem; color: var(--accent-blue)"
+               ></i>
+               <h1
+                  class="company-name-large text-muted mt-2"
+                  style="font-size: 24px"
+               >
+                  Chargement des données...
+               </h1>
+            </div>
+         </div>
+      } @else if (!state.companyProfile && !state.profileError) {
+         <!-- ÉTAT VIDE -->
+         <div class="company-header" data-testid="empty-state">
+            <div class="text-center py-4">
+               <i
+                  class="bi bi-search"
+                  style="font-size: 2.5rem; color: var(--text-muted)"
+               ></i>
+               <h2 class="mt-2 text-muted">Aucune entreprise trouvée</h2>
+               <p class="text-muted mt-1">Le symbole spécifié ne correspond à aucune donnée.</p>
+               <a routerLink="/home" class="btn-secondary mt-3 d-inline-block">Retour à la recherche</a>
+            </div>
+         </div>
+      } @else {
+         @if (state.profileError) {
+            <!-- ÉTAT ERREUR PROFIL -->
+            <div class="company-header" data-testid="error-state">
+               <div class="text-center py-4">
+                  <i
+                     class="bi bi-exclamation-triangle-fill"
+                     style="font-size: 2.5rem; color: var(--accent-red)"
+                  ></i>
+                  <h2 class="mt-2" style="color: var(--accent-red)">{{ state.profileError.title }}</h2>
+                  <p class="text-muted mt-1">{{ state.profileError.detail }}</p>
+                  <a routerLink="/home" class="btn-secondary mt-3 d-inline-block">Retour à l'accueil</a>
+               </div>
+            </div>
+         } @else if (state.companyProfile) {
+            <!-- HEADER ENTREPRISE -->
+            <div class="company-header" data-testid="data-state">
+            @if (state.companyProfile.image) {
+               <img
+                  [src]="state.companyProfile.image"
+                  [alt]="state.companyProfile.companyName"
+                  class="company-logo"
+               />
+            }
+            <div class="company-ticker-large">{{ state.companyProfile.symbol }}</div>
+            <h1 class="company-name-large">{{ state.companyProfile.companyName }}</h1>
+
+            <div class="watchlist-action-container">
+               <button
+                  type="button"
+                  class="btn-secondary watchlist-toggle-btn"
+                  [class.in-watchlist]="state.watchlist.inWatchlist"
+                  (click)="toggleWatchlist(state.companyProfile.symbol, state.watchlist.inWatchlist)"
+                  [disabled]="state.watchlist.loading"
+               >
+                  @if (state.watchlist.loading) {
+                     <i class="bi bi-arrow-repeat spin-icon"></i>
+                     <span>Mise à jour...</span>
+                  } @else if (state.watchlist.error) {
+                     <i class="bi bi-exclamation-circle" style="color: var(--accent-red)"></i>
+                     <span style="color: var(--accent-red)">Erreur watchlist</span>
+                  } @else if (state.watchlist.inWatchlist) {
+                     <i class="bi bi-star-fill text-yellow"></i>
+                     <span>Retirer de la watchlist</span>
+                  } @else {
+                     <i class="bi bi-star text-yellow"></i>
+                     <span>Ajouter à la watchlist</span>
+                  }
+               </button>
+            </div>
+
+            <div class="company-badges">
+               <span class="badge-info"
+                  ><i class="bi bi-building"></i> {{ state.companyProfile.industry }}</span
+               >
+               @if (state.companyProfile.price) {
+                  <span class="badge-info"
+                     ><i class="bi bi-tag"></i>
+                     {{ state.companyProfile.price | currency: 'USD' }}</span
+                  >
+               }
+               @if (state.companyProfile.marketCap) {
+                  <span class="badge-info"
+                     ><i class="bi bi-bank"></i> Cap:
+                     {{
+                        state.companyProfile.marketCap | currency: 'USD' : 'symbol' : '1.0-0'
+                     }}</span
+                  >
+               }
+               @if (state.companyProfile.beta) {
+                  <span class="badge-info"
+                     ><i class="bi bi-graph-up-arrow"></i> Beta:
+                     {{ state.companyProfile.beta }}</span
+                  >
+               }
+            </div>
+
+            @if (state.companyProfile.description) {
+               <p class="company-description">{{ state.companyProfile.description }}</p>
+            }
+            </div>
+         }
+
+         <!-- TABS NAVIGATION -->
+         <div class="tabs-container">
+            <div class="tabs-nav">
+               <button
+                  class="tab-button tab-growth"
+                  [class.active]="activeTab === 'growth'"
+                  (click)="switchTab('growth')"
+                  aria-label="Croissance"
+               >
+                  <i class="bi bi-graph-up-arrow"></i> Croissance
+               </button>
+               <button
+                  class="tab-button tab-value"
+                  [class.active]="activeTab === 'value'"
+                  (click)="switchTab('value')"
+                  aria-label="Valorisation"
+               >
+                  <i class="bi bi-tags"></i> Valorisation
+               </button>
+               <button
+                  class="tab-button tab-quality"
+                  [class.active]="activeTab === 'quality'"
+                  (click)="switchTab('quality')"
+                  aria-label="Qualité"
+               >
+                  <i class="bi bi-shield-check"></i> Qualité
+               </button>
+            </div>
+         </div>
+
+         <!-- TAB CONTENT -->
+         @if (state.metrics; as metrics) {
+            <div class="tab-content" [class.active]="activeTab === 'growth'">
+               <div class="metrics-grid">
+                  <div class="metric-card growth">
+                     <div class="metric-icon"><i class="bi bi-graph-up"></i></div>
+                     <div class="metric-content">
+                        <div class="metric-label">Croissance CA (3A)</div>
+                        <div class="metric-value-large">
+                           {{ formatPercent(metrics.growth.revenueGrowth3Y) }}
+                        </div>
+                        <div class="metric-description">
+                           Taux de croissance annuel moyen du chiffre d'affaires sur 3
+                           ans.
+                        </div>
+                     </div>
+                  </div>
+                  <div class="metric-card growth">
+                     <div class="metric-icon"><i class="bi bi-cash-stack"></i></div>
+                     <div class="metric-content">
+                        <div class="metric-label">Croissance EBITDA (3A)</div>
+                        <div class="metric-value-large">
+                           {{ formatPercent(metrics.growth.ebitdaGrowth3Y) }}
+                        </div>
+                        <div class="metric-description">
+                           Croissance de la rentabilité opérationnelle sur 3 ans.
+                        </div>
+                     </div>
+                  </div>
+                  <div class="metric-card growth">
+                     <div class="metric-icon">
+                        <i class="bi bi-person-lines-fill"></i>
+                     </div>
+                     <div class="metric-content">
+                        <div class="metric-label">Croissance BNA (3A)</div>
+                        <div class="metric-value-large">
+                           {{ formatPercent(metrics.growth.epsGrowth3Y) }}
+                        </div>
+                        <div class="metric-description">
+                           Croissance du Bénéfice Net par Action.
+                        </div>
+                     </div>
+                  </div>
+                  <div class="metric-card growth">
+                     <div class="metric-icon"><i class="bi bi-wallet2"></i></div>
+                     <div class="metric-content">
+                        <div class="metric-label">Croissance FCF</div>
+                        <div class="metric-value-large">
+                           {{ formatPercent(metrics.growth.fcfGrowth) }}
+                        </div>
+                        <div class="metric-description">
+                           Croissance du Free Cash Flow sur la dernière année.
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+
+            <div class="tab-content" [class.active]="activeTab === 'value'">
+               <div class="metrics-grid">
+                  <div class="metric-card value">
+                     <div class="metric-icon"><i class="bi bi-building"></i></div>
+                     <div class="metric-content">
+                        <div class="metric-label">EV / EBIT</div>
+                        <div class="metric-value-large">
+                           {{ formatRatio(metrics.value.evToEbit) }}
+                        </div>
+                        <div class="metric-description">
+                           Multiple de valorisation de l'entreprise par rapport à son
+                           résultat opérationnel.
+                        </div>
+                     </div>
+                  </div>
+                  <div class="metric-card value">
+                     <div class="metric-icon"><i class="bi bi-calculator"></i></div>
+                     <div class="metric-content">
+                        <div class="metric-label">P/E Ratio (TTM)</div>
+                        <div class="metric-value-large">
+                           {{ formatRatio(metrics.value.peRatioTTM) }}
+                        </div>
+                        <div class="metric-description">
+                           Price to Earnings Ratio sur les 12 derniers mois.
+                        </div>
+                     </div>
+                  </div>
+                  <div class="metric-card value">
+                     <div class="metric-icon"><i class="bi bi-bar-chart"></i></div>
+                     <div class="metric-content">
+                        <div class="metric-label">PEG Ratio</div>
+                        <div class="metric-value-large">
+                           {{ formatRatio(metrics.value.pegRatioForward) }}
+                        </div>
+                        <div class="metric-description">
+                           P/E Ratio rapporté à la croissance attendue.
+                        </div>
+                     </div>
+                  </div>
+                  <div class="metric-card value">
+                     <div class="metric-icon"><i class="bi bi-shop"></i></div>
+                     <div class="metric-content">
+                        <div class="metric-label">EV / Sales</div>
+                        <div class="metric-value-large">
+                           {{ formatRatio(metrics.value.evToSales) }}
+                        </div>
+                        <div class="metric-description">
+                           Multiple de valorisation sur le chiffre d'affaires.
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+
+            <div class="tab-content" [class.active]="activeTab === 'quality'">
+               <div class="metrics-grid">
+                  <div class="metric-card quality">
+                     <div class="metric-icon"><i class="bi bi-award"></i></div>
+                     <div class="metric-content">
+                        <div class="metric-label">ROIC</div>
+                        <div class="metric-value-large">
+                           {{ formatPercent(metrics.quality.roic) }}
+                        </div>
+                        <div class="metric-description">
+                           Return on Invested Capital. Qualité des investissements.
+                        </div>
+                     </div>
+                  </div>
+                  <div class="metric-card quality">
+                     <div class="metric-icon"><i class="bi bi-percent"></i></div>
+                     <div class="metric-content">
+                        <div class="metric-label">Marge Opérationnelle</div>
+                        <div class="metric-value-large">
+                           {{ formatPercent(metrics.quality.operatingMargin) }}
+                        </div>
+                        <div class="metric-description">
+                           Rentabilité opérationnelle de base.
+                        </div>
+                     </div>
+                  </div>
+                  <div class="metric-card quality">
+                     <div class="metric-icon"><i class="bi bi-bank"></i></div>
+                     <div class="metric-content">
+                        <div class="metric-label">Dette Nette / EBITDA</div>
+                        <div class="metric-value-large">
+                           {{ formatRatio(metrics.quality.netDebtToEbitda) }}
+                        </div>
+                        <div class="metric-description">
+                           Levier financier et capacité de remboursement.
+                        </div>
+                     </div>
+                  </div>
+                  <div class="metric-card quality">
+                     <div class="metric-icon"><i class="bi bi-piggy-bank"></i></div>
+                     <div class="metric-content">
+                        <div class="metric-label">Marge FCF</div>
+                        <div class="metric-value-large">
+                           {{ formatPercent(metrics.quality.freeCashFlowMargin) }}
+                        </div>
+                        <div class="metric-description">
+                           Proportion du CA transformée en cash flow libre.
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         } @else if (state.metricsError) {
+            @if (state.metricsError.status === 404) {
+               <div class="tab-content active" data-testid="metrics-unavailable">
+                  <div class="text-center py-4">
+                     <i class="bi bi-info-circle" style="font-size: 2.5rem; color: var(--text-muted)"></i>
+                     <h3 class="mt-2 text-muted">Données indisponibles</h3>
+                     <p class="text-muted mt-1">{{ state.metricsError.detail || 'Données indisponibles pour ce symbole.' }}</p>
+                  </div>
+               </div>
+            } @else {
+               <div class="tab-content active" data-testid="metrics-error">
+                  <div class="text-center py-4">
+                     <i class="bi bi-exclamation-triangle-fill" style="font-size: 2.5rem; color: var(--accent-red)"></i>
+                     <h3 class="mt-2" style="color: var(--accent-red)">{{ state.metricsError.title }}</h3>
+                     <p class="text-muted mt-1">{{ state.metricsError.detail }}</p>
+                  </div>
+               </div>
+            }
+         } @else {
+            <div class="tab-content active" data-testid="metrics-unavailable">
+               <div class="text-center py-4">
+                  <i class="bi bi-info-circle" style="font-size: 2.5rem; color: var(--text-muted)"></i>
+                  <h3 class="mt-2 text-muted">Données indisponibles</h3>
+                  <p class="text-muted mt-1">Données indisponibles pour cette entreprise.</p>
+               </div>
+            </div>
+         }
+      }
+   }
+</div>
