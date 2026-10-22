@@ -1,0 +1,48 @@
+spring:
+  cache:
+    type: none
+    cache-names:
+      - analysis-metrics
+
+  ai:
+    google:
+      genai:
+        api-key: test-key-not-used
+
+  datasource:
+    url: jdbc:h2:mem:financeapp_test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: "" # On vide l'URI pour éviter les appels réseau vers Keycloak au boot
+
+fmp:
+  api-key: test-key-not-used
+  base-url: https://financialmodelingprep.com
+
+# ─────────────────────────────────────────────────────────────
+# INTELLIGENCE — configuration neutre pour les tests
+# ─────────────────────────────────────────────────────────────
+intelligence:
+  sec:
+    base-url: https://data.sec.gov
+    www-url: https://www.sec.gov
+    user-agent: cairedine.finance test@cairedine.com
+  summarization:
+    max-sections-tokens: 80000
+    filing-ttl-days: 90

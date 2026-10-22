@@ -1,0 +1,31 @@
+# ─────────────────────────────────────────────────────────────
+# PROFIL DOCKER — activé par SPRING_PROFILES_ACTIVE=docker
+# Surcharge la configuration locale pour le réseau Docker Compose.
+# FMP_API_KEY et GEMINI_API_KEY sont obligatoires et n'ont
+# volontairement aucune valeur par défaut.
+# ─────────────────────────────────────────────────────────────
+
+spring:
+  datasource:
+    url: jdbc:postgresql://app-db:5432/${APP_DB:financeapp}
+    username: ${APP_DB_USER:financeapp}
+    password: ${APP_DB_PASSWORD:financeapp}
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Validation du claim iss : doit correspondre à l'URL vue par le navigateur
+          issuer-uri: http://localhost:8080/realms/dev-realm
+          # Récupération des clés JWKS : joignable depuis le réseau Docker
+          jwk-set-uri: http://keycloak:8080/realms/dev-realm/protocol/openid-connect/certs
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}
+
+logging:
+  level:
+    com.cairedine: INFO
+    org.springframework.security: INFO
+    org.hibernate.SQL: WARN

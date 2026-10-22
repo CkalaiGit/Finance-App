@@ -1,0 +1,1 @@
+package com.cairedine.finance.app.intelligence.infrastructure.web;

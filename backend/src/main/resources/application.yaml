@@ -1,0 +1,143 @@
+server:
+  port: 8081
+
+app:
+  cors:
+    allowed-origins:
+      - http://localhost:4200
+
+spring:
+  application:
+    name: finance-app
+
+  # ─────────────────────────────────────────────────────────────
+  # CACHE (CAFFEINE RAM)
+  # ─────────────────────────────────────────────────────────────
+  cache:
+    type: caffeine
+    cache-names:
+      - analysis-metrics
+    caffeine:
+      spec: maximumSize=500,expireAfterWrite=1h
+
+  # ─────────────────────────────────────────────────────────────
+  # VIRTUAL THREADS
+  # ─────────────────────────────────────────────────────────────
+  threads:
+    virtual:
+      enabled: true
+
+  # ─────────────────────────────────────────────────────────────
+  # DATASOURCE — PostgreSQL applicatif (app-db)
+  # ─────────────────────────────────────────────────────────────
+  datasource:
+    url: jdbc:postgresql://localhost:5434/financeapp
+    username: financeapp
+    password: financeapp
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  # ─────────────────────────────────────────────────────────────
+  # JPA / HIBERNATE
+  # ─────────────────────────────────────────────────────────────
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        default_schema: public
+
+  # ─────────────────────────────────────────────────────────────
+  # SÉCURITÉ — OAuth2 Resource Server (Keycloak)
+  # ─────────────────────────────────────────────────────────────
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/dev-realm
+
+  # ─────────────────────────────────────────────────────────────
+  # DOCKER COMPOSE — Spring Boot détecte docker-compose.yml
+  # ─────────────────────────────────────────────────────────────
+  docker:
+    compose:
+      enabled: false
+      lifecycle-management: start-only
+
+  # ─────────────────────────────────────────────────────────────
+  # SPRING AI — Google Gemini + pgvector + MongoDB
+  # ─────────────────────────────────────────────────────────────
+  ai:
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY}
+        chat:
+          options:
+            model: gemini-2.0-flash
+            temperature: 0.2
+            max-output-tokens: 2048
+        embedding:
+          options:
+            model: text-embedding-004
+
+
+# ─────────────────────────────────────────────────────────────
+# ACTUATOR
+# ─────────────────────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# ─────────────────────────────────────────────────────────────
+# OPENAPI / SWAGGER
+# ─────────────────────────────────────────────────────────────
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    oauth2-redirect-url: http://localhost:8080/realms/finance-app
+
+# ─────────────────────────────────────────────────────────────
+# LOGGING
+# ─────────────────────────────────────────────────────────────
+logging:
+  level:
+    com.cairedine: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+
+# ─────────────────────────────────────────────────────────────
+# FMP
+# ─────────────────────────────────────────────────────────────
+fmp:
+  api-key: ${FMP_API_KEY}
+  base-url: https://financialmodelingprep.com
+
+# ─────────────────────────────────────────────────────────────
+# INTELLIGENCE — Module IA (chunking SEC EDGAR)
+# ─────────────────────────────────────────────────────────────
+intelligence:
+  chunking:
+    size: 512
+    overlap: 64
+  sec:
+    base-url: https://data.sec.gov
+    www-url: https://www.sec.gov
+    user-agent: cairedine.finance cairedine@gmail.com
+  summarization:
+    max-sections-tokens: 80000
+  filing-ttl-days: 90
