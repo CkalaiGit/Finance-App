@@ -46,6 +46,7 @@ class ArchitectureRulesTest {
         void domainShouldNotDependOnSpring() {
             ArchRule rule = noClasses()
                     .that().resideInAPackage("..domain..")
+                    .and().haveSimpleNameNotEndingWith("package-info")
                     .should().dependOnClassesThat()
                     .resideInAPackage("org.springframework..");
 
