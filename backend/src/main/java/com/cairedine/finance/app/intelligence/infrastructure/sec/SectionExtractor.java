@@ -20,6 +20,7 @@ public class SectionExtractor implements ISectionExtractor {
 
     private static final int MIN_SECTION_LENGTH = 500;
     private static final int MAX_SECTION_LENGTH = 15_000;
+    private static final int MAX_HEADING_LENGTH = 100;
     private static final int KEY_HIGHLIGHTS_LENGTH = 10_000;
     private static final Pattern NEXT_ITEM = Pattern.compile(
             "(?im)^[ \\t]*ITEM\\s+\\d+[A-Z]?\\b[^\\r\\n]*"
@@ -27,13 +28,17 @@ public class SectionExtractor implements ISectionExtractor {
 
     private static final List<SectionPattern> SECTION_PATTERNS = List.of(
             new SectionPattern(InsightSection.RISK_FACTORS,
-                    "^[ \\t]*(?:RISK FACTORS\\b[^\\r\\n]*|ITEM\\s+1A\\b[^\\r\\n]*)[ \\t]*$"),
+                    "^[ \\t]*(?=.{1," + MAX_HEADING_LENGTH + "}$)"
+                            + "(?:RISK FACTORS\\b[^\\r\\n]*|ITEM\\s+1A\\b[^\\r\\n]*)[ \\t]*$"),
             new SectionPattern(InsightSection.MANAGEMENT_DISCUSSION,
-                    "^[ \\t]*(?:MANAGEMENT['’]S\\s+DISCUSSION\\b[^\\r\\n]*|ITEM\\s+7\\b[^\\r\\n]*|MD&A\\b[^\\r\\n]*)[ \\t]*$"),
+                    "^[ \\t]*(?=.{1," + MAX_HEADING_LENGTH + "}$)"
+                            + "(?:MANAGEMENT['’]S\\s+DISCUSSION\\b[^\\r\\n]*|ITEM\\s+7\\b[^\\r\\n]*|MD&A\\b[^\\r\\n]*)[ \\t]*$"),
             new SectionPattern(InsightSection.GUIDANCE,
-                    "^[ \\t]*(?:OUTLOOK\\b[^\\r\\n]*|GUIDANCE\\b[^\\r\\n]*|FORWARD-LOOKING\\b[^\\r\\n]*)[ \\t]*$"),
+                    "^[ \\t]*(?=.{1," + MAX_HEADING_LENGTH + "}$)"
+                            + "(?:OUTLOOK\\b[^\\r\\n]*|GUIDANCE\\b[^\\r\\n]*)[ \\t]*$"),
             new SectionPattern(InsightSection.SUPPLY_CHAIN,
-                    "^[ \\t]*(?:SUPPLY\\s+CHAIN\\b[^\\r\\n]*|MANUFACTURING\\b[^\\r\\n]*|SUPPLIERS\\b[^\\r\\n]*)[ \\t]*$")
+                    "^[ \\t]*(?=.{1," + MAX_HEADING_LENGTH + "}$)"
+                            + "(?:SUPPLY\\s+CHAIN\\b[^\\r\\n]*|MANUFACTURING\\b[^\\r\\n]*|SUPPLIERS\\b[^\\r\\n]*)[ \\t]*$")
     );
 
     private final int maxSectionsTokens;

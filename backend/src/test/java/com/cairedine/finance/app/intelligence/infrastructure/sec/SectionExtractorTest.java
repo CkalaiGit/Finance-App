@@ -58,6 +58,49 @@ class SectionExtractorTest {
                 .isEqualTo(section.rawText().isBlank() ? 0 : section.rawText().trim().split("\\s+").length));
     }
 
+    @Test
+    void shouldNotUseForwardLookingDisclaimerAsGuidance() {
+        String disclaimer = "FORWARD-LOOKING STATEMENTS. These statements involve known and unknown risks. "
+                .repeat(30);
+        String text = disclaimer + "\nITEM 1. BUSINESS\n" + "General business information. ".repeat(30);
+
+        List<SectionContent> sections = new SectionExtractor(80_000).extractSections(text);
+
+        assertThat(sections).extracting(SectionContent::section)
+                .doesNotContain(InsightSection.GUIDANCE);
+    }
+
+    @Test
+    void shouldExtractGuidanceFromOutlookHeading() {
+        String text = "Outlook\n" + "Management expects continued growth across its principal markets. ".repeat(20);
+
+        List<SectionContent> sections = new SectionExtractor(80_000).extractSections(text);
+
+        assertThat(sections).extracting(SectionContent::section)
+                .contains(InsightSection.GUIDANCE);
+    }
+
+    @Test
+    void shouldExtractSupplyChainFromShortHeading() {
+        String text = "Supply Chain\n" + "Our suppliers support the manufacture and delivery of products. ".repeat(20);
+
+        List<SectionContent> sections = new SectionExtractor(80_000).extractSections(text);
+
+        assertThat(sections).extracting(SectionContent::section)
+                .contains(InsightSection.SUPPLY_CHAIN);
+    }
+
+    @Test
+    void shouldNotTreatLongParagraphAsHeading() {
+        String text = "Manufacturing of our products is performed by independent suppliers around the world. "
+                .repeat(10);
+
+        List<SectionContent> sections = new SectionExtractor(80_000).extractSections(text);
+
+        assertThat(sections).extracting(SectionContent::section)
+                .doesNotContain(InsightSection.SUPPLY_CHAIN);
+    }
+
     private SectionContent section(List<SectionContent> sections, InsightSection section) {
         return sections.stream()
                 .filter(content -> content.section() == section)

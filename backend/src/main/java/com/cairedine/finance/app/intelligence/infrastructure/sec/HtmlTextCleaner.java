@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +27,11 @@ public class HtmlTextCleaner implements ITextCleaner {
     );
     private static final Pattern EXCESS_BLANK_LINES = Pattern.compile("\\n{3,}");
     private static final Pattern MULTIPLE_SPACES = Pattern.compile("[ \\t]{2,}");
+    private static final Pattern NUMERIC_ENTITY = Pattern.compile("&#(x[\\da-f]+|\\d+);", Pattern.CASE_INSENSITIVE);
+    private static final Pattern NAMED_ENTITY = Pattern.compile(
+            "&(amp|lt|gt|quot|apos|nbsp);",
+            Pattern.CASE_INSENSITIVE
+    );
 
     @Override
     public String clean(String html) {
@@ -53,10 +59,49 @@ public class HtmlTextCleaner implements ITextCleaner {
         return normalize(extractedText);
     }
 
-    private String fallbackToText(String html) {
+    String fallbackToText(String html) {
         String withoutScriptAndStyle = SCRIPT_AND_STYLE.matcher(html).replaceAll(" ");
         String withoutIxTags = IX_TAGS.matcher(withoutScriptAndStyle).replaceAll(" ");
-        return HTML_TAGS.matcher(withoutIxTags).replaceAll(" ");
+        String withoutHtmlTags = HTML_TAGS.matcher(withoutIxTags).replaceAll(" ");
+        return decodeEntities(withoutHtmlTags);
+    }
+
+    private String decodeEntities(String text) {
+        Matcher namedEntities = NAMED_ENTITY.matcher(text);
+        StringBuilder decodedNamedEntities = new StringBuilder();
+        while (namedEntities.find()) {
+            String decoded = switch (namedEntities.group(1).toLowerCase()) {
+                case "amp" -> "&";
+                case "lt" -> "<";
+                case "gt" -> ">";
+                case "quot" -> "\"";
+                case "apos" -> "'";
+                case "nbsp" -> "\u00a0";
+                default -> namedEntities.group();
+            };
+            namedEntities.appendReplacement(decodedNamedEntities, Matcher.quoteReplacement(decoded));
+        }
+        namedEntities.appendTail(decodedNamedEntities);
+
+        Matcher numericEntities = NUMERIC_ENTITY.matcher(decodedNamedEntities.toString());
+        StringBuilder decodedNumericEntities = new StringBuilder();
+        while (numericEntities.find()) {
+            String entityValue = numericEntities.group(1);
+            int radix = entityValue.regionMatches(true, 0, "x", 0, 1) ? 16 : 10;
+            String digits = radix == 16 ? entityValue.substring(1) : entityValue;
+            String decoded;
+            try {
+                int codePoint = Integer.parseInt(digits, radix);
+                decoded = Character.isValidCodePoint(codePoint)
+                        ? new String(Character.toChars(codePoint))
+                        : numericEntities.group();
+            } catch (NumberFormatException exception) {
+                decoded = numericEntities.group();
+            }
+            numericEntities.appendReplacement(decodedNumericEntities, Matcher.quoteReplacement(decoded));
+        }
+        numericEntities.appendTail(decodedNumericEntities);
+        return decodedNumericEntities.toString();
     }
 
     private String normalize(String text) {

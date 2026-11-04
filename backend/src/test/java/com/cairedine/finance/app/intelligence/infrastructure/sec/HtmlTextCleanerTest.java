@@ -36,4 +36,11 @@ class HtmlTextCleanerTest {
     void shouldReturnEmptyTextForBlankInput() {
         assertThat(cleaner.clean(" \n\t ")).isEmpty();
     }
+
+    @Test
+    void shouldDecodeEntitiesInFallback() {
+        String cleaned = cleaner.fallbackToText("<p>R&amp;D&nbsp;&#8217; &#65; &#x42;</p>");
+
+        assertThat(cleaned.trim()).isEqualTo("R&D\u00a0’ A B");
+    }
 }
