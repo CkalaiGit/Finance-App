@@ -19,7 +19,7 @@ public class InsightPersistenceAdapter implements ICompanyInsightRepository {
     private final InsightPersistenceMapper mapper;
     private final int filingTtlDays;
 
-    public InsightPersistenceAdapter(
+    InsightPersistenceAdapter(
             FinancialInsightJpaRepository repository,
             InsightPersistenceMapper mapper,
             @Value("${intelligence.filing-ttl-days:90}") int filingTtlDays) {
