@@ -2,11 +2,13 @@ package com.cairedine.finance.app.intelligence.application;
 
 import com.cairedine.finance.app.financialanalysis.domain.model.FullMetrics;
 import com.cairedine.finance.app.intelligence.domain.model.CompanyInsight;
+import com.cairedine.finance.app.intelligence.domain.model.IngestionStatus;
 import com.cairedine.finance.app.intelligence.domain.model.InsightSection;
 import com.cairedine.finance.app.intelligence.domain.model.SectionContent;
 import com.cairedine.finance.app.intelligence.domain.model.SecFiling;
 import com.cairedine.finance.app.intelligence.domain.port.IAiSummaryService;
 import com.cairedine.finance.app.intelligence.domain.port.ICompanyInsightRepository;
+import com.cairedine.finance.app.intelligence.domain.port.IDocumentSourcePort;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +18,8 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 
 @Service
 public class AiSummaryServiceImpl implements IAiSummaryService {
@@ -31,12 +35,13 @@ public class AiSummaryServiceImpl implements IAiSummaryService {
 
     private final ChatClient chatClient;
     private final ICompanyInsightRepository insightRepository;
+    private final IDocumentSourcePort documentSource;
 
-    public AiSummaryServiceImpl(
-            ChatClient.Builder chatClientBuilder,
-            ICompanyInsightRepository insightRepository) {
+    public AiSummaryServiceImpl(ChatClient.Builder chatClientBuilder, ICompanyInsightRepository insightRepository,
+            IDocumentSourcePort documentSource) {
         this.chatClient = chatClientBuilder.build();
         this.insightRepository = insightRepository;
+        this.documentSource = documentSource;
     }
 
     @Override
@@ -48,13 +53,28 @@ public class AiSummaryServiceImpl implements IAiSummaryService {
     @Override
     @Transactional(readOnly = true)
     public boolean isReady(String ticker) {
-        return !insightRepository.findByTicker(normalizeTicker(ticker)).isEmpty();
+        return getStatus(ticker).ready();
     }
 
-    public CompanyInsight summarize(
-            String ticker,
-            SecFiling filing,
-            List<SectionContent> sections,
+    @Override
+    @Transactional(readOnly = true)
+    public IngestionStatus getStatus(String ticker) {
+        String normalizedTicker = normalizeTicker(ticker);
+        List<CompanyInsight> insights = insightRepository.findByTicker(normalizedTicker);
+        Instant lastGenerated = insights.stream()
+                .map(CompanyInsight::generatedAt)
+                .filter(Objects::nonNull)
+                .max(Comparator.naturalOrder())
+                .orElse(null);
+        return new IngestionStatus(normalizedTicker, !insights.isEmpty(), insights.size(), lastGenerated);
+    }
+
+    @Override
+    public boolean isTickerSupported(String ticker) {
+        return documentSource.isAvailable(normalizeTicker(ticker));
+    }
+
+    public CompanyInsight summarize(String ticker, SecFiling filing, List<SectionContent> sections,
             List<FullMetrics> metrics) {
         AiInsightPayload payload = chatClient.prompt()
                 .system(SYSTEM_PROMPT)
@@ -67,18 +87,12 @@ public class AiSummaryServiceImpl implements IAiSummaryService {
                     + filing.accessionNumber());
         }
 
-        return new CompanyInsight(
-                normalizeTicker(ticker),
-                filing.formType(),
-                filing.period(),
-                filing.accessionNumber(),
-                payload.synthesePerformance(),
-                payload.analyseMargesEtDette(),
-                payload.risquesPrincipaux(),
-                payload.guidanceManagement(),
-                payload.chaineApprovisionnement(),
-                payload.faitsMarquants(),
-                Instant.now()
+        return new CompanyInsight(normalizeTicker(ticker),
+                filing.formType(), filing.period(),
+                filing.accessionNumber(), payload.synthesePerformance(),
+                payload.analyseMargesEtDette(), payload.risquesPrincipaux(),
+                payload.guidanceManagement(), payload.chaineApprovisionnement(),
+                payload.faitsMarquants(), Instant.now()
         );
     }
 
@@ -126,7 +140,7 @@ public class AiSummaryServiceImpl implements IAiSummaryService {
         }
 
         List<FullMetrics> recentMetrics = metrics.stream()
-                .filter(metric -> metric != null)
+                .filter(Objects::nonNull)
                 .sorted(Comparator.comparing(
                         FullMetrics::fiscalYearEndDate,
                         Comparator.nullsLast(Comparator.reverseOrder())))
@@ -176,6 +190,6 @@ public class AiSummaryServiceImpl implements IAiSummaryService {
     }
 
     private String normalizeTicker(String ticker) {
-        return ticker == null ? null : ticker.trim().toUpperCase(java.util.Locale.ROOT);
+        return ticker == null ? null : ticker.trim().toUpperCase(Locale.ROOT);
     }
 }

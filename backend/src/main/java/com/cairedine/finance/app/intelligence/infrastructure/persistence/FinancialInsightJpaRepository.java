@@ -14,5 +14,5 @@ interface FinancialInsightJpaRepository extends JpaRepository<FinancialInsightJp
     List<FinancialInsightJpaEntity> findByTickerAndExpiresAtAfterOrderByGeneratedAtDesc(
             String ticker, Instant expiresAt);
 
-    boolean existsByAccessionNumber(String accessionNumber);
+    boolean existsByAccessionNumberAndExpiresAtAfter(String accessionNumber, Instant expiresAt);
 }

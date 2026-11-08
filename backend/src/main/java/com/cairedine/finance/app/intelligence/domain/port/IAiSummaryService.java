@@ -1,6 +1,7 @@
 package com.cairedine.finance.app.intelligence.domain.port;
 
 import com.cairedine.finance.app.intelligence.domain.model.CompanyInsight;
+import com.cairedine.finance.app.intelligence.domain.model.IngestionStatus;
 
 import java.util.List;
 
@@ -29,4 +30,20 @@ public interface IAiSummaryService {
      * @return true si au moins un insight complet est disponible
      */
     boolean isReady(String ticker);
+
+    /**
+     * Récupère l'état des insights non expirés pour un ticker.
+     *
+     * @param ticker Symbole boursier
+     * @return État d'ingestion calculé à partir des insights disponibles
+     */
+    IngestionStatus getStatus(String ticker);
+
+    /**
+     * Indique si la source de documents prend en charge ce ticker.
+     *
+     * @param ticker Symbole boursier
+     * @return true si le ticker est connu de la source
+     */
+    boolean isTickerSupported(String ticker);
 }

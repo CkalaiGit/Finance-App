@@ -40,10 +40,11 @@ public interface ICompanyInsightRepository {
     Optional<CompanyInsight> findByTickerAndPeriod(String ticker, String formType, String period);
 
     /**
-     * Vérifie si un rapport a déjà été traité et sauvegardé via son numéro d'accession SEC (idempotence).
+     * Vérifie si un rapport non expiré a déjà été traité et sauvegardé via son numéro
+     * d'accession SEC (idempotence).
      *
      * @param accessionNumber Numéro d'accession officiel SEC
-     * @return true si le document a déjà été persisté
+     * @return true si le document a déjà été persisté et n'est pas expiré
      */
     boolean existsByAccessionNumber(String accessionNumber);
 }

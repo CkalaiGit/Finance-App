@@ -62,7 +62,7 @@ public class InsightPersistenceAdapter implements ICompanyInsightRepository {
     @Override
     @Transactional(readOnly = true)
     public boolean existsByAccessionNumber(String accessionNumber) {
-        return repository.existsByAccessionNumber(accessionNumber);
+        return repository.existsByAccessionNumberAndExpiresAtAfter(accessionNumber, Instant.now());
     }
 
     private String normalizeTicker(String ticker) {

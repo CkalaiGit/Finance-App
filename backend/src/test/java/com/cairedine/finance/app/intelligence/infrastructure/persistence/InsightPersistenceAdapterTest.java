@@ -44,7 +44,7 @@ class InsightPersistenceAdapterTest {
     }
 
     @Test
-    void shouldExcludeExpiredInsightsAndCheckAccessionRegardlessOfExpiry() {
+    void shouldExcludeExpiredInsightsAndOnlyCheckNonExpiredAccessions() {
         Instant now = Instant.now();
         adapter.save("AAPL", insight(
                 "10-K", "2023", "expired-accession", "Expired", now.minus(30, ChronoUnit.DAYS)));
@@ -55,8 +55,35 @@ class InsightPersistenceAdapterTest {
 
         assertThat(available).extracting(CompanyInsight::accessionNumber)
                 .containsExactly("active-accession");
-        assertThat(adapter.existsByAccessionNumber("expired-accession")).isTrue();
+        assertThat(adapter.existsByAccessionNumber("expired-accession")).isFalse();
+        assertThat(adapter.existsByAccessionNumber("active-accession")).isTrue();
         assertThat(adapter.existsByAccessionNumber("unknown-accession")).isFalse();
+    }
+
+    @Test
+    void shouldRefreshExpiredInsightOnTheSameRow() {
+        Instant expiredGeneratedAt = Instant.now().minus(30, ChronoUnit.DAYS);
+        adapter.save("AAPL", insight(
+                "10-K", "2023", "expired-accession", "Old summary", expiredGeneratedAt));
+        FinancialInsightJpaEntity expiredEntity = repository.findByTickerAndFormTypeAndPeriod(
+                "AAPL", "10-K", "2023").orElseThrow();
+        Long originalId = expiredEntity.getId();
+        Instant expiredAt = expiredEntity.getExpiresAt();
+        Instant refreshedGeneratedAt = Instant.now();
+
+        adapter.save("AAPL", insight(
+                "10-K", "2023", "refreshed-accession", "Refreshed summary", refreshedGeneratedAt));
+
+        FinancialInsightJpaEntity refreshedEntity = repository.findByTickerAndFormTypeAndPeriod(
+                "AAPL", "10-K", "2023").orElseThrow();
+        assertThat(repository.count()).isEqualTo(1);
+        assertThat(refreshedEntity.getId()).isEqualTo(originalId);
+        assertThat(refreshedEntity.getAccessionNumber()).isEqualTo("refreshed-accession");
+        assertThat(refreshedEntity.getExpiresAt())
+                .isEqualTo(refreshedGeneratedAt.plus(14, ChronoUnit.DAYS))
+                .isAfter(expiredAt);
+        assertThat(adapter.existsByAccessionNumber("expired-accession")).isFalse();
+        assertThat(adapter.existsByAccessionNumber("refreshed-accession")).isTrue();
     }
 
     private CompanyInsight insight(
