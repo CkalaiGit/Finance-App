@@ -13,13 +13,13 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 public class GrowthMetricsEmbeddable {
-    @Column(precision = 19, scale = 4)
+    @Column(nullable = true, precision = 19, scale = 4)
     private BigDecimal revenueGrowth3Y;
-    @Column(precision = 19, scale = 4)
+    @Column(nullable = true, precision = 19, scale = 4)
     private BigDecimal ebitdaGrowth3Y;
-    @Column(precision = 19, scale = 4)
+    @Column(nullable = true, precision = 19, scale = 4)
     private BigDecimal epsGrowth3Y;
-    @Column(precision = 19, scale = 4)
+    @Column(nullable = true, precision = 19, scale = 4)
     private BigDecimal fcfGrowth;
 
     // TODO: Future add ValueMetrics and QualityMetrics

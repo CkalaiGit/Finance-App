@@ -87,4 +87,20 @@ class FinancialAnalysisPersistenceMapperTest {
         assertNull(entity.getValueMetrics());
         assertNull(entity.getQualityMetrics());
     }
+
+    @Test
+    void shouldPreserveMissingMetricValuesAsNull() {
+        FullMetrics metrics = new FullMetrics(
+                new GrowthMetrics(null, null, null, null),
+                new ValueMetrics(null, null, null, null),
+                new QualityMetrics(null, null, null, null, null),
+                "2023-12-31",
+                Instant.now());
+
+        FullMetrics mapped = mapper.toDomain(mapper.toEntity("AAPL", metrics));
+
+        assertNull(mapped.growth().revenueGrowth3Y());
+        assertNull(mapped.value().peRatioTTM());
+        assertNull(mapped.quality().roic());
+    }
 }

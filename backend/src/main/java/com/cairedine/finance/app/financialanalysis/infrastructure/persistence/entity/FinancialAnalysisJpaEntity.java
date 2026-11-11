@@ -27,9 +27,6 @@ public class FinancialAnalysisJpaEntity {
     @Column
     private Instant lastUpdated;
 
-    @Column
-    private Instant expiresAt;
-
     @Embedded
     private GrowthMetricsEmbeddable growthMetrics;
 
@@ -38,10 +35,6 @@ public class FinancialAnalysisJpaEntity {
 
     @Embedded
     private QualityMetricsEmbeddable qualityMetrics;
-
-    public boolean isExpired() {
-        return expiresAt != null && Instant.now().isAfter(expiresAt);
-    }
 
     @PrePersist
     @PreUpdate

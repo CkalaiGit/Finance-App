@@ -90,10 +90,10 @@ Toutes les routes sont authentifiées, sauf `/actuator/health`, `/actuator/info`
 - Les métriques sont calculées par `FinancialAnalysisServiceImpl`, avec `FinancialMath` dans `domain`. Les modèles sont `GrowthMetrics`, `ValueMetrics`, `QualityMetrics`, regroupés dans `FullMetrics`.
 - **Deux ancres de temps** :
   - Growth et Quality utilisent `fiscalYearEndDate`, la date du dernier rapport publié. Elles restent figées jusqu'au prochain rapport.
-  - Value et TTM utilisent `marketDataAsOf` (`Instant.now()`), avec les données de marché et les 12 derniers mois.
+  - Value et TTM utilisent `marketDataAsOf`, avec les données de marché et les 12 derniers mois. L'exercice courant est recalculé quand cette date dépasse `financial-analysis.market-data-ttl` (24 h par défaut) ; les exercices passés ne sont jamais recalculés.
 - **Cache à deux niveaux** :
   1. `@Cacheable("analysis-metrics")` sur le service, clé = ticker en majuscules. Caffeine, 500 entrées max, expiration après 1h (`application.yaml`).
-  2. La table JPA garde l'historique. Elle est interrogée via `metricsCache.findByTickerAndFiscalYear`, avec `fiscalYearEndDate` comme clé. Cela évite de refaire les calculs lorsque le rapport n'a pas changé.
+  2. La table JPA garde l'historique. Elle est interrogée via `metricsCache.findByTickerAndFiscalYear`, avec `fiscalYearEndDate` comme clé ; la ligne de l'exercice courant est mise à jour en place après expiration des données de marché.
 - Les calculs sont parallélisés avec des Virtual Threads.
 
 ## Flux d'authentification côté backend

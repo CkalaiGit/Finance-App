@@ -9,13 +9,15 @@ import com.cairedine.finance.app.financialanalysis.domain.port.IFinancialAnalysi
 import com.cairedine.finance.app.financialanalysis.domain.port.IMetricsCachePort;
 import com.cairedine.finance.app.shared.exceptions.TickerNotFoundException;
 import com.cairedine.finance.app.webclient.*;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -29,11 +31,23 @@ import static com.cairedine.finance.app.financialanalysis.domain.FinancialMath.c
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class FinancialAnalysisServiceImpl implements IFinancialAnalysisService {
 
     private final IMarketDataPort marketDataPort;
     private final IMetricsCachePort metricsCache;
+    private final Clock clock;
+    private final Duration marketDataTtl;
+
+    public FinancialAnalysisServiceImpl(
+            IMarketDataPort marketDataPort,
+            IMetricsCachePort metricsCache,
+            Clock clock,
+            @Value("${financial-analysis.market-data-ttl:24h}") Duration marketDataTtl) {
+        this.marketDataPort = marketDataPort;
+        this.metricsCache = metricsCache;
+        this.clock = clock;
+        this.marketDataTtl = marketDataTtl;
+    }
 
     /**
      * Caffeine protège le quota FMP pendant une heure ; la table JPA conserve l'historique
@@ -52,7 +66,14 @@ public class FinancialAnalysisServiceImpl implements IFinancialAnalysisService {
 
         String currentFiscalYearEndDate = incomeStatements.getFirst().date();
 
-        if (metricsCache.findByTickerAndFiscalYear(normalizedTicker, currentFiscalYearEndDate).isEmpty()) {
+        Optional<FullMetrics> currentMetrics =
+                metricsCache.findByTickerAndFiscalYear(normalizedTicker, currentFiscalYearEndDate);
+        Instant staleBefore = clock.instant().minus(marketDataTtl);
+        boolean shouldRecalculate = currentMetrics.isEmpty()
+                || currentMetrics.get().marketDataAsOf() == null
+                || currentMetrics.get().marketDataAsOf().isBefore(staleBefore);
+
+        if (shouldRecalculate) {
             FullMetrics calculated = calculateMetricsFromApi(normalizedTicker, incomeStatements);
             try {
                 metricsCache.save(normalizedTicker, calculated);
@@ -88,7 +109,7 @@ public class FinancialAnalysisServiceImpl implements IFinancialAnalysisService {
             IncomeStatementRecord ttmIncome = preFetchedIncome.getFirst();
             CashFlowRecord ttmCashFlow = cashFlowStatements.getFirst();
             String fiscalYearEndDate = ttmIncome.date();
-            Instant marketDataAsOf = Instant.now();
+            Instant marketDataAsOf = clock.instant();
 
             // Growth
             BigDecimal revenueGrowth3Y = calculateCAGR(ttmIncome.revenue(), preFetchedIncome.get(3).revenue());
@@ -98,11 +119,11 @@ public class FinancialAnalysisServiceImpl implements IFinancialAnalysisService {
             GrowthMetrics growth = new GrowthMetrics(revenueGrowth3Y, ebitdaGrowth3Y, epsGrowth3Y, fcfGrowth);
 
             // Value & Quality base from KeyMetrics
-            BigDecimal roic = BigDecimal.ZERO;
-            BigDecimal netDebtToEbitda = BigDecimal.ZERO;
-            BigDecimal enterpriseValue = BigDecimal.ZERO;
-            BigDecimal peRatioTTM = BigDecimal.ZERO;
-            BigDecimal evToSales = BigDecimal.ZERO;
+            BigDecimal roic = null;
+            BigDecimal netDebtToEbitda = null;
+            BigDecimal enterpriseValue = null;
+            BigDecimal peRatioTTM = null;
+            BigDecimal evToSales = null;
 
             if (keyMetricsOpt.isPresent()) {
                 KeyMetricsRecord km = keyMetricsOpt.get();
@@ -118,7 +139,7 @@ public class FinancialAnalysisServiceImpl implements IFinancialAnalysisService {
             // Ratio cohérent en convention marché — EV et EBIT doivent couvrir 12 mois TTM
             // KeyMetrics FMP retourne un EV TTM aligné sur les 12 derniers mois.
             BigDecimal evToEbit = FinancialMath.calculateRatio(enterpriseValue, ttmIncome.operatingIncome());
-            BigDecimal epsGrowthForward = BigDecimal.ZERO;
+            BigDecimal epsGrowthForward = null;
             if (analystEstimates.size() >= 2) {
                 BigDecimal epsNext = analystEstimates.get(0).epsAvg();
                 BigDecimal epsCurrent = analystEstimates.get(1).epsAvg();

@@ -1,19 +1,26 @@
 package com.cairedine.finance.app.financialanalysis.application;
 
 import com.cairedine.finance.app.financialanalysis.domain.model.FullMetrics;
+import com.cairedine.finance.app.financialanalysis.domain.model.GrowthMetrics;
+import com.cairedine.finance.app.financialanalysis.domain.model.QualityMetrics;
+import com.cairedine.finance.app.financialanalysis.domain.model.ValueMetrics;
 import com.cairedine.finance.app.financialanalysis.domain.port.IMetricsCachePort;
 import com.cairedine.finance.app.shared.exceptions.MarketDataUnavailableException;
 import com.cairedine.finance.app.shared.exceptions.TickerNotFoundException;
 import com.cairedine.finance.app.webclient.*;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessResourceFailureException;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,10 +36,16 @@ class FinancialAnalysisServiceImplTest {
     @Mock
     private IMetricsCachePort metricsCache;
 
-    @InjectMocks
     private FinancialAnalysisServiceImpl financialAnalysisService;
 
     private static final String TICKER = "AAPL";
+    private static final Instant NOW = Instant.parse("2025-01-01T12:00:00Z");
+
+    @BeforeEach
+    void setUp() {
+        financialAnalysisService = new FinancialAnalysisServiceImpl(
+                marketDataPort, metricsCache, Clock.fixed(NOW, ZoneOffset.UTC), Duration.ofHours(24));
+    }
 
     private final List<IncomeStatementRecord> incomeStatements4 = List.of(
             new IncomeStatementRecord(TICKER, "2023", new BigDecimal("1000"), new BigDecimal("200"), new BigDecimal("200"), new BigDecimal("10"), new BigDecimal("65")),
@@ -99,8 +112,8 @@ class FinancialAnalysisServiceImplTest {
     }
 
     @Test
-    @DisplayName("evToEbit doit être zéro si operatingIncome est nul")
-    void shouldReturnZeroEvToEbitWhenOperatingIncomeNull() {
+    @DisplayName("evToEbit doit être null si operatingIncome est absent")
+    void shouldReturnNullEvToEbitWhenOperatingIncomeNull() {
         // Arrange
         IncomeStatementRecord incomeWithNullEbit = new IncomeStatementRecord(TICKER, "2023", new BigDecimal("1000"), null, new BigDecimal("200"), new BigDecimal("10"), new BigDecimal("65"));
         List<IncomeStatementRecord> statements = List.of(incomeWithNullEbit, incomeStatements4.get(1), incomeStatements4.get(2), incomeStatements4.get(3));
@@ -116,9 +129,9 @@ class FinancialAnalysisServiceImplTest {
         financialAnalysisService.computeMetrics(TICKER);
 
         // Assert
-        // EV dans keyMetrics est 3200, mais si EBIT est null, le ratio doit être 0
+        // EV dans keyMetrics est 3200, mais si EBIT est null, le ratio doit être null.
         verify(metricsCache).save(eq(TICKER), argThat(metrics ->
-                metrics.value().evToEbit().compareTo(BigDecimal.ZERO) == 0
+                metrics.value().evToEbit() == null
         ));
     }
 
@@ -160,7 +173,7 @@ class FinancialAnalysisServiceImplTest {
     void shouldReturnCachedMetricsIfPeriodMatches() {
         // Arrange
         when(marketDataPort.fetchIncomeStatements(TICKER, 4)).thenReturn(incomeStatements4);
-        FullMetrics existing = mock(FullMetrics.class);
+        FullMetrics existing = metricsAsOf(NOW.minus(Duration.ofHours(1)));
 
         when(metricsCache.findByTickerAndFiscalYear(TICKER, "2023")).thenReturn(Optional.of(existing));
         when(metricsCache.findAllByTicker(TICKER)).thenReturn(List.of(existing));
@@ -193,8 +206,8 @@ class FinancialAnalysisServiceImplTest {
     }
 
     @Test
-    @DisplayName("3. Doit initialiser les métriques à ZERO si KeyMetrics est absent")
-    void shouldFallbackToZeroWhenKeyMetricsMissing() {
+    @DisplayName("3. Les métriques dépendant de KeyMetrics restent nulles si les données manquent")
+    void shouldKeepKeyMetricsNullWhenMissing() {
         when(marketDataPort.fetchIncomeStatements(TICKER, 4)).thenReturn(incomeStatements4);
         when(marketDataPort.fetchCashFlowStatements(TICKER, 2)).thenReturn(cashFlowStatements2);
         when(marketDataPort.fetchKeyMetricsTtm(TICKER)).thenReturn(Optional.empty());
@@ -203,14 +216,18 @@ class FinancialAnalysisServiceImplTest {
         financialAnalysisService.computeMetrics(TICKER);
 
         verify(metricsCache).save(eq(TICKER), argThat(metrics -> 
-            metrics.quality().roic().compareTo(BigDecimal.ZERO) == 0 &&
-            metrics.value().peRatioTTM().compareTo(BigDecimal.ZERO) == 0
+            metrics.quality().roic() == null &&
+            metrics.quality().netDebtToEbitda() == null &&
+            metrics.value().evToEbit() == null &&
+            metrics.value().peRatioTTM() == null &&
+            metrics.value().evToSales() == null &&
+            metrics.value().pegRatioForward() == null
         ));
     }
 
     @Test
-    @DisplayName("4. CAGR doit utiliser la croissance simple si les valeurs de début sont négatives")
-    void shouldReturnSimpleGrowthForNegativeOrZeroValues() {
+    @DisplayName("4. CAGR est nul si la valeur de base est négative")
+    void shouldReturnNullCagrForNegativeBaseValue() {
         List<IncomeStatementRecord> negativeEbitdaStatements = List.of(
                 new IncomeStatementRecord(TICKER, "2023", new BigDecimal("1000"), new BigDecimal("200"), new BigDecimal("200"), new BigDecimal("10"), null),
                 new IncomeStatementRecord(TICKER, "2022", new BigDecimal("900"), new BigDecimal("180"), new BigDecimal("180"), new BigDecimal("9"), null),
@@ -225,15 +242,14 @@ class FinancialAnalysisServiceImplTest {
 
         financialAnalysisService.computeMetrics(TICKER);
 
-        // Simple growth: (200 - (-50)) / 50 = 5.0 (500%)
         verify(metricsCache).save(eq(TICKER), argThat(metrics ->
-            metrics.growth().ebitdaGrowth3Y().compareTo(new BigDecimal("5.0000")) == 0
+            metrics.growth().ebitdaGrowth3Y() == null
         ));
     }
 
     @Test
-    @DisplayName("5. PEG Ratio doit être ZERO si la croissance forward est négative ou nulle")
-    void shouldReturnZeroPegWhenForwardGrowthIsNegative() {
+    @DisplayName("5. PEG Ratio est null si la croissance forward est négative ou nulle")
+    void shouldReturnNullPegWhenForwardGrowthIsNegative() {
         List<AnalystEstimateRecord> negativeEstimates = List.of(
                 new AnalystEstimateRecord(TICKER, "2025", new BigDecimal("5.00"), null), // Next Year lower
                 new AnalystEstimateRecord(TICKER, "2024", new BigDecimal("6.00"), null)  // Current Year higher
@@ -247,12 +263,12 @@ class FinancialAnalysisServiceImplTest {
         financialAnalysisService.computeMetrics(TICKER);
 
         verify(metricsCache).save(eq(TICKER), argThat(metrics -> 
-            metrics.value().pegRatioForward().compareTo(BigDecimal.ZERO) == 0
+            metrics.value().pegRatioForward() == null
         ));
     }
 
     @Test
-    @DisplayName("6. Les marges doivent être ZERO si le revenu est nul (Division par zéro)")
+    @DisplayName("6. Les marges sont nulles si le revenu est nul (division impossible)")
     void shouldHandleZeroRevenueInMargins() {
         List<IncomeStatementRecord> zeroRevenueStatements = List.of(
                 new IncomeStatementRecord(TICKER, "2023", BigDecimal.ZERO, new BigDecimal("100"), new BigDecimal("200"), new BigDecimal("10"), null),
@@ -269,9 +285,24 @@ class FinancialAnalysisServiceImplTest {
         financialAnalysisService.computeMetrics(TICKER);
 
         verify(metricsCache).save(eq(TICKER), argThat(metrics -> 
-            metrics.quality().operatingMargin().compareTo(BigDecimal.ZERO) == 0 &&
-            metrics.quality().freeCashFlowMargin().compareTo(BigDecimal.ZERO) == 0
+            metrics.quality().operatingMargin() == null &&
+            metrics.quality().freeCashFlowMargin() == null
         ));
+    }
+
+    @Test
+    void shouldRecalculateCurrentFiscalYearWhenMarketDataIsStale() {
+        when(marketDataPort.fetchIncomeStatements(TICKER, 4)).thenReturn(incomeStatements4);
+        when(metricsCache.findByTickerAndFiscalYear(TICKER, "2023"))
+                .thenReturn(Optional.of(metricsAsOf(NOW.minus(Duration.ofHours(25)))));
+        when(marketDataPort.fetchCashFlowStatements(TICKER, 2)).thenReturn(cashFlowStatements2);
+        when(marketDataPort.fetchKeyMetricsTtm(TICKER)).thenReturn(Optional.of(keyMetrics));
+        when(marketDataPort.fetchAnalystEstimates(TICKER)).thenReturn(List.of());
+        when(metricsCache.findAllByTicker(TICKER)).thenReturn(List.of());
+
+        financialAnalysisService.computeMetrics(TICKER);
+
+        verify(metricsCache).save(eq(TICKER), argThat(metrics -> NOW.equals(metrics.marketDataAsOf())));
     }
 
     @Test
@@ -306,5 +337,14 @@ class FinancialAnalysisServiceImplTest {
                 () -> financialAnalysisService.computeMetrics(TICKER));
 
         assertSame(expected, actual);
+    }
+
+    private FullMetrics metricsAsOf(Instant marketDataAsOf) {
+        return new FullMetrics(
+                new GrowthMetrics(null, null, null, null),
+                new ValueMetrics(null, null, null, null),
+                new QualityMetrics(null, null, null, null, null),
+                "2023",
+                marketDataAsOf);
     }
 }

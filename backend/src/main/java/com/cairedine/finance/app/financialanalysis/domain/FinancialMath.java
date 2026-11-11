@@ -23,11 +23,12 @@ public final class FinancialMath {
      *
      * @param current  la valeur courante
      * @param previous la valeur précédente
-     * @return le taux de croissance, ou ZERO si les données sont invalides
+     * @return le taux de croissance, ou {@code null} si les données sont manquantes
+     *         ou si le calcul est impossible
      */
     public static BigDecimal calculateGrowth(BigDecimal current, BigDecimal previous) {
         if (current == null || previous == null || previous.signum() == 0) {
-            return BigDecimal.ZERO;
+            return null;
         }
         return current.subtract(previous)
                 .divide(previous.abs(), MC)
@@ -39,11 +40,12 @@ public final class FinancialMath {
      *
      * @param numerator   le numérateur
      * @param denominator le dénominateur
-     * @return le ratio, ou ZERO si les données sont invalides ou la division est impossible
+     * @return le ratio, ou {@code null} si les données sont manquantes
+     *         ou si la division est impossible
      */
     public static BigDecimal calculateRatio(BigDecimal numerator, BigDecimal denominator) {
         if (numerator == null || denominator == null || denominator.signum() == 0) {
-            return BigDecimal.ZERO;
+            return null;
         }
         return numerator.divide(denominator, MC).setScale(SCALE, ROUNDING_MODE);
     }
@@ -53,11 +55,12 @@ public final class FinancialMath {
      *
      * @param pe        le ratio PE (Price to Earnings)
      * @param epsGrowth la croissance du EPS
-     * @return le ratio PEG, ou ZERO si les données sont invalides
+     * @return le ratio PEG, ou {@code null} si les données sont manquantes
+     *         ou si la croissance ne permet pas de calculer le ratio
      */
     public static BigDecimal calculatePegRatio(BigDecimal pe, BigDecimal epsGrowth) {
         if (pe == null || epsGrowth == null || epsGrowth.signum() <= 0) {
-            return BigDecimal.ZERO;
+            return null;
         }
         BigDecimal epsGrowthPercent = epsGrowth.multiply(BigDecimal.valueOf(100));
         return pe.divide(epsGrowthPercent, MC).setScale(SCALE, ROUNDING_MODE);
@@ -67,41 +70,38 @@ public final class FinancialMath {
      * Formate une valeur BigDecimal en appliquant l'échelle et le mode d'arrondi standards.
      *
      * @param value la valeur à formater
-     * @return la valeur formatée, ou ZERO si la valeur est null
+     * @return la valeur formatée, ou {@code null} si la valeur est null
      */
     public static BigDecimal safeValue(BigDecimal value) {
-        return value != null ? value.setScale(SCALE, ROUNDING_MODE) : BigDecimal.ZERO;
+        return value != null ? value.setScale(SCALE, ROUNDING_MODE) : null;
     }
 
     /**
      * Calcule le taux de croissance annuel composé (CAGR) sur une période de 3 ans.
      * La formule standard utilisée est : {@code (endValue / startValue)^(1/3) - 1}.
      * <p><strong>Cas particuliers :</strong></p>
-     * Si l'une des valeurs est {@code null}, la méthode retourne {@link BigDecimal#ZERO}.
-     * Si l'une des valeurs est négative ou nulle, le calcul du CAGR (puissance fractionnaire)  n'est pas mathématiquement possible ou pertinent.
-     * Dans ce cas, la méthode bascule automatiquement sur un calcul de croissance simple via {@link FinancialMath#calculateGrowth}.
+     * Si l'une des valeurs est {@code null}, négative ou nulle, le calcul du CAGR
+     * n'est pas possible et la méthode retourne {@code null}.
      *
      * @param endValue   La valeur à la fin de la période (ex: Revenu année N).
      * @param startValue La valeur au début de la période (ex: Revenu année N-3).
      * @return Le CAGR calculé avec une précision de 4 décimales (HALF_UP), 
-     * ou {@link BigDecimal#ZERO} en cas de données manquantes.
+     * ou {@code null} si les données manquent ou si le calcul est impossible.
      */
     public static BigDecimal calculateCAGR(BigDecimal endValue, BigDecimal startValue) {
-        // Return ZERO if either value is null
         if (startValue == null || endValue == null) {
-            return BigDecimal.ZERO;
+            return null;
         }
 
-        // If both values are positive, calculate proper CAGR
         if (startValue.signum() > 0 && endValue.signum() > 0) {
             double ratio = endValue.divide(startValue, new MathContext(8, RoundingMode.HALF_UP)).doubleValue();
             double cagr = Math.pow(ratio, 1.0 / 3.0) - 1;
+            if (!Double.isFinite(cagr)) {
+                return null;
+            }
             return BigDecimal.valueOf(cagr).setScale(4, RoundingMode.HALF_UP);
         }
 
-        // Fallback: use simple growth rate when CAGR is not calculable
-        // This handles cases like negative-to-positive transitions
-        return FinancialMath.calculateGrowth(endValue, startValue);
+        return null;
     }
 }
-

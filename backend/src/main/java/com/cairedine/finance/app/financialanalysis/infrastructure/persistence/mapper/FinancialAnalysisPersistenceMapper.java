@@ -27,7 +27,7 @@ public class FinancialAnalysisPersistenceMapper {
     }
 
     private GrowthMetrics toGrowthDomain(GrowthMetricsEmbeddable embeddable) {
-        if (embeddable == null) return null;
+        if (embeddable == null) return new GrowthMetrics(null, null, null, null);
         return new GrowthMetrics(
                 embeddable.getRevenueGrowth3Y(),
                 embeddable.getEbitdaGrowth3Y(),
@@ -37,7 +37,7 @@ public class FinancialAnalysisPersistenceMapper {
     }
 
     private ValueMetrics toValueDomain(ValueMetricsEmbeddable embeddable) {
-        if (embeddable == null) return null;
+        if (embeddable == null) return new ValueMetrics(null, null, null, null);
         return new ValueMetrics(
                 embeddable.getEvToEbit(),
                 embeddable.getPeRatioTTM(),
@@ -47,7 +47,7 @@ public class FinancialAnalysisPersistenceMapper {
     }
 
     private QualityMetrics toQualityDomain(QualityMetricsEmbeddable embeddable) {
-        if (embeddable == null) return null;
+        if (embeddable == null) return new QualityMetrics(null, null, null, null, null);
         return new QualityMetrics(
                 embeddable.getRoic(),
                 embeddable.getOperatingMargin(),

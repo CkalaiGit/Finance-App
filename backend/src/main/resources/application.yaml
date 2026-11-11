@@ -6,6 +6,9 @@ app:
     allowed-origins:
       - http://localhost:4200
 
+financial-analysis:
+  market-data-ttl: 24h
+
 spring:
   application:
     name: finance-app

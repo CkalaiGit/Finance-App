@@ -262,6 +262,30 @@ class FinancialAnalysisE2ETest {
     }
 
     @Test
+    void shouldReturnNullForMissingMarketMetricsInJson() {
+        when(marketDataPort.fetchKeyMetricsTtm(anyString())).thenReturn(Optional.empty());
+        when(marketDataPort.fetchAnalystEstimates(anyString())).thenReturn(List.of());
+
+        String response = restClient.get()
+                .uri("/api/v1/analysis/{ticker}", "GOOGL")
+                .retrieve()
+                .body(String.class);
+
+        assertThat(response)
+                .contains("\"roic\":null")
+                .contains("\"netDebtToEbitda\":null")
+                .contains("\"evToEbit\":null")
+                .contains("\"peRatioTTM\":null")
+                .contains("\"pegRatioForward\":null")
+                .contains("\"evToSales\":null");
+
+        var persisted = repository.findAllByTickerOrderByFiscalYearEndDateDesc("GOOGL").getFirst();
+        assertThat(persisted.getQualityMetrics().getRoic()).isNull();
+        assertThat(persisted.getQualityMetrics().getNetDebtToEbitda()).isNull();
+        assertThat(persisted.getValueMetrics()).isNull();
+    }
+
+    @Test
     void shouldReturn404ForUnknownTicker() {
         // Arrange
         String unknownTicker = "TICKER_INEXISTANT";

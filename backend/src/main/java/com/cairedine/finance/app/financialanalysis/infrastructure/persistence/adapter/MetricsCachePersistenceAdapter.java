@@ -8,8 +8,6 @@ import com.cairedine.finance.app.financialanalysis.infrastructure.persistence.re
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,7 +21,6 @@ public class MetricsCachePersistenceAdapter implements IMetricsCachePort {
     @Override
     public List<FullMetrics> findAllByTicker(String ticker) {
         return repository.findAllByTickerOrderByFiscalYearEndDateDesc(ticker).stream()
-                .filter(entity -> !entity.isExpired())
                 .map(mapper::toDomain)
                 .toList();
     }
@@ -31,27 +28,24 @@ public class MetricsCachePersistenceAdapter implements IMetricsCachePort {
     @Override
     public Optional<FullMetrics> findByTickerAndFiscalYear(String ticker, String fiscalYearEndDate) {
         return repository.findByTickerAndFiscalYearEndDate(ticker, fiscalYearEndDate)
-                .filter(entity -> !entity.isExpired())
                 .map(mapper::toDomain);
     }
 
     @Override
     public void save(String ticker, FullMetrics metrics) {
         repository.findByTickerAndFiscalYearEndDate(ticker, metrics.fiscalYearEndDate())
-                .ifPresentOrElse(
-                    existing -> {
-                        if (existing.isExpired()) {
-                            repository.delete(existing);
-                            saveNewEntry(ticker, metrics);
-                        }
-                    },
-                    () -> saveNewEntry(ticker, metrics)
-                );
+                .ifPresentOrElse(existing -> updateEntry(existing, ticker, metrics),
+                        () -> repository.save(mapper.toEntity(ticker, metrics)));
     }
 
-    private void saveNewEntry(String ticker, FullMetrics metrics) {
-        FinancialAnalysisJpaEntity entity = mapper.toEntity(ticker, metrics);
-        entity.setExpiresAt(Instant.now().plus(Duration.ofHours(24)));
-        repository.save(entity);
+    private void updateEntry(FinancialAnalysisJpaEntity existing, String ticker, FullMetrics metrics) {
+        FinancialAnalysisJpaEntity updated = mapper.toEntity(ticker, metrics);
+        existing.setTicker(updated.getTicker());
+        existing.setFiscalYearEndDate(updated.getFiscalYearEndDate());
+        existing.setMarketDataAsOf(updated.getMarketDataAsOf());
+        existing.setGrowthMetrics(updated.getGrowthMetrics());
+        existing.setValueMetrics(updated.getValueMetrics());
+        existing.setQualityMetrics(updated.getQualityMetrics());
+        repository.save(existing);
     }
 }
