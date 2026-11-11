@@ -1,3 +1,4 @@
+import { InsightsTabComponent } from './insights-tab/insights-tab.component';
 import {
    ChangeDetectionStrategy,
    Component,
@@ -49,7 +50,7 @@ export interface CompanyDetailsState {
 @Component({
    selector: 'app-company-details',
    standalone: true,
-   imports: [AsyncPipe, CurrencyPipe, RouterLink],
+   imports: [AsyncPipe, CurrencyPipe, RouterLink, InsightsTabComponent],
    templateUrl: './company-details.component.html',
    styleUrls: ['./company-details.component.scss'],
    changeDetection: ChangeDetectionStrategy.OnPush,
@@ -60,7 +61,7 @@ export class CompanyDetailsComponent {
    private readonly companyService = inject(CompanyService);
    private readonly watchlistService = inject(WatchlistService);
 
-   activeTab: 'growth' | 'value' | 'quality' = 'growth';
+   activeTab: 'growth' | 'value' | 'quality' | 'insights' = 'growth';
 
    private readonly watchlistOverrides$ = new Subject<WatchlistOverride>();
 
@@ -296,7 +297,7 @@ export class CompanyDetailsComponent {
       return result$;
    }
 
-   switchTab(tab: 'growth' | 'value' | 'quality'): void {
+   switchTab(tab: 'growth' | 'value' | 'quality' | 'insights'): void {
       this.activeTab = tab;
    }
 

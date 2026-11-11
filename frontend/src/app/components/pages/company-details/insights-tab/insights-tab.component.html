@@ -1,0 +1,333 @@
+<div class="insights-tab-wrapper">
+   @if (state$ | async; as state) {
+      @switch (state.status) {
+         @case ('loading') {
+            <div class="tab-state-card" data-testid="insights-loading">
+               <div class="text-center py-5">
+                  <i class="bi bi-hourglass-split spin-icon state-icon"></i>
+                  <h3 class="state-title mt-3">Chargement de l'analyse IA...</h3>
+                  <p class="state-subtitle text-muted mt-1">Récupération des synthèses des rapports SEC</p>
+               </div>
+            </div>
+         }
+
+         @case ('pending') {
+            <div class="tab-state-card" data-testid="insights-pending">
+               <div class="text-center py-5">
+                  <i class="bi bi-arrow-repeat spin-icon state-icon"></i>
+                  <h3 class="state-title mt-3">{{ state.pendingMessage || 'Ingestion des rapports SEC en cours...' }}</h3>
+                  <p class="state-subtitle text-muted mt-2">
+                     Traitement des documents officiels en arrière-plan. Actualisation automatique...
+                  </p>
+               </div>
+            </div>
+         }
+
+         @case ('partial') {
+            <div class="insights-container" data-testid="insights-partial">
+               <div class="partial-banner">
+                  <i class="bi bi-info-circle-fill banner-icon"></i>
+                  <div class="banner-text">
+                     <strong>Analyse partielle :</strong> analyse des autres rapports en cours...
+                  </div>
+               </div>
+
+               @if (state.selectedInsight; as insight) {
+                  <!-- EN-TÊTE DE LA SYNTHÈSE -->
+                  <div class="insight-header-bar">
+                     <div class="report-selector-wrapper">
+                        @if (state.insights.length > 1) {
+                           <label for="report-select-partial" class="report-select-label">Rapport SEC :</label>
+                           <select
+                              id="report-select-partial"
+                              class="form-select report-select"
+                              [value]="insight.accessionNumber"
+                              (change)="onReportChange($event)"
+                           >
+                              @for (item of state.insights; track item.accessionNumber) {
+                                 <option [value]="item.accessionNumber">
+                                    {{ item.formType }} · {{ item.period }}
+                                 </option>
+                              }
+                           </select>
+                        } @else {
+                           <span class="single-report-badge">
+                              <i class="bi bi-file-earmark-text"></i> {{ insight.formType }} · {{ insight.period }}
+                           </span>
+                        }
+                     </div>
+
+                     @if (isDemo(insight)) {
+                        <span class="badge-demo" data-testid="insights-demo">
+                           <i class="bi bi-stars"></i> Données de démonstration
+                        </span>
+                     }
+                  </div>
+
+                  <!-- BLOCS D'ANALYSE DANS L'ORDRE STRICT -->
+                  <div class="insight-content-blocks">
+                     <!-- 1. FAITS MARQUANTS -->
+                     @if (hasList(insight.faitsMarquants)) {
+                        <section class="insight-card highlight-card">
+                           <div class="card-header-line">
+                              <div class="card-icon-bubble"><i class="bi bi-bookmark-star"></i></div>
+                              <h3 class="card-title">Faits marquants</h3>
+                           </div>
+                           <ul class="card-list">
+                              @for (item of insight.faitsMarquants; track item) {
+                                 <li>{{ cleanDemo(item) }}</li>
+                              }
+                           </ul>
+                        </section>
+                     }
+
+                     <!-- 2. SYNTHÈSE DE LA PERFORMANCE -->
+                     @if (hasText(insight.synthesePerformance)) {
+                        <section class="insight-card">
+                           <div class="card-header-line">
+                              <div class="card-icon-bubble"><i class="bi bi-graph-up-arrow"></i></div>
+                              <h3 class="card-title">Synthèse de la performance</h3>
+                           </div>
+                           <p class="card-body-text">{{ cleanDemo(insight.synthesePerformance) }}</p>
+                        </section>
+                     }
+
+                     <!-- 3. MARGES ET DETTE -->
+                     @if (hasText(insight.analyseMargesEtDette)) {
+                        <section class="insight-card">
+                           <div class="card-header-line">
+                              <div class="card-icon-bubble"><i class="bi bi-pie-chart"></i></div>
+                              <h3 class="card-title">Marges et dette</h3>
+                           </div>
+                           <p class="card-body-text">{{ cleanDemo(insight.analyseMargesEtDette) }}</p>
+                        </section>
+                     }
+
+                     <!-- 4. RISQUES PRINCIPAUX -->
+                     @if (hasList(insight.risquesPrincipaux)) {
+                        <section class="insight-card risks-card">
+                           <div class="card-header-line">
+                              <div class="card-icon-bubble"><i class="bi bi-shield-exclamation"></i></div>
+                              <h3 class="card-title">Risques principaux</h3>
+                           </div>
+                           <ul class="card-list">
+                              @for (item of insight.risquesPrincipaux; track item) {
+                                 <li>{{ cleanDemo(item) }}</li>
+                              }
+                           </ul>
+                        </section>
+                     }
+
+                     <!-- 5. GUIDANCE DU MANAGEMENT -->
+                     @if (hasText(insight.guidanceManagement)) {
+                        <section class="insight-card">
+                           <div class="card-header-line">
+                              <div class="card-icon-bubble"><i class="bi bi-compass"></i></div>
+                              <h3 class="card-title">Guidance du management</h3>
+                           </div>
+                           <p class="card-body-text">{{ cleanDemo(insight.guidanceManagement) }}</p>
+                        </section>
+                     }
+
+                     <!-- 6. CHAÎNE D'APPROVISIONNEMENT -->
+                     @if (hasText(insight.chaineApprovisionnement)) {
+                        <section class="insight-card">
+                           <div class="card-header-line">
+                              <div class="card-icon-bubble"><i class="bi bi-truck"></i></div>
+                              <h3 class="card-title">Chaîne d'approvisionnement</h3>
+                           </div>
+                           <p class="card-body-text">{{ cleanDemo(insight.chaineApprovisionnement) }}</p>
+                        </section>
+                     }
+                  </div>
+
+                  <!-- PIED DE BLOC -->
+                  <footer class="insight-footer">
+                     <p class="insight-meta">
+                        Généré le {{ insight.generatedAt }} à partir du rapport SEC {{ insight.accessionNumber }}
+                     </p>
+                     <p class="insight-disclaimer">
+                        Synthèse générée par IA. Ce n'est pas un conseil en investissement.
+                     </p>
+                  </footer>
+               }
+            </div>
+         }
+
+         @case ('ready') {
+            <div class="insights-container" data-testid="insights-ready">
+               @if (state.selectedInsight; as insight) {
+                  <!-- EN-TÊTE DE LA SYNTHÈSE AVEC SÉLECTEUR ET EXPORT PDF -->
+                  <div class="insight-header-bar">
+                     <div class="report-selector-wrapper">
+                        @if (state.insights.length > 1) {
+                           <label for="report-select-ready" class="report-select-label">Rapport SEC :</label>
+                           <select
+                              id="report-select-ready"
+                              class="form-select report-select"
+                              [value]="insight.accessionNumber"
+                              (change)="onReportChange($event)"
+                           >
+                              @for (item of state.insights; track item.accessionNumber) {
+                                 <option [value]="item.accessionNumber">
+                                    {{ item.formType }} · {{ item.period }}
+                                 </option>
+                              }
+                           </select>
+                        } @else {
+                           <span class="single-report-badge">
+                              <i class="bi bi-file-earmark-text"></i> {{ insight.formType }} · {{ insight.period }}
+                           </span>
+                        }
+                     </div>
+
+                     <div class="header-actions-right">
+                        @if (isDemo(insight)) {
+                           <span class="badge-demo" data-testid="insights-demo">
+                              <i class="bi bi-stars"></i> Données de démonstration
+                           </span>
+                        }
+                        <button
+                           type="button"
+                           class="btn-secondary export-pdf-btn"
+                           (click)="exportPdf()"
+                           data-testid="export-pdf-btn"
+                           aria-label="Exporter en PDF"
+                        >
+                           <i class="bi bi-printer"></i> Exporter en PDF
+                        </button>
+                     </div>
+                  </div>
+
+                  <!-- BLOCS D'ANALYSE DANS L'ORDRE STRICT -->
+                  <div class="insight-content-blocks">
+                     <!-- 1. FAITS MARQUANTS -->
+                     @if (hasList(insight.faitsMarquants)) {
+                        <section class="insight-card highlight-card">
+                           <div class="card-header-line">
+                              <div class="card-icon-bubble"><i class="bi bi-bookmark-star"></i></div>
+                              <h3 class="card-title">Faits marquants</h3>
+                           </div>
+                           <ul class="card-list">
+                              @for (item of insight.faitsMarquants; track item) {
+                                 <li>{{ cleanDemo(item) }}</li>
+                              }
+                           </ul>
+                        </section>
+                     }
+
+                     <!-- 2. SYNTHÈSE DE LA PERFORMANCE -->
+                     @if (hasText(insight.synthesePerformance)) {
+                        <section class="insight-card">
+                           <div class="card-header-line">
+                              <div class="card-icon-bubble"><i class="bi bi-graph-up-arrow"></i></div>
+                              <h3 class="card-title">Synthèse de la performance</h3>
+                           </div>
+                           <p class="card-body-text">{{ cleanDemo(insight.synthesePerformance) }}</p>
+                        </section>
+                     }
+
+                     <!-- 3. MARGES ET DETTE -->
+                     @if (hasText(insight.analyseMargesEtDette)) {
+                        <section class="insight-card">
+                           <div class="card-header-line">
+                              <div class="card-icon-bubble"><i class="bi bi-pie-chart"></i></div>
+                              <h3 class="card-title">Marges et dette</h3>
+                           </div>
+                           <p class="card-body-text">{{ cleanDemo(insight.analyseMargesEtDette) }}</p>
+                        </section>
+                     }
+
+                     <!-- 4. RISQUES PRINCIPAUX -->
+                     @if (hasList(insight.risquesPrincipaux)) {
+                        <section class="insight-card risks-card">
+                           <div class="card-header-line">
+                              <div class="card-icon-bubble"><i class="bi bi-shield-exclamation"></i></div>
+                              <h3 class="card-title">Risques principaux</h3>
+                           </div>
+                           <ul class="card-list">
+                              @for (item of insight.risquesPrincipaux; track item) {
+                                 <li>{{ cleanDemo(item) }}</li>
+                              }
+                           </ul>
+                        </section>
+                     }
+
+                     <!-- 5. GUIDANCE DU MANAGEMENT -->
+                     @if (hasText(insight.guidanceManagement)) {
+                        <section class="insight-card">
+                           <div class="card-header-line">
+                              <div class="card-icon-bubble"><i class="bi bi-compass"></i></div>
+                              <h3 class="card-title">Guidance du management</h3>
+                           </div>
+                           <p class="card-body-text">{{ cleanDemo(insight.guidanceManagement) }}</p>
+                        </section>
+                     }
+
+                     <!-- 6. CHAÎNE D'APPROVISIONNEMENT -->
+                     @if (hasText(insight.chaineApprovisionnement)) {
+                        <section class="insight-card">
+                           <div class="card-header-line">
+                              <div class="card-icon-bubble"><i class="bi bi-truck"></i></div>
+                              <h3 class="card-title">Chaîne d'approvisionnement</h3>
+                           </div>
+                           <p class="card-body-text">{{ cleanDemo(insight.chaineApprovisionnement) }}</p>
+                        </section>
+                     }
+                  </div>
+
+                  <!-- PIED DE BLOC -->
+                  <footer class="insight-footer">
+                     <p class="insight-meta">
+                        Généré le {{ insight.generatedAt }} à partir du rapport SEC {{ insight.accessionNumber }}
+                     </p>
+                     <p class="insight-disclaimer">
+                        Synthèse générée par IA. Ce n'est pas un conseil en investissement.
+                     </p>
+                  </footer>
+               }
+            </div>
+         }
+
+         @case ('timeout') {
+            <div class="tab-state-card" data-testid="insights-timeout">
+               <div class="text-center py-5">
+                  <i class="bi bi-clock-history state-icon text-warning"></i>
+                  <h3 class="state-title mt-3 text-warning">Délai d'attente dépassé</h3>
+                  <p class="state-subtitle text-muted mt-2">
+                     Le traitement des rapports SEC prend plus de temps que prévu.
+                  </p>
+                  <button type="button" class="btn-primary mt-4" (click)="retry()">
+                     <i class="bi bi-arrow-clockwise"></i> Réessayer
+                  </button>
+               </div>
+            </div>
+         }
+
+         @case ('unavailable') {
+            <div class="tab-state-card" data-testid="insights-unavailable">
+               <div class="text-center py-5">
+                  <i class="bi bi-file-earmark-x state-icon text-muted"></i>
+                  <h3 class="state-title mt-3 text-muted">Aucun rapport SEC pour cette entreprise</h3>
+                  <p class="state-subtitle text-muted mt-2">
+                     Cette société n'est probablement pas soumise aux déclarations de la SEC (sociétés non cotées aux États-Unis).
+                  </p>
+               </div>
+            </div>
+         }
+
+         @case ('error') {
+            <div class="tab-state-card" data-testid="insights-error">
+               <div class="text-center py-5">
+                  <i class="bi bi-exclamation-triangle-fill state-icon text-danger"></i>
+                  <h3 class="state-title mt-3 text-danger">{{ state.error?.title || 'Erreur' }}</h3>
+                  <p class="state-subtitle text-muted mt-2">{{ state.error?.detail || 'Une erreur inattendue est survenue.' }}</p>
+                  <button type="button" class="btn-primary mt-4" (click)="retry()">
+                     <i class="bi bi-arrow-clockwise"></i> Réessayer
+                  </button>
+               </div>
+            </div>
+         }
+      }
+   }
+</div>

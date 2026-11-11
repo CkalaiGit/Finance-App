@@ -362,11 +362,19 @@ textarea,
       );
    }
 
-   &.tab-quality.active {
+      &.tab-quality.active {
       background: linear-gradient(
          135deg,
          var(--accent-yellow) 0%,
          var(--accent-red) 100%
+      );
+   }
+
+   &.tab-insights.active {
+      background: linear-gradient(
+         135deg,
+         var(--accent-purple) 0%,
+         var(--accent-cyan) 100%
       );
    }
 }
@@ -887,4 +895,54 @@ footer {
 }
 .p-4 {
    padding: 32px;
+}
+
+
+/* ========================================
+   MEDIA PRINT (EXPORT PDF)
+======================================== */
+@media print {
+   app-header,
+   .navbar,
+   .background-elements,
+   .tabs-container,
+   .watchlist-action-container,
+   .export-pdf-btn,
+   .report-selector-container,
+   .btn,
+   .btn-primary,
+   .btn-secondary {
+      display: none !important;
+   }
+
+   body {
+      background: #ffffff !important;
+      color: #0f172a !important;
+   }
+
+   .container {
+      max-width: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+   }
+
+   .company-header {
+      background: none !important;
+      border: none !important;
+      box-shadow: none !important;
+      color: #0f172a !important;
+      padding: 0 0 16px 0 !important;
+      text-align: left !important;
+
+      .company-name-large,
+      .company-ticker-large {
+         color: #0f172a !important;
+      }
+
+      .badge-info {
+         background: #f1f5f9 !important;
+         border: 1px solid #cbd5e1 !important;
+         color: #0f172a !important;
+      }
+   }
 }

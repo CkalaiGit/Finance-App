@@ -6,6 +6,7 @@ import { CompanyDetailsComponent } from './company-details.component';
 import { CompanyService } from '../../../services/company.service';
 import { FinancialAnalysisService } from '../../../services/financial-analysis.service';
 import { WatchlistService } from '../../../services/watchlist.service';
+import { InsightService } from '../../../services/insight.service';
 import { CompanyProfileResponse } from '../../../models/company.model';
 import { FullMetrics } from '../../../models/analysis.model';
 import { ApiError } from '../../../models/api-error.model';
@@ -25,6 +26,10 @@ describe('CompanyDetailsComponent', () => {
       checkExists: ReturnType<typeof vi.fn>;
       addTicker: ReturnType<typeof vi.fn>;
       removeTicker: ReturnType<typeof vi.fn>;
+   };
+   let insightServiceMock: {
+      getInsights: ReturnType<typeof vi.fn>;
+      getStatus: ReturnType<typeof vi.fn>;
    };
 
    const sampleProfile: CompanyProfileResponse = {
@@ -60,6 +65,10 @@ describe('CompanyDetailsComponent', () => {
          addTicker: vi.fn().mockReturnValue(of({ keycloakId: 'u1', tickers: ['AAPL'] })),
          removeTicker: vi.fn().mockReturnValue(of({ keycloakId: 'u1', tickers: [] })),
       };
+      insightServiceMock = {
+         getInsights: vi.fn().mockReturnValue(of({ kind: 'ready', insights: [] })),
+         getStatus: vi.fn().mockReturnValue(of({ ticker: 'AAPL', ready: true, inProgress: false, count: 0, lastGenerated: null })),
+      };
 
       await TestBed.configureTestingModule({
          imports: [CompanyDetailsComponent],
@@ -69,6 +78,7 @@ describe('CompanyDetailsComponent', () => {
             { provide: CompanyService, useValue: companyServiceMock },
             { provide: FinancialAnalysisService, useValue: analysisServiceMock },
             { provide: WatchlistService, useValue: watchlistServiceMock },
+            { provide: InsightService, useValue: insightServiceMock },
          ],
       }).compileComponents();
    });
@@ -280,5 +290,27 @@ describe('CompanyDetailsComponent', () => {
 
       expect(watchlistServiceMock.removeTicker).toHaveBeenCalledWith('AAPL');
       expect(stateSnapshot?.watchlist.inWatchlist).toBe(false);
+   });
+   it('should render Analyse IA tab button and switch to it when clicked', async () => {
+      fixture = TestBed.createComponent(CompanyDetailsComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const tabButton = compiled.querySelector('.tab-insights') as HTMLButtonElement;
+      expect(tabButton).toBeTruthy();
+      expect(tabButton.textContent).toContain('Analyse IA');
+      expect(component.activeTab).toBe('growth');
+      expect(insightServiceMock.getInsights).not.toHaveBeenCalled();
+
+      tabButton.click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(component.activeTab).toBe('insights');
+      expect(tabButton.classList.contains('active')).toBe(true);
+      expect(insightServiceMock.getInsights).toHaveBeenCalledWith('AAPL');
    });
 });
