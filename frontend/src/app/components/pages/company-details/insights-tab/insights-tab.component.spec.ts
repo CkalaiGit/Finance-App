@@ -32,9 +32,14 @@ describe('InsightsTabComponent', () => {
       accessionNumber: '0000320193-24-000106',
       synthesePerformance: 'Année record portée par la division Services.',
       analyseMargesEtDette: 'Marge opérationnelle supérieure à 30%.',
-      risquesPrincipaux: ['Concurrence IA accrue', 'Risques géopolitiques en Asie'],
-      guidanceManagement: 'Croissance à deux chiffres attendue sur les abonnements.',
-      chaineApprovisionnement: 'Approvisionnement diversifié en Inde et au Vietnam.',
+      risquesPrincipaux: [
+         'Concurrence IA accrue',
+         'Risques géopolitiques en Asie',
+      ],
+      guidanceManagement:
+         'Croissance à deux chiffres attendue sur les abonnements.',
+      chaineApprovisionnement:
+         'Approvisionnement diversifié en Inde et au Vietnam.',
       faitsMarquants: ['Revenus Services record', 'Rachat d actions massif'],
       generatedAt: '2024-11-01T10:00:00Z',
    };
@@ -44,8 +49,10 @@ describe('InsightsTabComponent', () => {
       formType: '10-K',
       period: 'FY 2023',
       accessionNumber: '0000320193-23-000106',
-      synthesePerformance: 'Performance résiliente dans un contexte macroéconomique incertain.',
-      analyseMargesEtDette: 'Excellente gestion des flux de trésorerie disponible.',
+      synthesePerformance:
+         'Performance résiliente dans un contexte macroéconomique incertain.',
+      analyseMargesEtDette:
+         'Excellente gestion des flux de trésorerie disponible.',
       risquesPrincipaux: ['Taux d intérêt élevés'],
       guidanceManagement: 'Prudence sur les dépenses d investissement.',
       chaineApprovisionnement: 'Dépendance soutenue aux usines chinoises.',
@@ -102,9 +109,7 @@ describe('InsightsTabComponent', () => {
 
       await TestBed.configureTestingModule({
          imports: [InsightsTabComponent],
-         providers: [
-            { provide: InsightService, useValue: insightServiceMock },
-         ],
+         providers: [{ provide: InsightService, useValue: insightServiceMock }],
       }).compileComponents();
 
       fixture = TestBed.createComponent(InsightsTabComponent);
@@ -157,8 +162,12 @@ describe('InsightsTabComponent', () => {
 
       // État pending initial
       let compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.querySelector('[data-testid="insights-pending"]')).toBeTruthy();
-      expect(compiled.textContent).toContain('Ingestion des rapports SEC en cours...');
+      expect(
+         compiled.querySelector('[data-testid="insights-pending"]'),
+      ).toBeTruthy();
+      expect(compiled.textContent).toContain(
+         'Ingestion des rapports SEC en cours...',
+      );
 
       // Avancer de 5 secondes pour le premier tick de polling
       vi.advanceTimersByTime(POLLING_INTERVAL_MS);
@@ -186,8 +195,12 @@ describe('InsightsTabComponent', () => {
       fixture.detectChanges();
 
       compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.querySelector('[data-testid="insights-ready"]')).toBeTruthy();
-      expect(compiled.textContent).toContain('Année record portée par la division Services.');
+      expect(
+         compiled.querySelector('[data-testid="insights-ready"]'),
+      ).toBeTruthy();
+      expect(compiled.textContent).toContain(
+         'Année record portée par la division Services.',
+      );
    });
 
    it('état partiel puis rechargement', () => {
@@ -226,9 +239,13 @@ describe('InsightsTabComponent', () => {
       fixture.detectChanges();
 
       let compiled = fixture.nativeElement as HTMLElement;
-      const partialEl = compiled.querySelector('[data-testid="insights-partial"]');
+      const partialEl = compiled.querySelector(
+         '[data-testid="insights-partial"]',
+      );
       expect(partialEl).toBeTruthy();
-      expect(compiled.textContent).toContain('analyse des autres rapports en cours');
+      expect(compiled.textContent).toContain(
+         'analyse des autres rapports en cours',
+      );
       expect(compiled.textContent).toContain('Troisième trimestre dynamique.');
 
       // 2e sondage : inProgress devient faux -> rechargement de la liste
@@ -253,9 +270,15 @@ describe('InsightsTabComponent', () => {
       fixture.detectChanges();
 
       compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.querySelector('[data-testid="insights-ready"]')).toBeTruthy();
-      expect(compiled.querySelector('[data-testid="insights-partial"]')).toBeFalsy();
-      expect(compiled.textContent).toContain('Année record portée par la division Services.');
+      expect(
+         compiled.querySelector('[data-testid="insights-ready"]'),
+      ).toBeTruthy();
+      expect(
+         compiled.querySelector('[data-testid="insights-partial"]'),
+      ).toBeFalsy();
+      expect(compiled.textContent).toContain(
+         'Année record portée par la division Services.',
+      );
    });
 
    it('timeout à 3 minutes', () => {
@@ -287,7 +310,9 @@ describe('InsightsTabComponent', () => {
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
-      const timeoutEl = compiled.querySelector('[data-testid="insights-timeout"]');
+      const timeoutEl = compiled.querySelector(
+         '[data-testid="insights-timeout"]',
+      );
       expect(timeoutEl).toBeTruthy();
       expect(compiled.textContent).toContain("Délai d'attente dépassé");
 
@@ -315,16 +340,22 @@ describe('InsightsTabComponent', () => {
          title: 'Non trouvé',
          detail: 'Ticker inconnu de la SEC',
       };
-      insightServiceMock.getInsights.mockReturnValue(throwError(() => notFoundError));
+      insightServiceMock.getInsights.mockReturnValue(
+         throwError(() => notFoundError),
+      );
 
       component.ticker = 'UNKNOWN';
       component.active = true;
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
-      const unavailableEl = compiled.querySelector('[data-testid="insights-unavailable"]');
+      const unavailableEl = compiled.querySelector(
+         '[data-testid="insights-unavailable"]',
+      );
       expect(unavailableEl).toBeTruthy();
-      expect(compiled.textContent).toContain('Aucun rapport SEC pour cette entreprise');
+      expect(compiled.textContent).toContain(
+         'Aucun rapport SEC pour cette entreprise',
+      );
    });
 
    it('erreur et bouton Réessayer', () => {
@@ -333,7 +364,9 @@ describe('InsightsTabComponent', () => {
          title: 'Erreur serveur SEC',
          detail: 'Impossible de joindre le service SEC EDGAR',
       };
-      insightServiceMock.getInsights.mockReturnValueOnce(throwError(() => serverError));
+      insightServiceMock.getInsights.mockReturnValueOnce(
+         throwError(() => serverError),
+      );
 
       component.ticker = 'AAPL';
       component.active = true;
@@ -343,7 +376,9 @@ describe('InsightsTabComponent', () => {
       const errorEl = compiled.querySelector('[data-testid="insights-error"]');
       expect(errorEl).toBeTruthy();
       expect(compiled.textContent).toContain('Erreur serveur SEC');
-      expect(compiled.textContent).toContain('Impossible de joindre le service SEC EDGAR');
+      expect(compiled.textContent).toContain(
+         'Impossible de joindre le service SEC EDGAR',
+      );
 
       const retryBtn = errorEl?.querySelector('button') as HTMLButtonElement;
       expect(retryBtn).toBeTruthy();
@@ -361,7 +396,9 @@ describe('InsightsTabComponent', () => {
 
       expect(insightServiceMock.getInsights).toHaveBeenCalledTimes(2);
       compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.querySelector('[data-testid="insights-ready"]')).toBeTruthy();
+      expect(
+         compiled.querySelector('[data-testid="insights-ready"]'),
+      ).toBeTruthy();
    });
 
    it('arrêt du sondage à la destruction', () => {
@@ -437,7 +474,10 @@ describe('InsightsTabComponent', () => {
          analyseMargesEtDette: '[DÉMO] Marges brutes en amélioration continue',
          guidanceManagement: '[DÉMO] Objectifs annuels confirmés',
          chaineApprovisionnement: '[DÉMO] Aucun goulet d étranglement détecté',
-         faitsMarquants: ['[DÉMO] Nouveau contrat majeur', '[DÉMO] Rachat d actions'],
+         faitsMarquants: [
+            '[DÉMO] Nouveau contrat majeur',
+            '[DÉMO] Rachat d actions',
+         ],
          risquesPrincipaux: ['[DÉMO] Risque de change'],
       };
 
@@ -459,8 +499,12 @@ describe('InsightsTabComponent', () => {
 
       // Le texte affiché ne doit plus contenir le préfixe [DÉMO]
       expect(compiled.textContent).not.toContain('[DÉMO]');
-      expect(compiled.textContent).toContain('Performance synthétisée par IA de test');
-      expect(compiled.textContent).toContain('Marges brutes en amélioration continue');
+      expect(compiled.textContent).toContain(
+         'Performance synthétisée par IA de test',
+      );
+      expect(compiled.textContent).toContain(
+         'Marges brutes en amélioration continue',
+      );
       expect(compiled.textContent).toContain('Nouveau contrat majeur');
    });
 
@@ -499,7 +543,9 @@ describe('InsightsTabComponent', () => {
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
-      const selectEl = compiled.querySelector('.report-select') as HTMLSelectElement;
+      const selectEl = compiled.querySelector(
+         '.report-select',
+      ) as HTMLSelectElement;
       expect(selectEl).toBeTruthy();
 
       const options = selectEl.querySelectorAll('option');
@@ -528,7 +574,9 @@ describe('InsightsTabComponent', () => {
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
-      const printBtn = compiled.querySelector('[data-testid="export-pdf-btn"]') as HTMLButtonElement;
+      const printBtn = compiled.querySelector(
+         '[data-testid="export-pdf-btn"]',
+      ) as HTMLButtonElement;
       expect(printBtn).toBeTruthy();
 
       printBtn.click();

@@ -1,5 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import {
+   ActivatedRoute,
+   convertToParamMap,
+   provideRouter,
+} from '@angular/router';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import { describe, beforeEach, it, expect, vi } from 'vitest';
 import { CompanyDetailsComponent } from './company-details.component';
@@ -44,15 +48,33 @@ describe('CompanyDetailsComponent', () => {
    };
 
    const sampleMetrics: FullMetrics = {
-      growth: { revenueGrowth3Y: 0.15, ebitdaGrowth3Y: 0.12, epsGrowth3Y: 0.1, fcfGrowth: 0.08 },
-      value: { evToEbit: 22.5, peRatioTTM: 28.3, pegRatioForward: 1.5, evToSales: 6.2 },
-      quality: { roic: 0.25, operatingMargin: 0.3, netDebtToEbitda: 0.8, freeCashFlowMargin: 0.22, sgaToRevenue: 0.1 },
+      growth: {
+         revenueGrowth3Y: 0.15,
+         ebitdaGrowth3Y: 0.12,
+         epsGrowth3Y: 0.1,
+         fcfGrowth: 0.08,
+      },
+      value: {
+         evToEbit: 22.5,
+         peRatioTTM: 28.3,
+         pegRatioForward: 1.5,
+         evToSales: 6.2,
+      },
+      quality: {
+         roic: 0.25,
+         operatingMargin: 0.3,
+         netDebtToEbitda: 0.8,
+         freeCashFlowMargin: 0.22,
+         sgaToRevenue: 0.1,
+      },
       fiscalYearEndDate: '2025-12-31',
       marketDataAsOf: '2026-01-01',
    };
 
    beforeEach(async () => {
-      paramMapSubject = new BehaviorSubject(convertToParamMap({ ticker: 'AAPL' }));
+      paramMapSubject = new BehaviorSubject(
+         convertToParamMap({ ticker: 'AAPL' }),
+      );
 
       companyServiceMock = {
          getCompanyProfile: vi.fn().mockReturnValue(of(sampleProfile)),
@@ -61,22 +83,44 @@ describe('CompanyDetailsComponent', () => {
          getMetrics: vi.fn().mockReturnValue(of(sampleMetrics)),
       };
       watchlistServiceMock = {
-         checkExists: vi.fn().mockReturnValue(of({ ticker: 'AAPL', exists: false })),
-         addTicker: vi.fn().mockReturnValue(of({ keycloakId: 'u1', tickers: ['AAPL'] })),
-         removeTicker: vi.fn().mockReturnValue(of({ keycloakId: 'u1', tickers: [] })),
+         checkExists: vi
+            .fn()
+            .mockReturnValue(of({ ticker: 'AAPL', exists: false })),
+         addTicker: vi
+            .fn()
+            .mockReturnValue(of({ keycloakId: 'u1', tickers: ['AAPL'] })),
+         removeTicker: vi
+            .fn()
+            .mockReturnValue(of({ keycloakId: 'u1', tickers: [] })),
       };
       insightServiceMock = {
-         getInsights: vi.fn().mockReturnValue(of({ kind: 'ready', insights: [] })),
-         getStatus: vi.fn().mockReturnValue(of({ ticker: 'AAPL', ready: true, inProgress: false, count: 0, lastGenerated: null })),
+         getInsights: vi
+            .fn()
+            .mockReturnValue(of({ kind: 'ready', insights: [] })),
+         getStatus: vi.fn().mockReturnValue(
+            of({
+               ticker: 'AAPL',
+               ready: true,
+               inProgress: false,
+               count: 0,
+               lastGenerated: null,
+            }),
+         ),
       };
 
       await TestBed.configureTestingModule({
          imports: [CompanyDetailsComponent],
          providers: [
             provideRouter([]),
-            { provide: ActivatedRoute, useValue: { paramMap: paramMapSubject.asObservable() } },
+            {
+               provide: ActivatedRoute,
+               useValue: { paramMap: paramMapSubject.asObservable() },
+            },
             { provide: CompanyService, useValue: companyServiceMock },
-            { provide: FinancialAnalysisService, useValue: analysisServiceMock },
+            {
+               provide: FinancialAnalysisService,
+               useValue: analysisServiceMock,
+            },
             { provide: WatchlistService, useValue: watchlistServiceMock },
             { provide: InsightService, useValue: insightServiceMock },
          ],
@@ -84,7 +128,9 @@ describe('CompanyDetailsComponent', () => {
    });
 
    it('should display loading state while fetching company data', () => {
-      companyServiceMock.getCompanyProfile.mockReturnValue(new BehaviorSubject(null).pipe()); // or NEVER
+      companyServiceMock.getCompanyProfile.mockReturnValue(
+         new BehaviorSubject(null).pipe(),
+      ); // or NEVER
       fixture = TestBed.createComponent(CompanyDetailsComponent);
       component = fixture.componentInstance;
       fixture.detectChanges();
@@ -105,8 +151,12 @@ describe('CompanyDetailsComponent', () => {
       const compiled = fixture.nativeElement as HTMLElement;
       const dataStateEl = compiled.querySelector('[data-testid="data-state"]');
       expect(dataStateEl).toBeTruthy();
-      expect(compiled.querySelector('.company-name-large')?.textContent).toContain('Apple Inc.');
-      expect(compiled.querySelector('.company-ticker-large')?.textContent).toContain('AAPL');
+      expect(
+         compiled.querySelector('.company-name-large')?.textContent,
+      ).toContain('Apple Inc.');
+      expect(
+         compiled.querySelector('.company-ticker-large')?.textContent,
+      ).toContain('AAPL');
    });
 
    it('should display error state when company service fails', async () => {
@@ -115,7 +165,9 @@ describe('CompanyDetailsComponent', () => {
          title: 'Non trouvé',
          detail: 'Société introuvable',
       };
-      companyServiceMock.getCompanyProfile.mockReturnValue(throwError(() => error));
+      companyServiceMock.getCompanyProfile.mockReturnValue(
+         throwError(() => error),
+      );
 
       fixture = TestBed.createComponent(CompanyDetailsComponent);
       component = fixture.componentInstance;
@@ -124,7 +176,9 @@ describe('CompanyDetailsComponent', () => {
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
-      const errorStateEl = compiled.querySelector('[data-testid="error-state"]');
+      const errorStateEl = compiled.querySelector(
+         '[data-testid="error-state"]',
+      );
       expect(errorStateEl).toBeTruthy();
       expect(compiled.textContent).toContain('Non trouvé');
       expect(compiled.textContent).toContain('Société introuvable');
@@ -140,7 +194,9 @@ describe('CompanyDetailsComponent', () => {
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
-      const emptyStateEl = compiled.querySelector('[data-testid="empty-state"]');
+      const emptyStateEl = compiled.querySelector(
+         '[data-testid="empty-state"]',
+      );
       expect(emptyStateEl).toBeTruthy();
       expect(compiled.textContent).toContain('Aucune entreprise trouvée');
    });
@@ -160,12 +216,16 @@ describe('CompanyDetailsComponent', () => {
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
-      const metricsErrorEl = compiled.querySelector('[data-testid="metrics-error"]');
+      const metricsErrorEl = compiled.querySelector(
+         '[data-testid="metrics-error"]',
+      );
       expect(metricsErrorEl).toBeTruthy();
       expect(compiled.textContent).toContain('Erreur Métriques');
       expect(compiled.textContent).toContain('Calcul des ratios impossible');
       // Company profile should not be hidden by metrics error
-      expect(compiled.querySelector('.company-name-large')?.textContent).toContain('Apple Inc.');
+      expect(
+         compiled.querySelector('.company-name-large')?.textContent,
+      ).toContain('Apple Inc.');
    });
 
    it('should display "Données indisponibles" when metrics service returns 404', async () => {
@@ -183,11 +243,15 @@ describe('CompanyDetailsComponent', () => {
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
-      const unavailableEl = compiled.querySelector('[data-testid="metrics-unavailable"]');
+      const unavailableEl = compiled.querySelector(
+         '[data-testid="metrics-unavailable"]',
+      );
       expect(unavailableEl).toBeTruthy();
       expect(compiled.textContent).toContain('Données indisponibles');
       // Company profile should still be visible
-      expect(compiled.querySelector('.company-name-large')?.textContent).toContain('Apple Inc.');
+      expect(
+         compiled.querySelector('.company-name-large')?.textContent,
+      ).toContain('Apple Inc.');
    });
 
    it('should display profile error while still displaying metrics when company profile fails', async () => {
@@ -196,7 +260,9 @@ describe('CompanyDetailsComponent', () => {
          title: 'Erreur Profil',
          detail: 'Impossible de joindre le profil',
       };
-      companyServiceMock.getCompanyProfile.mockReturnValue(throwError(() => error));
+      companyServiceMock.getCompanyProfile.mockReturnValue(
+         throwError(() => error),
+      );
 
       fixture = TestBed.createComponent(CompanyDetailsComponent);
       component = fixture.componentInstance;
@@ -205,7 +271,9 @@ describe('CompanyDetailsComponent', () => {
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
-      const profileErrorEl = compiled.querySelector('[data-testid="error-state"]');
+      const profileErrorEl = compiled.querySelector(
+         '[data-testid="error-state"]',
+      );
       expect(profileErrorEl).toBeTruthy();
       expect(compiled.textContent).toContain('Erreur Profil');
       expect(compiled.textContent).toContain('Impossible de joindre le profil');
@@ -299,7 +367,9 @@ describe('CompanyDetailsComponent', () => {
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
-      const tabButton = compiled.querySelector('.tab-insights') as HTMLButtonElement;
+      const tabButton = compiled.querySelector(
+         '.tab-insights',
+      ) as HTMLButtonElement;
       expect(tabButton).toBeTruthy();
       expect(tabButton.textContent).toContain('Analyse IA');
       expect(component.activeTab).toBe('growth');

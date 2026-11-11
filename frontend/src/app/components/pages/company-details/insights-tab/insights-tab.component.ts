@@ -162,7 +162,9 @@ export class InsightsTabComponent {
    private readonly ticker$ = new BehaviorSubject<string>('');
    private readonly active$ = new BehaviorSubject<boolean>(false);
    private readonly retry$ = new Subject<void>();
-   private readonly selectedAccessionOverride$ = new BehaviorSubject<string | null>(null);
+   private readonly selectedAccessionOverride$ = new BehaviorSubject<
+      string | null
+   >(null);
 
    private _ticker = '';
    private _active = false;
@@ -232,10 +234,12 @@ export class InsightsTabComponent {
          this.selectedAccessionOverride$,
       ]).pipe(
          map(([flow, overrideAccession]): InsightsTabState => {
-            const effectiveAccession = overrideAccession ?? flow.selectedAccession;
+            const effectiveAccession =
+               overrideAccession ?? flow.selectedAccession;
             const selectedInsight =
-               flow.insights.find((i) => i.accessionNumber === effectiveAccession) ??
-               pickDefaultInsight(flow.insights);
+               flow.insights.find(
+                  (i) => i.accessionNumber === effectiveAccession,
+               ) ?? pickDefaultInsight(flow.insights);
 
             return {
                status: flow.status,
@@ -283,7 +287,10 @@ export class InsightsTabComponent {
                }
                return of<InternalFlowState>({
                   status: 'error',
-                  error: toApiError(err, 'Impossible de charger les synthèses IA.'),
+                  error: toApiError(
+                     err,
+                     'Impossible de charger les synthèses IA.',
+                  ),
                   insights: [],
                   selectedAccession: null,
                });
@@ -355,7 +362,9 @@ export class InsightsTabComponent {
                            pickDefaultInsight(sorted)?.accessionNumber ?? null;
                      } else if (
                         !currentAccession ||
-                        !sorted.some((i) => i.accessionNumber === currentAccession)
+                        !sorted.some(
+                           (i) => i.accessionNumber === currentAccession,
+                        )
                      ) {
                         currentAccession =
                            pickDefaultInsight(sorted)?.accessionNumber ?? null;

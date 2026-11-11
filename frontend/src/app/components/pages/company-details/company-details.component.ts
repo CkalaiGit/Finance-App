@@ -1,9 +1,5 @@
 import { InsightsTabComponent } from './insights-tab/insights-tab.component';
-import {
-   ChangeDetectionStrategy,
-   Component,
-   inject,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { AsyncPipe, CurrencyPipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Observable, Subject, combineLatest, forkJoin, merge, of } from 'rxjs';
@@ -85,9 +81,8 @@ export class CompanyDetailsComponent {
             });
          }
 
-         const initialWatchlist$: Observable<WatchlistStatus> = this.watchlistService
-            .checkExists(ticker)
-            .pipe(
+         const initialWatchlist$: Observable<WatchlistStatus> =
+            this.watchlistService.checkExists(ticker).pipe(
                map((res) => ({
                   inWatchlist: res.exists,
                   loading: false,
@@ -115,23 +110,28 @@ export class CompanyDetailsComponent {
 
          return combineLatest({
             data: forkJoin({
-               profileResult: this.companyService.getCompanyProfile(ticker).pipe(
-                  map((companyProfile) => ({
-                     companyProfile,
+               profileResult: this.companyService
+                  .getCompanyProfile(ticker)
+                  .pipe(
+                     map((companyProfile) => ({
+                        companyProfile,
+                        error: null as ApiError | null,
+                     })),
+                     catchError((err: unknown) =>
+                        of({
+                           companyProfile: null,
+                           error: this.toApiError(
+                              err,
+                              'Impossible de charger les données de l’entreprise.',
+                           ),
+                        }),
+                     ),
+                  ),
+               metricsResult: this.analysisService.getMetrics(ticker).pipe(
+                  map((metrics) => ({
+                     metrics,
                      error: null as ApiError | null,
                   })),
-                  catchError((err: unknown) =>
-                     of({
-                        companyProfile: null,
-                        error: this.toApiError(
-                           err,
-                           'Impossible de charger les données de l’entreprise.',
-                        ),
-                     }),
-                  ),
-               ),
-               metricsResult: this.analysisService.getMetrics(ticker).pipe(
-                  map((metrics) => ({ metrics, error: null as ApiError | null })),
                   catchError((err: unknown) =>
                      of({
                         metrics: null,
@@ -208,12 +208,7 @@ export class CompanyDetailsComponent {
    );
 
    private toApiError(err: unknown, defaultDetail: string): ApiError {
-      if (
-         err &&
-         typeof err === 'object' &&
-         'title' in err &&
-         'detail' in err
-      ) {
+      if (err && typeof err === 'object' && 'title' in err && 'detail' in err) {
          const apiErr = err as ApiError;
          return {
             status: typeof apiErr.status === 'number' ? apiErr.status : 500,

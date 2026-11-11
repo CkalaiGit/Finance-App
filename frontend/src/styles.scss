@@ -362,7 +362,7 @@ textarea,
       );
    }
 
-      &.tab-quality.active {
+   &.tab-quality.active {
       background: linear-gradient(
          135deg,
          var(--accent-yellow) 0%,
@@ -896,7 +896,6 @@ footer {
 .p-4 {
    padding: 32px;
 }
-
 
 /* ========================================
    MEDIA PRINT (EXPORT PDF)

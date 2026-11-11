@@ -27,22 +27,26 @@ export class InsightService {
             observe: 'response',
          })
          .pipe(
-            map((response: HttpResponse<Insight[] | PendingBody>): InsightsResult => {
-               if (response.status === 202) {
-                  const pendingBody = response.body as PendingBody | null;
-                  return {
-                     kind: 'pending',
-                     message:
-                        pendingBody?.message ||
-                        'Ingestion des rapports SEC en cours...',
-                  };
-               }
+            map(
+               (
+                  response: HttpResponse<Insight[] | PendingBody>,
+               ): InsightsResult => {
+                  if (response.status === 202) {
+                     const pendingBody = response.body as PendingBody | null;
+                     return {
+                        kind: 'pending',
+                        message:
+                           pendingBody?.message ||
+                           'Ingestion des rapports SEC en cours...',
+                     };
+                  }
 
-               return {
-                  kind: 'ready',
-                  insights: (response.body as Insight[]) ?? [],
-               };
-            }),
+                  return {
+                     kind: 'ready',
+                     insights: (response.body as Insight[]) ?? [],
+                  };
+               },
+            ),
          );
    }
 
