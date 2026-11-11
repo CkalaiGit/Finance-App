@@ -79,7 +79,6 @@ public class InsightController {
             @ApiResponse(responseCode = "200", description = "État d'ingestion récupéré",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = IngestionStatusResponse.class))),
-            @ApiResponse(responseCode = "202", description = "Ingestion des insights en attente", content = @Content),
             @ApiResponse(responseCode = "400", description = "Ticker invalide", content = @Content),
             @ApiResponse(responseCode = "401", description = "Non authentifié", content = @Content),
             @ApiResponse(responseCode = "404", description = "Ticker inconnu", content = @Content)
@@ -91,6 +90,9 @@ public class InsightController {
             @Parameter(hidden = true) JwtAuthenticationToken auth) {
         String normalizedTicker = normalizeTicker(ticker);
         logAudit(auth, normalizedTicker);
+        if (!aiSummaryService.isTickerSupported(normalizedTicker)) {
+            throw new TickerNotFoundException(normalizedTicker);
+        }
         return ResponseEntity.ok(webMapper.toResponse(aiSummaryService.getStatus(normalizedTicker)));
     }
 

@@ -10,6 +10,8 @@ public record IngestionStatusResponse(
         String ticker,
         @Schema(description = "Indique si au moins un insight non expiré est disponible", example = "true")
         boolean ready,
+        @Schema(description = "Indique si l'ingestion des documents est en cours", example = "true")
+        boolean inProgress,
         @Schema(description = "Nombre d'insights non expirés disponibles", example = "3")
         int count,
         @Schema(description = "Date de génération la plus récente, ou null si aucun insight n'est disponible")

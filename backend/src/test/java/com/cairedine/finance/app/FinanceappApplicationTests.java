@@ -54,6 +54,26 @@ class FinanceappApplicationTests {
     }
 
     @Test
+    void verifyWatchlistModulePublicAPI() throws Exception {
+        Path watchlistRoot = Paths.get("src/main/java/com/cairedine/finance/app/watchlist");
+        var classes = Files.list(watchlistRoot)
+                .filter(p -> p.toString().endsWith(".java"))
+                .filter(p -> {
+                    try {
+                        return Files.lines(p).limit(5)
+                                .anyMatch(l -> l.trim().equals("package com.cairedine.finance.app.watchlist;"));
+                    } catch (Exception e) {
+                        return false;
+                    }
+                })
+                .map(p -> p.getFileName().toString().replace(".java", ""))
+                .filter(name -> !name.equals("package-info"))
+                .collect(Collectors.toSet());
+
+        Assertions.assertThat(classes).containsExactly("TickerAddedEvent");
+    }
+
+    @Test
     void generateModulesDoc() {
         new Documenter(modules)
                 .writeModulesAsPlantUml()

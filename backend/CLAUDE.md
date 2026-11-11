@@ -64,9 +64,10 @@ Chaque module suit la séparation `domain` (logique pure) / `application` (orche
 | `DELETE` | `/api/v1/watchlist/{ticker}` | `WatchlistController` | `WatchlistResponse` |
 | `GET` | `/api/v1/watchlist/{ticker}/exists` | `WatchlistController` | `TickerExistsResponse` |
 | `GET` | `/api/v1/insights/{ticker}` | `InsightController` | `List<InsightResponse>` (200), pending (202) |
-| `GET` | `/api/v1/insights/{ticker}/status` | `InsightController` | `IngestionStatusResponse` |
+| `GET` | `/api/v1/insights/{ticker}/status` | `InsightController` | `IngestionStatusResponse` (200, 404) |
 
 Les endpoints d'insights sont en lecture seule et nécessitent une authentification.
+Le statut d'ingestion inclut `inProgress`; un ticker non pris en charge retourne 404.
 
 Toutes les routes sont authentifiées, sauf `/actuator/health`, `/actuator/info`, `/v3/api-docs/**`, `/swagger-ui/**`, `/error` et les requêtes `OPTIONS`.
 

@@ -3,6 +3,7 @@ package com.cairedine.finance.app.watchlist.application;
 import com.cairedine.finance.app.shared.exceptions.InvalidTickerException;
 import com.cairedine.finance.app.shared.exceptions.TickerAlreadyInWatchlistException;
 import com.cairedine.finance.app.shared.exceptions.TickerNotInWatchlistException;
+import com.cairedine.finance.app.watchlist.TickerAddedEvent;
 import com.cairedine.finance.app.watchlist.domain.IWatchlistRepositoryPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.Set;
 
@@ -28,11 +30,14 @@ class WatchlistServiceTest {
     @Mock
     private IWatchlistRepositoryPort watchlistRepository;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     private WatchlistService watchlistService;
 
     @BeforeEach
     void setUp() {
-        watchlistService = new WatchlistService(watchlistRepository);
+        watchlistService = new WatchlistService(watchlistRepository, eventPublisher);
     }
 
     @Test
@@ -47,6 +52,10 @@ class WatchlistServiceTest {
 
         // Assert
         verify(watchlistRepository).addTickerToWatchlist(KEYCLOAK_ID, TICKER_AAPL);
+        var eventCaptor = org.mockito.ArgumentCaptor.forClass(TickerAddedEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().ticker()).isEqualTo(TICKER_AAPL);
+        assertThat(eventCaptor.getValue().occurredAt()).isNotNull();
     }
 
     @Test
@@ -60,6 +69,7 @@ class WatchlistServiceTest {
         assertThatThrownBy(() -> watchlistService.addTickerToWatchlist(KEYCLOAK_ID, TICKER_AAPL))
             .isInstanceOf(TickerAlreadyInWatchlistException.class)
             .hasMessageContaining("existe déjà");
+        verify(eventPublisher, never()).publishEvent(any(TickerAddedEvent.class));
     }
 
     @Test

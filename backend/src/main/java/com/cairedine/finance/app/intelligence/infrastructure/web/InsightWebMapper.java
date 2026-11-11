@@ -29,6 +29,7 @@ class InsightWebMapper {
         return new IngestionStatusResponse(
                 status.ticker(),
                 status.ready(),
+                status.inProgress(),
                 status.count(),
                 status.lastGenerated()
         );

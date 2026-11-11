@@ -9,7 +9,9 @@ import com.cairedine.finance.app.intelligence.domain.model.SecFiling;
 import com.cairedine.finance.app.intelligence.domain.port.IAiSummaryService;
 import com.cairedine.finance.app.intelligence.domain.port.ICompanyInsightRepository;
 import com.cairedine.finance.app.intelligence.domain.port.IDocumentSourcePort;
+import com.cairedine.finance.app.intelligence.domain.port.IIngestionTracker;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -36,12 +38,14 @@ public class AiSummaryServiceImpl implements IAiSummaryService {
     private final ChatClient chatClient;
     private final ICompanyInsightRepository insightRepository;
     private final IDocumentSourcePort documentSource;
+    private final IIngestionTracker ingestionTracker;
 
     public AiSummaryServiceImpl(ChatClient.Builder chatClientBuilder, ICompanyInsightRepository insightRepository,
-            IDocumentSourcePort documentSource) {
+            IDocumentSourcePort documentSource, @Lazy IIngestionTracker ingestionTracker) {
         this.chatClient = chatClientBuilder.build();
         this.insightRepository = insightRepository;
         this.documentSource = documentSource;
+        this.ingestionTracker = ingestionTracker;
     }
 
     @Override
@@ -66,7 +70,8 @@ public class AiSummaryServiceImpl implements IAiSummaryService {
                 .filter(Objects::nonNull)
                 .max(Comparator.naturalOrder())
                 .orElse(null);
-        return new IngestionStatus(normalizedTicker, !insights.isEmpty(), insights.size(), lastGenerated);
+        return new IngestionStatus(normalizedTicker, !insights.isEmpty(),
+                ingestionTracker.isIngesting(normalizedTicker), insights.size(), lastGenerated);
     }
 
     @Override

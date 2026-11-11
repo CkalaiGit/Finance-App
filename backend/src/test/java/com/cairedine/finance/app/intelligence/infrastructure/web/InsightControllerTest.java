@@ -85,15 +85,25 @@ class InsightControllerTest {
     @Test
     void shouldReturnStatus() throws Exception {
         Instant lastGenerated = Instant.parse("2025-03-01T12:00:00Z");
+        when(aiSummaryService.isTickerSupported("AAPL")).thenReturn(true);
         when(aiSummaryService.getStatus("AAPL"))
-                .thenReturn(new IngestionStatus("AAPL", true, 2, lastGenerated));
+                .thenReturn(new IngestionStatus("AAPL", true, true, 2, lastGenerated));
 
         mockMvc.perform(get("/api/v1/insights/aapl/status").with(jwt()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.ticker").value("AAPL"))
                 .andExpect(jsonPath("$.ready").value(true))
+                .andExpect(jsonPath("$.inProgress").value(true))
                 .andExpect(jsonPath("$.count").value(2))
                 .andExpect(jsonPath("$.lastGenerated").value("2025-03-01T12:00:00Z"));
+    }
+
+    @Test
+    void shouldReturn404ForUnknownTickerStatus() throws Exception {
+        when(aiSummaryService.isTickerSupported("UNKNOWN")).thenReturn(false);
+
+        mockMvc.perform(get("/api/v1/insights/unknown/status").with(jwt()))
+                .andExpect(status().isNotFound());
     }
 
     private CompanyInsight insight(Instant generatedAt) {

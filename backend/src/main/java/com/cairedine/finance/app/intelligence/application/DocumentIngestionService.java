@@ -5,6 +5,7 @@ import com.cairedine.finance.app.financialanalysis.domain.port.IFinancialAnalysi
 import com.cairedine.finance.app.intelligence.domain.model.SecFiling;
 import com.cairedine.finance.app.intelligence.domain.port.IDocumentSourcePort;
 import com.cairedine.finance.app.intelligence.domain.port.ICompanyInsightRepository;
+import com.cairedine.finance.app.intelligence.domain.port.IIngestionTracker;
 import com.cairedine.finance.app.intelligence.domain.port.ISectionExtractor;
 import com.cairedine.finance.app.intelligence.domain.port.ITextCleaner;
 import lombok.extern.slf4j.Slf4j;
@@ -13,15 +14,17 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 
 @Service
 @Slf4j
-public class DocumentIngestionService {
+public class DocumentIngestionService implements IIngestionTracker {
 
     private final IDocumentSourcePort documentSource;
     private final IFinancialAnalysisService financialAnalysisService;
@@ -29,6 +32,7 @@ public class DocumentIngestionService {
     private final ITextCleaner textCleaner;
     private final ISectionExtractor sectionExtractor;
     private final AiSummaryServiceImpl aiSummaryService;
+    private final Set<String> ingestingTickers = ConcurrentHashMap.newKeySet();
 
     public DocumentIngestionService(
             IDocumentSourcePort documentSource,
@@ -52,6 +56,27 @@ public class DocumentIngestionService {
         }
 
         String normalizedTicker = ticker.trim().toUpperCase(Locale.ROOT);
+        if (!ingestingTickers.add(normalizedTicker)) {
+            log.info("Ingestion SEC déjà en cours pour '{}'; nouvel appel ignoré.", normalizedTicker);
+            return;
+        }
+
+        try {
+            ingestAvailableDocuments(normalizedTicker);
+        } finally {
+            ingestingTickers.remove(normalizedTicker);
+        }
+    }
+
+    @Override
+    public boolean isIngesting(String ticker) {
+        if (ticker == null || ticker.isBlank()) {
+            return false;
+        }
+        return ingestingTickers.contains(ticker.trim().toUpperCase(Locale.ROOT));
+    }
+
+    private void ingestAvailableDocuments(String normalizedTicker) {
         if (!documentSource.isAvailable(normalizedTicker)) {
             log.info("Ingestion SEC ignorée pour le ticker inconnu '{}'.", normalizedTicker);
             return;

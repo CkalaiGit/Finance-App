@@ -3,10 +3,15 @@ package com.cairedine.finance.app.watchlist.application;
 import com.cairedine.finance.app.shared.exceptions.InvalidTickerException;
 import com.cairedine.finance.app.shared.exceptions.TickerAlreadyInWatchlistException;
 import com.cairedine.finance.app.shared.exceptions.TickerNotInWatchlistException;
+import com.cairedine.finance.app.watchlist.TickerAddedEvent;
 import com.cairedine.finance.app.watchlist.domain.IWatchlistRepositoryPort;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -19,10 +24,12 @@ import java.util.Set;
 public class WatchlistService {
 
     private final IWatchlistRepositoryPort watchlistRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * Ajoute un ticker à la watchlist de l'utilisateur
      */
+    @Transactional
     public void addTickerToWatchlist(String keycloakId, String ticker) {
         if (ticker == null || ticker.isBlank()) {
             throw new InvalidTickerException("Le ticker ne peut pas être vide");
@@ -34,6 +41,8 @@ public class WatchlistService {
         }
 
         watchlistRepository.addTickerToWatchlist(keycloakId, ticker);
+        eventPublisher.publishEvent(new TickerAddedEvent(
+                ticker.trim().toUpperCase(Locale.ROOT), Instant.now()));
     }
 
     /**
