@@ -24,6 +24,10 @@ app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}
 
+intelligence:
+  ai:
+    mode: ${INTELLIGENCE_AI_MODE:stub}
+
 logging:
   level:
     com.cairedine: INFO

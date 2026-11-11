@@ -13,9 +13,9 @@ Application d'analyse financière : frontend Angular, API Spring Boot, authentif
    ```bash
    cp .env.example .env
    ```
-3. Renseigner les clés d'API dans `.env` :
-   - `FMP_API_KEY` : données de marché, clé sur https://site.financialmodelingprep.com/developer/docs
-   - `GEMINI_API_KEY` : module IA, clé sur https://aistudio.google.com/apikey
+3. Renseigner `FMP_API_KEY` dans `.env` pour les données de marché (clé sur https://site.financialmodelingprep.com/developer/docs).
+   Le module IA fonctionne par défaut en mode `stub`, sans clé Gemini ni appel réseau.
+   Pour activer Gemini, définir `INTELLIGENCE_AI_MODE=gemini`, renseigner une clé Google AI Studio (`GEMINI_API_KEY`, https://aistudio.google.com/apikey) et choisir dans `GEMINI_MODEL` un modèle disponible dans l'offre gratuite de Google.
 4. Lancer l'application :
    ```bash
    docker compose up --build

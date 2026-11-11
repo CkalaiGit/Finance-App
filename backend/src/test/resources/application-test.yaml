@@ -4,11 +4,6 @@ spring:
     cache-names:
       - analysis-metrics
 
-  ai:
-    google:
-      genai:
-        api-key: test-key-not-used
-
   datasource:
     url: jdbc:h2:mem:financeapp_test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
     driver-class-name: org.h2.Driver
@@ -39,10 +34,13 @@ fmp:
 # INTELLIGENCE — configuration neutre pour les tests
 # ─────────────────────────────────────────────────────────────
 intelligence:
+  ai:
+    mode: stub
+  summarization:
+    max-sections-tokens: 80000
+    delay-between-calls: 0s
+  filing-ttl-days: 90
   sec:
     base-url: https://data.sec.gov
     www-url: https://www.sec.gov
     user-agent: cairedine.finance test@cairedine.com
-  summarization:
-    max-sections-tokens: 80000
-    filing-ttl-days: 90

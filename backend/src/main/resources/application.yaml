@@ -79,13 +79,16 @@ spring:
   # SPRING AI — Google Gemini
   # ─────────────────────────────────────────────────────────────
   ai:
+    # Spring AI selects Google GenAI only in gemini mode; stub mode disables the model auto-configuration.
+    model:
+      chat: none
     google:
       genai:
-        api-key: ${GEMINI_API_KEY}
+        api-key: ${GEMINI_API_KEY:}
         chat:
           temperature: 0.2
           max-output-tokens: 4096
-          model: gemini-2.0-flash
+          model: ${GEMINI_MODEL:gemini-2.0-flash}
 
 
 # ─────────────────────────────────────────────────────────────
@@ -130,6 +133,10 @@ fmp:
 # INTELLIGENCE — Module IA (chunking SEC EDGAR)
 # ─────────────────────────────────────────────────────────────
 intelligence:
+  ai:
+    mode: ${INTELLIGENCE_AI_MODE:stub}
+  ingestion:
+    retry-cooldown: 15m
   chunking:
     size: 512
     overlap: 64
@@ -139,4 +146,5 @@ intelligence:
     user-agent: cairedine.finance cairedine@gmail.com
   summarization:
     max-sections-tokens: 80000
+    delay-between-calls: 5s
   filing-ttl-days: 90

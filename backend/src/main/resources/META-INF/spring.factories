@@ -1,0 +1,2 @@
+org.springframework.boot.EnvironmentPostProcessor=\
+com.cairedine.finance.app.intelligence.infrastructure.ai.IntelligenceAiModeEnvironmentPostProcessor

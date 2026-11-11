@@ -17,6 +17,8 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -54,11 +56,28 @@ class InsightControllerTest {
     void shouldReturn202WhenIngestionPending() throws Exception {
         when(aiSummaryService.isReady("AAPL")).thenReturn(false);
         when(aiSummaryService.isTickerSupported("AAPL")).thenReturn(true);
+        when(aiSummaryService.getStatus("AAPL"))
+                .thenReturn(new IngestionStatus("AAPL", false, false, 0, null));
 
         mockMvc.perform(get("/api/v1/insights/aapl").with(jwt()))
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.status").value("INGESTION_PENDING"))
                 .andExpect(jsonPath("$.message").isNotEmpty());
+
+        verify(aiSummaryService).requestIngestion("AAPL");
+    }
+
+    @Test
+    void doesNotRequestDuplicateIngestionWhenAlreadyInProgress() throws Exception {
+        when(aiSummaryService.isReady("AAPL")).thenReturn(false);
+        when(aiSummaryService.isTickerSupported("AAPL")).thenReturn(true);
+        when(aiSummaryService.getStatus("AAPL"))
+                .thenReturn(new IngestionStatus("AAPL", false, true, 0, null));
+
+        mockMvc.perform(get("/api/v1/insights/aapl").with(jwt()))
+                .andExpect(status().isAccepted());
+
+        verify(aiSummaryService, never()).requestIngestion("AAPL");
     }
 
     @Test
@@ -96,6 +115,8 @@ class InsightControllerTest {
                 .andExpect(jsonPath("$.inProgress").value(true))
                 .andExpect(jsonPath("$.count").value(2))
                 .andExpect(jsonPath("$.lastGenerated").value("2025-03-01T12:00:00Z"));
+
+        verify(aiSummaryService, never()).requestIngestion("AAPL");
     }
 
     @Test

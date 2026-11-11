@@ -8,9 +8,8 @@ import java.util.List;
 /**
  * Port primaire exposé au reste de l'application (contrôleur REST).
  *
- * <p>Ce service est en lecture seule du point de vue du contrôleur : il fournit
- * l'accès aux CompanyInsight consolidés. L'ingestion et la génération
- * d'insights sont gérées en interne et ne sont pas exposées via ce port.</p>
+ * <p>Ce service fournit l'accès aux CompanyInsight consolidés et permet de demander
+ * le démarrage contrôlé d'une ingestion.</p>
  */
 public interface IAiSummaryService {
 
@@ -46,4 +45,12 @@ public interface IAiSummaryService {
      * @return true si le ticker est connu de la source
      */
     boolean isTickerSupported(String ticker);
+
+    /**
+     * Demande une ingestion si le ticker n'est pas déjà en cours de traitement
+     * et si le délai de garde autorise une nouvelle tentative.
+     *
+     * @param ticker Symbole boursier
+     */
+    void requestIngestion(String ticker);
 }

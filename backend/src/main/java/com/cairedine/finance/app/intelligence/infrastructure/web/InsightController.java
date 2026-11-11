@@ -69,6 +69,9 @@ public class InsightController {
         if (!aiSummaryService.isTickerSupported(normalizedTicker)) {
             throw new TickerNotFoundException(normalizedTicker);
         }
+        if (!aiSummaryService.getStatus(normalizedTicker).inProgress()) {
+            aiSummaryService.requestIngestion(normalizedTicker);
+        }
         return ResponseEntity.accepted()
                 .body(new IngestionPendingResponse(INGESTION_PENDING, PENDING_MESSAGE));
     }

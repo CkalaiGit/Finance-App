@@ -10,9 +10,13 @@ Lancement local, avec Keycloak et `app-db` démarrés par Docker Compose :
 
 ```bash
 export FMP_API_KEY=votre_cle_fmp
-export GEMINI_API_KEY=votre_cle_gemini
 ./mvnw spring-boot:run
 ```
+
+Le module IA démarre par défaut en mode `stub`, sans clé Gemini ni appel réseau.
+Pour une synthèse réelle, définir `INTELLIGENCE_AI_MODE=gemini`, renseigner
+`GEMINI_API_KEY` avec une clé Google AI Studio et sélectionner dans `GEMINI_MODEL`
+un modèle Gemini disponible dans l'offre gratuite.
 
 L'API écoute sur http://localhost:8081, Swagger UI sur http://localhost:8081/swagger-ui.html.
 

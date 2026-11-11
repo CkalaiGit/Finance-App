@@ -1,7 +1,10 @@
 package com.cairedine.finance.app;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContext;
+import org.springframework.core.env.Environment;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.docs.Documenter;
 import java.nio.file.Files;
@@ -17,11 +20,26 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 @ActiveProfiles("test")
 class FinanceappApplicationTests {
 
+    @Autowired
+    private ApplicationContext applicationContext;
+
+    @Autowired
+    private Environment environment;
+
 	@MockitoBean
 	private JwtDecoder jwtDecoder;
 
 	@Test
 	void contextLoads() {}
+
+    @Test
+    void startsWithStubAndWithoutGeminiApiKey() {
+        Assertions.assertThat(applicationContext.getBean(
+                com.cairedine.finance.app.intelligence.domain.port.IInsightSynthesizer.class)
+                .getClass().getSimpleName()).isEqualTo("StubInsightSynthesizer");
+        Assertions.assertThat(environment.getProperty("spring.ai.google.genai.api-key")).isBlank();
+        Assertions.assertThat(environment.getProperty("spring.ai.model.chat")).isEqualTo("none");
+    }
 
     private final ApplicationModules modules =
             ApplicationModules.of(FinanceApp.class);

@@ -1,6 +1,6 @@
 package com.cairedine.finance.app.intelligence.infrastructure.event;
 
-import com.cairedine.finance.app.intelligence.application.DocumentIngestionService;
+import com.cairedine.finance.app.intelligence.application.IngestionLauncher;
 import com.cairedine.finance.app.watchlist.TickerAddedEvent;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -9,35 +9,34 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class IntelligenceEventListenerTest {
 
     @Mock
-    private DocumentIngestionService documentIngestionService;
+    private IngestionLauncher ingestionLauncher;
 
     @Test
     void tickerAddedEventTriggersIngestionOnce() {
-        IntelligenceEventListener listener = new IntelligenceEventListener(documentIngestionService);
+        IntelligenceEventListener listener = new IntelligenceEventListener(ingestionLauncher);
         TickerAddedEvent event = new TickerAddedEvent("AAPL", Instant.now());
 
+        when(ingestionLauncher.launchIfAllowed("AAPL")).thenReturn(true);
         listener.onTickerAdded(event);
 
-        verify(documentIngestionService).ingestDocuments("AAPL");
+        verify(ingestionLauncher).launchIfAllowed("AAPL");
     }
 
     @Test
     void ingestionFailureIsLoggedAndNotPropagated() {
-        IntelligenceEventListener listener = new IntelligenceEventListener(documentIngestionService);
+        IntelligenceEventListener listener = new IntelligenceEventListener(ingestionLauncher);
         TickerAddedEvent event = new TickerAddedEvent("AAPL", Instant.now());
-        doThrow(new IllegalStateException("ingestion failed"))
-                .when(documentIngestionService).ingestDocuments("AAPL");
+        when(ingestionLauncher.launchIfAllowed("AAPL")).thenReturn(false);
 
-        assertThatCode(() -> listener.onTickerAdded(event)).doesNotThrowAnyException();
+        listener.onTickerAdded(event);
 
-        verify(documentIngestionService).ingestDocuments("AAPL");
+        verify(ingestionLauncher).launchIfAllowed("AAPL");
     }
 }
