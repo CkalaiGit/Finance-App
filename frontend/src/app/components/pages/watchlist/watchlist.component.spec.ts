@@ -31,9 +31,25 @@ describe('WatchlistComponent', () => {
    };
 
    const sampleMetrics: FullMetrics = {
-      growth: { revenueGrowth3Y: 0.15, ebitdaGrowth3Y: 0.12, epsGrowth3Y: 0.1, fcfGrowth: 0.08 },
-      value: { evToEbit: 22.5, peRatioTTM: 28.3, pegRatioForward: 1.5, evToSales: 6.2 },
-      quality: { roic: 0.25, operatingMargin: 0.3, netDebtToEbitda: 0.8, freeCashFlowMargin: 0.22, sgaToRevenue: 0.1 },
+      growth: {
+         revenueGrowth3Y: 0.15,
+         ebitdaGrowth3Y: 0.12,
+         epsGrowth3Y: 0.1,
+         fcfGrowth: 0.08,
+      },
+      value: {
+         evToEbit: 22.5,
+         peRatioTTM: 28.3,
+         pegRatioForward: 1.5,
+         evToSales: 6.2,
+      },
+      quality: {
+         roic: 0.25,
+         operatingMargin: 0.3,
+         netDebtToEbitda: 0.8,
+         freeCashFlowMargin: 0.22,
+         sgaToRevenue: 0.1,
+      },
       fiscalYearEndDate: '2025-12-31',
       marketDataAsOf: '2026-01-01',
    };
@@ -60,7 +76,11 @@ describe('WatchlistComponent', () => {
       };
 
       mockAuthStoreService = {
-         user$: of({ username: 'Warren', email: 'warren@dev.com', roles: ['PREMIUM'] }),
+         user$: of({
+            username: 'Warren',
+            email: 'warren@dev.com',
+            roles: ['PREMIUM'],
+         }),
       };
 
       await TestBed.configureTestingModule({
@@ -68,7 +88,10 @@ describe('WatchlistComponent', () => {
          providers: [
             provideRouter([]),
             { provide: WatchlistService, useValue: mockWatchlistService },
-            { provide: FinancialAnalysisService, useValue: mockAnalysisService },
+            {
+               provide: FinancialAnalysisService,
+               useValue: mockAnalysisService,
+            },
             { provide: AuthStoreService, useValue: mockAuthStoreService },
          ],
       }).compileComponents();
@@ -101,7 +124,9 @@ describe('WatchlistComponent', () => {
       fixture.detectChanges();
 
       expect(component.isLoading).toBe(false);
-      expect(component.errorMessage).toBe('Impossible de charger votre watchlist.');
+      expect(component.errorMessage).toBe(
+         'Impossible de charger votre watchlist.',
+      );
    });
 
    it('should convert input to uppercase', () => {

@@ -4,6 +4,7 @@ import {
    Router,
    RouterStateSnapshot,
    UrlTree,
+   provideRouter,
 } from '@angular/router';
 import { of, firstValueFrom, isObservable, Observable } from 'rxjs';
 import { describe, beforeEach, it, expect, vi } from 'vitest';
@@ -18,13 +19,13 @@ describe('Auth Guards', () => {
    let authStoreMock: {
       isLoggedIn$: Observable<boolean>;
       hasRole: ReturnType<typeof vi.fn>;
+      login: ReturnType<typeof vi.fn>;
    };
-   let routerMock: {
-      createUrlTree: ReturnType<typeof vi.fn>;
-   };
+   let router: Router;
 
    const mockRoute = {} as unknown as ActivatedRouteSnapshot;
-   const mockState = {} as unknown as RouterStateSnapshot;
+   const stateFor = (url: string): RouterStateSnapshot =>
+      ({ url }) as unknown as RouterStateSnapshot;
 
    beforeEach(() => {
       authServiceMock = {
@@ -33,20 +34,18 @@ describe('Auth Guards', () => {
       authStoreMock = {
          isLoggedIn$: of(true),
          hasRole: vi.fn(),
-      };
-      routerMock = {
-         createUrlTree: vi.fn((commands: string[]) => ({
-            toString: () => `/${commands.join('/')}`,
-         } as unknown as UrlTree)),
+         login: vi.fn(),
       };
 
       TestBed.configureTestingModule({
          providers: [
+            provideRouter([]),
             { provide: AuthService, useValue: authServiceMock },
             { provide: AuthStoreService, useValue: authStoreMock },
-            { provide: Router, useValue: routerMock },
          ],
       });
+
+      router = TestBed.inject(Router);
    });
 
    describe('authGuard', () => {
@@ -54,24 +53,51 @@ describe('Auth Guards', () => {
          authStoreMock.isLoggedIn$ = of(true);
 
          const result = TestBed.runInInjectionContext(() =>
-            authGuard(mockRoute, mockState),
+            authGuard(mockRoute, stateFor('/details/NVDA')),
          );
 
-         const allowed = isObservable(result) ? await firstValueFrom(result) : result;
+         const allowed = isObservable(result)
+            ? await firstValueFrom(result)
+            : result;
          expect(allowed).toBe(true);
          expect(authServiceMock.login).not.toHaveBeenCalled();
+         expect(authStoreMock.login).not.toHaveBeenCalled();
       });
 
-      it('should block navigation and trigger login when user is not logged in', async () => {
+      it('should redirect to /home with returnUrl, without triggering login, when user is not logged in', async () => {
          authStoreMock.isLoggedIn$ = of(false);
 
          const result = TestBed.runInInjectionContext(() =>
-            authGuard(mockRoute, mockState),
+            authGuard(mockRoute, stateFor('/details/NVDA')),
          );
 
-         const allowed = isObservable(result) ? await firstValueFrom(result) : result;
-         expect(allowed).toBe(false);
-         expect(authServiceMock.login).toHaveBeenCalled();
+         const outcome = isObservable(result)
+            ? await firstValueFrom(result)
+            : result;
+         expect(outcome).toBeInstanceOf(UrlTree);
+         const tree = outcome as UrlTree;
+         expect(tree.queryParams['returnUrl']).toBe('/details/NVDA');
+         expect(router.serializeUrl(tree)).toBe(
+            '/home?returnUrl=%2Fdetails%2FNVDA',
+         );
+         expect(authServiceMock.login).not.toHaveBeenCalled();
+         expect(authStoreMock.login).not.toHaveBeenCalled();
+      });
+
+      it('should carry the requested url for /watchlist as well', async () => {
+         authStoreMock.isLoggedIn$ = of(false);
+
+         const result = TestBed.runInInjectionContext(() =>
+            authGuard(mockRoute, stateFor('/watchlist')),
+         );
+
+         const outcome = isObservable(result)
+            ? await firstValueFrom(result)
+            : result;
+         expect(router.serializeUrl(outcome as UrlTree)).toBe(
+            '/home?returnUrl=%2Fwatchlist',
+         );
+         expect(authServiceMock.login).not.toHaveBeenCalled();
       });
    });
 
@@ -81,12 +107,11 @@ describe('Auth Guards', () => {
 
          const guard = roleGuard('PREMIUM');
          const result = TestBed.runInInjectionContext(() =>
-            guard(mockRoute, mockState),
+            guard(mockRoute, stateFor('/watchlist')),
          );
 
          expect(result).toBe(true);
          expect(authStoreMock.hasRole).toHaveBeenCalledWith('PREMIUM');
-         expect(routerMock.createUrlTree).not.toHaveBeenCalled();
       });
 
       it('should redirect to /home when user lacks required role', () => {
@@ -94,12 +119,12 @@ describe('Auth Guards', () => {
 
          const guard = roleGuard('PREMIUM');
          const result = TestBed.runInInjectionContext(() =>
-            guard(mockRoute, mockState),
+            guard(mockRoute, stateFor('/watchlist')),
          );
 
          expect(authStoreMock.hasRole).toHaveBeenCalledWith('PREMIUM');
-         expect(routerMock.createUrlTree).toHaveBeenCalledWith(['/home']);
-         expect(result).toBeTruthy();
+         expect(result).toBeInstanceOf(UrlTree);
+         expect(router.serializeUrl(result as UrlTree)).toBe('/home');
       });
    });
 });

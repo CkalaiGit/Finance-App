@@ -70,6 +70,9 @@ describe('CompanyService', () => {
       const req = httpMock.expectOne(
          `${environment.apiUrl}/company-profile/UNKNOWN`,
       );
-      req.flush({ detail: 'Company not found' }, { status: 404, statusText: 'Not Found' });
+      req.flush(
+         { detail: 'Company not found' },
+         { status: 404, statusText: 'Not Found' },
+      );
    });
 });

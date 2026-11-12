@@ -1,21 +1,26 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router, UrlTree } from '@angular/router';
 import { AuthStoreService } from './auth-store.service';
-import { AuthService } from './auth.service';
 import { map, take } from 'rxjs';
 
-export const authGuard: CanActivateFn = () => {
+/**
+ * Protège une route sans jamais ouvrir Keycloak : un visiteur non connecté est
+ * ramené sur /home, avec l'URL demandée dans `returnUrl`. La page d'accueil
+ * affiche alors une invitation à se connecter.
+ */
+export const authGuard: CanActivateFn = (_route, state) => {
    const store = inject(AuthStoreService);
-   const authService = inject(AuthService);
+   const router = inject(Router);
 
    return store.isLoggedIn$.pipe(
       take(1),
-      map((isLoggedIn) => {
+      map((isLoggedIn): boolean | UrlTree => {
          if (isLoggedIn) {
             return true;
          }
-         authService.login();
-         return false;
+         return router.createUrlTree(['/home'], {
+            queryParams: { returnUrl: state.url },
+         });
       }),
    );
 };

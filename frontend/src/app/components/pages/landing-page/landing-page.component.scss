@@ -57,6 +57,82 @@
 }
 
 /* ========================================
+   ENCART - Connexion requise
+======================================== */
+.login-required {
+   max-width: 600px;
+   margin: 0 auto 24px;
+   padding: 14px 20px;
+
+   display: flex;
+   align-items: center;
+   gap: 14px;
+   text-align: left;
+
+   background: var(--bg-card);
+   backdrop-filter: blur(20px);
+   -webkit-backdrop-filter: blur(20px);
+   border: 1px solid var(--accent-blue);
+   border-radius: 16px;
+   box-shadow: var(--shadow-sm);
+
+   color: var(--text-primary);
+   font-family: 'Inter', sans-serif;
+   font-size: 15px;
+
+   .bi {
+      color: var(--accent-blue);
+      font-size: 18px;
+   }
+}
+
+.login-required-text {
+   flex: 1;
+   margin: 0;
+}
+
+.login-required-button {
+   flex-shrink: 0;
+   padding: 10px 18px;
+
+   background: linear-gradient(
+      135deg,
+      var(--accent-blue) 0%,
+      var(--accent-purple) 100%
+   );
+   border: none;
+   border-radius: 10px;
+
+   color: white;
+   font-family: 'Inter', sans-serif;
+   font-size: 14px;
+   font-weight: 600;
+
+   cursor: pointer;
+   transition: var(--transition-smooth);
+
+   &:hover {
+      box-shadow: var(--shadow-glow);
+   }
+
+   &:focus-visible {
+      outline: 2px solid white;
+      outline-offset: 2px;
+   }
+}
+
+@media (max-width: 480px) {
+   .login-required {
+      flex-direction: column;
+      text-align: center;
+   }
+
+   .login-required-button {
+      width: 100%;
+   }
+}
+
+/* ========================================
    FORMULAIRE DE RECHERCHE
 ======================================== */
 .search-form {

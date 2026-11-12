@@ -5,29 +5,30 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('AuthService', () => {
    let service: AuthService;
-   let keycloakServiceMock: {
-      instance: {
-         authenticated: boolean;
-         tokenParsed: null;
-         realmAccess: { roles: string[] };
-      };
-   };
-
-   const mockKeycloakInstance = {
-      authenticated: false,
-      tokenParsed: null,
-      realmAccess: { roles: [] as string[] },
+   let mockKeycloakInstance: {
+      authenticated: boolean;
+      tokenParsed: null;
+      realmAccess: { roles: string[] };
+      login: ReturnType<typeof vi.fn>;
+      logout: ReturnType<typeof vi.fn>;
    };
 
    beforeEach(() => {
-      keycloakServiceMock = {
-         instance: mockKeycloakInstance,
+      mockKeycloakInstance = {
+         authenticated: false,
+         tokenParsed: null,
+         realmAccess: { roles: [] },
+         login: vi.fn(),
+         logout: vi.fn(),
       };
 
       TestBed.configureTestingModule({
          providers: [
             AuthService,
-            { provide: KeycloakService, useValue: keycloakServiceMock },
+            {
+               provide: KeycloakService,
+               useValue: { instance: mockKeycloakInstance },
+            },
          ],
       });
 
@@ -44,5 +45,28 @@ describe('AuthService', () => {
 
    it('should return null for getUserProfile when not logged in', () => {
       expect(service.getUserProfile()).toBeNull();
+   });
+
+   it('should call keycloak login without options when no redirectUri is given', () => {
+      service.login();
+
+      expect(mockKeycloakInstance.login).toHaveBeenCalledTimes(1);
+      expect(mockKeycloakInstance.login).toHaveBeenCalledWith();
+   });
+
+   it('should forward redirectUri to keycloak login', () => {
+      const redirectUri = `${window.location.origin}/details/NVDA`;
+
+      service.login(redirectUri);
+
+      expect(mockKeycloakInstance.login).toHaveBeenCalledWith({ redirectUri });
+   });
+
+   it('should logout with a redirect to /home', () => {
+      service.logout();
+
+      expect(mockKeycloakInstance.logout).toHaveBeenCalledWith({
+         redirectUri: `${window.location.origin}/home`,
+      });
    });
 });

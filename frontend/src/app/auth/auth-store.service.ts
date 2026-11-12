@@ -29,8 +29,8 @@ export class AuthStoreService {
       this.userSubject$.next(profile);
    }
 
-   login(): void {
-      this.authService.login();
+   login(redirectUri?: string): void {
+      this.authService.login(redirectUri);
    }
 
    logout(): void {

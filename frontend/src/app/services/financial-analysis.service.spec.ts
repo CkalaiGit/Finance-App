@@ -90,6 +90,9 @@ describe('FinancialAnalysisService', () => {
       });
 
       const req = httpMock.expectOne(`${environment.apiUrl}/analysis/FAIL`);
-      req.flush({ detail: 'Server Error' }, { status: 500, statusText: 'Server Error' });
+      req.flush(
+         { detail: 'Server Error' },
+         { status: 500, statusText: 'Server Error' },
+      );
    });
 });

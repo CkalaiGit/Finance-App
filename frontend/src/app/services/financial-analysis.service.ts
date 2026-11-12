@@ -16,9 +16,7 @@ export class FinancialAnalysisService {
          .get<FullMetrics[]>(`${this.baseUrl}/${ticker.toUpperCase()}`)
          .pipe(
             map((metricsList) =>
-               metricsList && metricsList.length > 0
-                  ? metricsList[0]
-                  : null,
+               metricsList && metricsList.length > 0 ? metricsList[0] : null,
             ),
          );
    }

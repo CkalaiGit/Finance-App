@@ -25,7 +25,7 @@ KeycloakService       → Wrapper bas niveau, contient l'instance Keycloak-js
 AuthService           → Logique métier (isLoggedIn, getUserProfile, login, logout)
 AuthStoreService      → State management RxJS (BehaviorSubject<UserProfile|null>)
 authInterceptor       → Ajoute automatiquement Bearer token sur chaque requête HTTP
-authGuard             → Protège les routes, redirige vers Keycloak si non connecté
+authGuard             → Protège les routes ; non connecté → /home?returnUrl=… (jamais de redirection automatique vers Keycloak, qui ne s'ouvre qu'au clic sur « Se connecter »)
 ```
 
 ---
@@ -44,7 +44,7 @@ authGuard             → Protège les routes, redirige vers Keycloak si non con
 ## Routes Frontend
 ```
 /home            → LandingPageComponent (publique, présentation et recherche)
-/details/:ticker → CompanyDetailsComponent (publique, profil entreprise & analyses)
+/details/:ticker → CompanyDetailsComponent (protégée par authGuard, profil entreprise & analyses)
 /watchlist       → WatchlistComponent (protégée par authGuard, tableau tabulé de suivi)
 /about           → À implémenter
 ```

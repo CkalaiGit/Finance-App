@@ -7,9 +7,11 @@
       <h1 class="watchlist-title">Ma Watchlist</h1>
       <p class="watchlist-subtitle">
          @if (user$ | async; as user) {
-            Suivez en temps réel les performances financières des entreprises de {{ user.username }}.
+            Suivez en temps réel les performances financières des entreprises de
+            {{ user.username }}.
          } @else {
-            Suivez en temps réel la santé financière de vos entreprises préférées.
+            Suivez en temps réel la santé financière de vos entreprises
+            préférées.
          }
       </p>
 
@@ -66,8 +68,9 @@
             </div>
             <h2 class="empty-title">Votre watchlist est vide</h2>
             <p class="empty-description">
-               Vous n'avez pas encore ajouté d'entreprise à votre liste de suivi.
-               Saisissez un symbole boursier ci-dessus ou parcourez nos analyses pour commencer.
+               Vous n'avez pas encore ajouté d'entreprise à votre liste de
+               suivi. Saisissez un symbole boursier ci-dessus ou parcourez nos
+               analyses pour commencer.
             </p>
             <a routerLink="/home" class="btn-primary cta-btn">
                <i class="bi bi-house-door"></i>
@@ -127,28 +130,48 @@
                                  [routerLink]="['/details', item.ticker]"
                                  class="ticker-link"
                               >
-                                 <i class="bi bi-star-fill text-warning me-2"></i>
-                                 <span class="ticker-symbol">{{ item.ticker }}</span>
+                                 <i
+                                    class="bi bi-star-fill text-warning me-2"
+                                 ></i>
+                                 <span class="ticker-symbol">{{
+                                    item.ticker
+                                 }}</span>
                               </a>
                            </td>
                            <td>
                               <span class="metric-val">
-                                 {{ formatPercent(item.metrics?.growth?.revenueGrowth3Y) }}
+                                 {{
+                                    formatPercent(
+                                       item.metrics?.growth?.revenueGrowth3Y
+                                    )
+                                 }}
                               </span>
                            </td>
                            <td>
                               <span class="metric-val">
-                                 {{ formatPercent(item.metrics?.growth?.ebitdaGrowth3Y) }}
+                                 {{
+                                    formatPercent(
+                                       item.metrics?.growth?.ebitdaGrowth3Y
+                                    )
+                                 }}
                               </span>
                            </td>
                            <td>
                               <span class="metric-val">
-                                 {{ formatPercent(item.metrics?.growth?.epsGrowth3Y) }}
+                                 {{
+                                    formatPercent(
+                                       item.metrics?.growth?.epsGrowth3Y
+                                    )
+                                 }}
                               </span>
                            </td>
                            <td>
                               <span class="metric-val">
-                                 {{ formatPercent(item.metrics?.growth?.fcfGrowth) }}
+                                 {{
+                                    formatPercent(
+                                       item.metrics?.growth?.fcfGrowth
+                                    )
+                                 }}
                               </span>
                            </td>
                            <td class="text-end">
@@ -191,28 +214,42 @@
                                  [routerLink]="['/details', item.ticker]"
                                  class="ticker-link"
                               >
-                                 <i class="bi bi-star-fill text-warning me-2"></i>
-                                 <span class="ticker-symbol">{{ item.ticker }}</span>
+                                 <i
+                                    class="bi bi-star-fill text-warning me-2"
+                                 ></i>
+                                 <span class="ticker-symbol">{{
+                                    item.ticker
+                                 }}</span>
                               </a>
                            </td>
                            <td>
                               <span class="metric-val">
-                                 {{ formatRatio(item.metrics?.value?.evToEbit) }}
+                                 {{
+                                    formatRatio(item.metrics?.value?.evToEbit)
+                                 }}
                               </span>
                            </td>
                            <td>
                               <span class="metric-val">
-                                 {{ formatRatio(item.metrics?.value?.peRatioTTM) }}
+                                 {{
+                                    formatRatio(item.metrics?.value?.peRatioTTM)
+                                 }}
                               </span>
                            </td>
                            <td>
                               <span class="metric-val">
-                                 {{ formatRatio(item.metrics?.value?.pegRatioForward) }}
+                                 {{
+                                    formatRatio(
+                                       item.metrics?.value?.pegRatioForward
+                                    )
+                                 }}
                               </span>
                            </td>
                            <td>
                               <span class="metric-val">
-                                 {{ formatRatio(item.metrics?.value?.evToSales) }}
+                                 {{
+                                    formatRatio(item.metrics?.value?.evToSales)
+                                 }}
                               </span>
                            </td>
                            <td class="text-end">
@@ -255,28 +292,46 @@
                                  [routerLink]="['/details', item.ticker]"
                                  class="ticker-link"
                               >
-                                 <i class="bi bi-star-fill text-warning me-2"></i>
-                                 <span class="ticker-symbol">{{ item.ticker }}</span>
+                                 <i
+                                    class="bi bi-star-fill text-warning me-2"
+                                 ></i>
+                                 <span class="ticker-symbol">{{
+                                    item.ticker
+                                 }}</span>
                               </a>
                            </td>
                            <td>
                               <span class="metric-val">
-                                 {{ formatPercent(item.metrics?.quality?.roic) }}
+                                 {{
+                                    formatPercent(item.metrics?.quality?.roic)
+                                 }}
                               </span>
                            </td>
                            <td>
                               <span class="metric-val">
-                                 {{ formatPercent(item.metrics?.quality?.operatingMargin) }}
+                                 {{
+                                    formatPercent(
+                                       item.metrics?.quality?.operatingMargin
+                                    )
+                                 }}
                               </span>
                            </td>
                            <td>
                               <span class="metric-val">
-                                 {{ formatRatio(item.metrics?.quality?.netDebtToEbitda) }}
+                                 {{
+                                    formatRatio(
+                                       item.metrics?.quality?.netDebtToEbitda
+                                    )
+                                 }}
                               </span>
                            </td>
                            <td>
                               <span class="metric-val">
-                                 {{ formatPercent(item.metrics?.quality?.freeCashFlowMargin) }}
+                                 {{
+                                    formatPercent(
+                                       item.metrics?.quality?.freeCashFlowMargin
+                                    )
+                                 }}
                               </span>
                            </td>
                            <td class="text-end">

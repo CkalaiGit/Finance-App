@@ -21,6 +21,7 @@ describe('authInterceptor', () => {
    let http: HttpClient;
    let httpMock: HttpTestingController;
    let authServiceMock: {
+      isLoggedIn: boolean;
       getToken: ReturnType<typeof vi.fn>;
       login: ReturnType<typeof vi.fn>;
    };
@@ -31,6 +32,7 @@ describe('authInterceptor', () => {
 
    beforeEach(() => {
       authServiceMock = {
+         isLoggedIn: true,
          getToken: vi.fn().mockReturnValue('mock-jwt-token'),
          login: vi.fn(),
       };
@@ -92,6 +94,36 @@ describe('authInterceptor', () => {
       expect(req.request.headers.has('Authorization')).toBe(false);
       expect(keycloakInstanceMock.updateToken).not.toHaveBeenCalled();
       req.flush({});
+   });
+
+   it('should send the request untouched for an anonymous visitor (no header, no updateToken, no login)', () => {
+      authServiceMock.isLoggedIn = false;
+      authServiceMock.getToken.mockReturnValue(undefined);
+
+      http.get(`${environment.apiUrl}/companies/AAPL`).subscribe();
+
+      // Requête émise de façon synchrone : aucun renouvellement n'est attendu
+      const req = httpMock.expectOne(`${environment.apiUrl}/companies/AAPL`);
+      expect(req.request.headers.has('Authorization')).toBe(false);
+      expect(keycloakInstanceMock.updateToken).not.toHaveBeenCalled();
+      expect(authServiceMock.login).not.toHaveBeenCalled();
+      req.flush({});
+   });
+
+   it('should not trigger login for an anonymous visitor when the backend answers 401', () => {
+      authServiceMock.isLoggedIn = false;
+
+      let status: number | undefined;
+      http.get(`${environment.apiUrl}/watchlist`).subscribe({
+         error: (err: { status: number }) => (status = err.status),
+      });
+
+      const req = httpMock.expectOne(`${environment.apiUrl}/watchlist`);
+      req.flush(null, { status: 401, statusText: 'Unauthorized' });
+
+      expect(status).toBe(401);
+      expect(keycloakInstanceMock.updateToken).not.toHaveBeenCalled();
+      expect(authServiceMock.login).not.toHaveBeenCalled();
    });
 
    it('should call updateToken(30) before sending request to apiUrl', async () => {

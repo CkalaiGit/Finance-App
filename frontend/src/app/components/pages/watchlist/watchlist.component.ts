@@ -37,8 +37,7 @@ export class WatchlistComponent implements OnInit {
    private readonly router = inject(Router);
    private readonly cdr = inject(ChangeDetectorRef);
 
-   readonly user$: Observable<UserProfile | null> =
-      this.authStoreService.user$;
+   readonly user$: Observable<UserProfile | null> = this.authStoreService.user$;
 
    activeTab: 'growth' | 'value' | 'quality' = 'growth';
 

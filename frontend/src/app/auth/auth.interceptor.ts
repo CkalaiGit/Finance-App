@@ -9,7 +9,9 @@ import { ApiError } from '../models/api-error.model';
 
 let refreshInProgress$: Observable<boolean> | null = null;
 
-function getRefreshToken$(keycloakService: KeycloakService): Observable<boolean> {
+function getRefreshToken$(
+   keycloakService: KeycloakService,
+): Observable<boolean> {
    if (!refreshInProgress$) {
       refreshInProgress$ = from(keycloakService.instance.updateToken(30)).pipe(
          shareReplay({ bufferSize: 1, refCount: false }),
@@ -28,15 +30,28 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
    }
 
    const authService = inject(AuthService);
+
+   // Visiteur anonyme : la requête part telle quelle, sans jeton, sans
+   // renouvellement et surtout sans redirection vers Keycloak. Le backend
+   // répond normalement aux endpoints publics et par 401 aux autres.
+   if (!authService.isLoggedIn) {
+      return next(req);
+   }
+
    const keycloakService = inject(KeycloakService);
 
    return getRefreshToken$(keycloakService).pipe(
       catchError((_err: unknown) => {
+         // Choix assumé : ici l'utilisateur ÉTAIT authentifié et le
+         // renouvellement du jeton a échoué. C'est une session expirée, pas un
+         // visiteur : on le renvoie vers Keycloak pour qu'il se reconnecte
+         // (seul cas où login() est appelé sans clic explicite).
          authService.login();
          const apiError: ApiError = {
             status: 401,
             title: 'Session expirée',
-            detail: 'Impossible de renouveler la session. Veuillez vous reconnecter.',
+            detail:
+               'Impossible de renouveler la session. Veuillez vous reconnecter.',
          };
          return throwError(() => apiError);
       }),

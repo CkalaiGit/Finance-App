@@ -38,13 +38,22 @@ export class AuthService {
       };
    }
 
-   login(): void {
+   /**
+    * Ouvre la page de connexion Keycloak.
+    * @param redirectUri URL absolue de retour après connexion. Sans paramètre,
+    *                    Keycloak revient sur la page courante.
+    */
+   login(redirectUri?: string): void {
+      if (redirectUri) {
+         this.kc.login({ redirectUri });
+         return;
+      }
       this.kc.login();
    }
 
    logout(): void {
       this.kc.logout({
-         redirectUri: window.location.origin,
+         redirectUri: window.location.origin + '/home',
       });
    }
 

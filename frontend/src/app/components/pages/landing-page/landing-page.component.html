@@ -10,6 +10,28 @@
             </p>
          </header>
 
+         @if (showLoginRequired()) {
+            <div
+               class="login-required"
+               role="status"
+               aria-live="polite"
+               data-testid="login-required"
+            >
+               <i class="bi bi-lock-fill" aria-hidden="true"></i>
+               <p class="login-required-text">
+                  Connectez-vous pour consulter cette page
+               </p>
+               <button
+                  type="button"
+                  class="login-required-button"
+                  data-testid="login-required-button"
+                  (click)="onLogin()"
+               >
+                  Se connecter
+               </button>
+            </div>
+         }
+
          <form
             class="search-form"
             role="search"
