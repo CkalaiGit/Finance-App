@@ -137,6 +137,9 @@ intelligence:
     mode: ${INTELLIGENCE_AI_MODE:stub}
   ingestion:
     retry-cooldown: 15m
+    # Nombre de rapports SEC synthétisés par ticker (un appel IA par rapport)
+    annual-filings-limit: 1      # 10-K
+    quarterly-filings-limit: 2   # 10-Q
   chunking:
     size: 512
     overlap: 64

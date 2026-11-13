@@ -52,7 +52,7 @@ class DocumentIngestionServiceTest {
     void setUp() {
         ingestionService = new DocumentIngestionService(
                 documentSource, financialAnalysisService, insightRepository,
-                textCleaner, sectionExtractor, insightSynthesizer, java.time.Duration.ZERO);
+                textCleaner, sectionExtractor, insightSynthesizer, java.time.Duration.ZERO, 1, 2);
     }
 
     @Test
@@ -71,8 +71,8 @@ class DocumentIngestionServiceTest {
         SecFiling filing = filing("known-accession");
         when(documentSource.isAvailable("AAPL")).thenReturn(true);
         when(financialAnalysisService.computeMetrics("AAPL")).thenReturn(List.of());
-        when(documentSource.fetchFilings("AAPL", "10-K", 2)).thenReturn(List.of(filing));
-        when(documentSource.fetchFilings("AAPL", "10-Q", 4)).thenReturn(List.of());
+        when(documentSource.fetchFilings("AAPL", "10-K", 1)).thenReturn(List.of(filing));
+        when(documentSource.fetchFilings("AAPL", "10-Q", 2)).thenReturn(List.of());
         when(insightRepository.existsByAccessionNumber("known-accession")).thenReturn(true);
 
         ingestionService.ingestDocuments("AAPL");
@@ -90,9 +90,9 @@ class DocumentIngestionServiceTest {
                 "summary", "analysis", List.of(), null, null, List.of(), Instant.now());
         when(documentSource.isAvailable("AAPL")).thenReturn(true);
         when(financialAnalysisService.computeMetrics("AAPL")).thenReturn(List.of());
-        when(documentSource.fetchFilings("AAPL", "10-K", 2))
+        when(documentSource.fetchFilings("AAPL", "10-K", 1))
                 .thenReturn(List.of(failedFiling, successfulFiling));
-        when(documentSource.fetchFilings("AAPL", "10-Q", 4)).thenReturn(List.of());
+        when(documentSource.fetchFilings("AAPL", "10-Q", 2)).thenReturn(List.of());
         when(insightRepository.existsByAccessionNumber("failed-accession")).thenReturn(false);
         when(insightRepository.existsByAccessionNumber("successful-accession")).thenReturn(false);
         when(textCleaner.clean("raw-content")).thenReturn("clean-content");
@@ -121,8 +121,8 @@ class DocumentIngestionServiceTest {
                 metrics("2021-12-31"));
         when(documentSource.isAvailable("AAPL")).thenReturn(true);
         when(financialAnalysisService.computeMetrics("AAPL")).thenReturn(metrics);
-        when(documentSource.fetchFilings("AAPL", "10-K", 2)).thenReturn(List.of(filing));
-        when(documentSource.fetchFilings("AAPL", "10-Q", 4)).thenReturn(List.of());
+        when(documentSource.fetchFilings("AAPL", "10-K", 1)).thenReturn(List.of(filing));
+        when(documentSource.fetchFilings("AAPL", "10-Q", 2)).thenReturn(List.of());
         when(insightRepository.existsByAccessionNumber("filing-accession")).thenReturn(false);
         when(textCleaner.clean("raw-content")).thenReturn("clean-content");
         when(sectionExtractor.extractSections("clean-content")).thenReturn(List.of());
@@ -142,8 +142,8 @@ class DocumentIngestionServiceTest {
                 "raw-content", Instant.now());
         when(documentSource.isAvailable("AAPL")).thenReturn(true);
         when(financialAnalysisService.computeMetrics("AAPL")).thenReturn(List.of(metrics("2024-12-31")));
-        when(documentSource.fetchFilings("AAPL", "10-K", 2)).thenReturn(List.of(filing));
-        when(documentSource.fetchFilings("AAPL", "10-Q", 4)).thenReturn(List.of());
+        when(documentSource.fetchFilings("AAPL", "10-K", 1)).thenReturn(List.of(filing));
+        when(documentSource.fetchFilings("AAPL", "10-Q", 2)).thenReturn(List.of());
         when(insightRepository.existsByAccessionNumber("bad-period")).thenReturn(false);
         when(textCleaner.clean("raw-content")).thenReturn("clean-content");
         when(sectionExtractor.extractSections("clean-content")).thenReturn(List.of());
@@ -178,8 +178,8 @@ class DocumentIngestionServiceTest {
             firstIngestion.get(5, TimeUnit.SECONDS);
             verify(documentSource).isAvailable("AAPL");
             verify(financialAnalysisService).computeMetrics("AAPL");
-            verify(documentSource).fetchFilings("AAPL", "10-K", 2);
-            verify(documentSource).fetchFilings("AAPL", "10-Q", 4);
+            verify(documentSource).fetchFilings("AAPL", "10-K", 1);
+            verify(documentSource).fetchFilings("AAPL", "10-Q", 2);
             assertThat(ingestionService.isIngesting("AAPL")).isFalse();
         } finally {
             releaseIngestion.countDown();

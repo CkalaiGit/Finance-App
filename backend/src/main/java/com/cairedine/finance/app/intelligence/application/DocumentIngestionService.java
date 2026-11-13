@@ -39,6 +39,8 @@ public class DocumentIngestionService implements IIngestionTracker {
     private final ISectionExtractor sectionExtractor;
     private final IInsightSynthesizer insightSynthesizer;
     private final Duration delayBetweenCalls;
+    private final int annualFilingsLimit;
+    private final int quarterlyFilingsLimit;
     private final Set<String> ingestingTickers = ConcurrentHashMap.newKeySet();
 
     public DocumentIngestionService(
@@ -48,7 +50,9 @@ public class DocumentIngestionService implements IIngestionTracker {
             ITextCleaner textCleaner,
             ISectionExtractor sectionExtractor,
             IInsightSynthesizer insightSynthesizer,
-            @Value("${intelligence.summarization.delay-between-calls:5s}") Duration delayBetweenCalls) {
+            @Value("${intelligence.summarization.delay-between-calls:5s}") Duration delayBetweenCalls,
+            @Value("${intelligence.ingestion.annual-filings-limit:1}") int annualFilingsLimit,
+            @Value("${intelligence.ingestion.quarterly-filings-limit:2}") int quarterlyFilingsLimit) {
         this.documentSource = documentSource;
         this.financialAnalysisService = financialAnalysisService;
         this.insightRepository = insightRepository;
@@ -56,6 +60,8 @@ public class DocumentIngestionService implements IIngestionTracker {
         this.sectionExtractor = sectionExtractor;
         this.insightSynthesizer = insightSynthesizer;
         this.delayBetweenCalls = delayBetweenCalls;
+        this.annualFilingsLimit = Math.max(0, annualFilingsLimit);
+        this.quarterlyFilingsLimit = Math.max(0, quarterlyFilingsLimit);
     }
 
     public void ingestDocuments(String ticker) {
@@ -102,12 +108,12 @@ public class DocumentIngestionService implements IIngestionTracker {
             CompletableFuture<List<SecFiling>> annualFilingsFuture = submitSafely(
                     executor,
                     "récupération des 10-K pour " + normalizedTicker,
-                    () -> documentSource.fetchFilings(normalizedTicker, "10-K", 2),
+                    () -> documentSource.fetchFilings(normalizedTicker, "10-K", annualFilingsLimit),
                     List.of());
             CompletableFuture<List<SecFiling>> quarterlyFilingsFuture = submitSafely(
                     executor,
                     "récupération des 10-Q pour " + normalizedTicker,
-                    () -> documentSource.fetchFilings(normalizedTicker, "10-Q", 4),
+                    () -> documentSource.fetchFilings(normalizedTicker, "10-Q", quarterlyFilingsLimit),
                     List.of());
 
             metrics = metricsFuture.join();
