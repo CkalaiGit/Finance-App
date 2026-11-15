@@ -24,6 +24,8 @@ class FmpMarketDataAdapter implements IMarketDataPort {
     private final AnalystEstimateMapper analystEstimateMapper;
     private final KeyMetricsMapper keyMetricsMapper;
 
+    private static final int ANALYST_ESTIMATES_LIMIT = 10;
+
     @Override
     public Optional<CompanyProfileRecord> fetchCompanyProfile(String symbol) {
         FmpCompanyProfileDto[] dtos = call(symbol, "/stable/profile", () -> fmpRestClient.get()
@@ -40,6 +42,20 @@ class FmpMarketDataAdapter implements IMarketDataPort {
     public List<IncomeStatementRecord> fetchIncomeStatements(String symbol, int limit) {
         FmpIncomeStatementTtmDto[] dtos = call(symbol, "/stable/income-statement", () -> fmpRestClient.get()
                 .uri("/stable/income-statement?symbol={symbol}&limit={limit}", symbol, limit)
+                .retrieve()
+                .body(FmpIncomeStatementTtmDto[].class));
+
+        if (dtos == null || dtos.length == 0) return List.of();
+
+        return Arrays.stream(dtos)
+                .map(incomeStatementMapper::toRecord)
+                .toList();
+    }
+
+    @Override
+    public List<IncomeStatementRecord> fetchQuarterlyIncomeStatements(String symbol, int limit) {
+        FmpIncomeStatementTtmDto[] dtos = call(symbol, "/stable/income-statement", () -> fmpRestClient.get()
+                .uri("/stable/income-statement?symbol={symbol}&period=quarter&limit={limit}", symbol, limit)
                 .retrieve()
                 .body(FmpIncomeStatementTtmDto[].class));
 
@@ -107,10 +123,16 @@ class FmpMarketDataAdapter implements IMarketDataPort {
         return Optional.ofNullable(keyMetricsMapper.toRecord(merged));
     }
 
+    /**
+     * FMP renvoie les estimations de la plus lointaine à la plus ancienne (ex. 2031, 2030, …).
+     * La limite doit donc être assez large pour inclure l'exercice clos et le suivant ;
+     * le choix des deux exercices à comparer revient à l'appelant, d'après les dates.
+     */
     @Override
     public List<AnalystEstimateRecord> fetchAnalystEstimates(String symbol) {
         FmpAnalystEstimateDto[] dtos = call(symbol, "/stable/analyst-estimates", () -> fmpRestClient.get()
-                .uri("/stable/analyst-estimates?symbol={symbol}&period=annual&limit=2", symbol)
+                .uri("/stable/analyst-estimates?symbol={symbol}&period=annual&limit={limit}",
+                        symbol, ANALYST_ESTIMATES_LIMIT)
                 .retrieve()
                 .body(FmpAnalystEstimateDto[].class));
 

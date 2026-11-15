@@ -19,6 +19,9 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -32,6 +35,10 @@ import static com.cairedine.finance.app.financialanalysis.domain.FinancialMath.c
 @Slf4j
 @Service
 public class FinancialAnalysisServiceImpl implements IFinancialAnalysisService {
+
+    private static final int TTM_QUARTERS = 4;
+    /** Tolérance entre la date de clôture publiée et celle des estimations (exercices de 52/53 semaines). */
+    private static final int FISCAL_YEAR_DATE_TOLERANCE_DAYS = 45;
 
     private final IMarketDataPort marketDataPort;
     private final IMetricsCachePort metricsCache;
@@ -98,9 +105,13 @@ public class FinancialAnalysisServiceImpl implements IFinancialAnalysisService {
             var analystEstimatesFuture = CompletableFuture.supplyAsync(
                     () -> marketDataPort.fetchAnalystEstimates(ticker), executor);
 
+            var quarterlyIncomeFuture = CompletableFuture.supplyAsync(
+                    () -> fetchQuarterlyIncomeSafely(ticker), executor);
+
             List<CashFlowRecord> cashFlowStatements = join(cashFlowFuture);
             Optional<KeyMetricsRecord> keyMetricsOpt = join(keyMetricsFuture);
             List<AnalystEstimateRecord> analystEstimates = join(analystEstimatesFuture);
+            List<IncomeStatementRecord> quarterlyIncome = join(quarterlyIncomeFuture);
 
             if (preFetchedIncome.size() < 4 || cashFlowStatements.size() < 2) {
                 throw new TickerNotFoundException(ticker + " (Insufficient data)");
@@ -135,16 +146,12 @@ public class FinancialAnalysisServiceImpl implements IFinancialAnalysisService {
             }
 
             // Value
-            // EV (instantanée, TTM boursier) / EBIT (comptable, dernière clôture)
-            // Ratio cohérent en convention marché — EV et EBIT doivent couvrir 12 mois TTM
-            // KeyMetrics FMP retourne un EV TTM aligné sur les 12 derniers mois.
-            BigDecimal evToEbit = FinancialMath.calculateRatio(enterpriseValue, ttmIncome.operatingIncome());
-            BigDecimal epsGrowthForward = null;
-            if (analystEstimates.size() >= 2) {
-                BigDecimal epsNext = analystEstimates.get(0).epsAvg();
-                BigDecimal epsCurrent = analystEstimates.get(1).epsAvg();
-                epsGrowthForward = calculateGrowth(epsNext, epsCurrent);
-            }
+            // EV (valeur de marché du jour) / EBIT des 12 derniers mois (somme des 4 derniers
+            // trimestres). Diviser par l'EBIT du dernier exercice annuel surévalue le ratio
+            // des entreprises en forte croissance dès que la clôture date de quelques mois.
+            BigDecimal ebitTtm = trailingTwelveMonthsEbit(ticker, ttmIncome, quarterlyIncome);
+            BigDecimal evToEbit = FinancialMath.calculateRatio(enterpriseValue, ebitTtm);
+            BigDecimal epsGrowthForward = forwardEpsGrowth(ticker, fiscalYearEndDate, analystEstimates);
             BigDecimal pegRatioForward = FinancialMath.calculatePegRatio(peRatioTTM, epsGrowthForward);
             ValueMetrics value = new ValueMetrics(evToEbit, peRatioTTM, pegRatioForward, evToSales);
 
@@ -155,6 +162,104 @@ public class FinancialAnalysisServiceImpl implements IFinancialAnalysisService {
             QualityMetrics quality = new QualityMetrics(roic, operatingMargin, netDebtToEbitda, freeCashFlowMargin, sgaToRevenue);
 
             return new FullMetrics(growth, value, quality, fiscalYearEndDate, marketDataAsOf);
+        }
+    }
+
+    /**
+     * Les trimestres ne servent qu'à affiner l'EV/EBIT : s'ils sont indisponibles, on retombe
+     * sur l'EBIT annuel plutôt que de faire échouer tout le calcul.
+     */
+    private List<IncomeStatementRecord> fetchQuarterlyIncomeSafely(String ticker) {
+        try {
+            List<IncomeStatementRecord> quarters =
+                    marketDataPort.fetchQuarterlyIncomeStatements(ticker, TTM_QUARTERS);
+            return quarters == null ? List.of() : quarters;
+        } catch (RuntimeException exception) {
+            log.warn("Comptes trimestriels indisponibles pour {} ; EV/EBIT calculé sur l'exercice annuel.",
+                    ticker, exception);
+            return List.of();
+        }
+    }
+
+    /**
+     * EBIT des 12 derniers mois = somme des 4 derniers trimestres publiés.
+     * Repli sur l'EBIT du dernier exercice annuel si les trimestres sont incomplets
+     * ou plus anciens que cette clôture.
+     */
+    private BigDecimal trailingTwelveMonthsEbit(
+            String ticker, IncomeStatementRecord lastFiscalYear, List<IncomeStatementRecord> quarterlyIncome) {
+        BigDecimal annualEbit = lastFiscalYear.operatingIncome();
+        List<IncomeStatementRecord> lastQuarters = quarterlyIncome.stream()
+                .filter(quarter -> quarter != null && parseDate(quarter.date()) != null)
+                .sorted(Comparator.comparing((IncomeStatementRecord quarter) -> parseDate(quarter.date())).reversed())
+                .limit(TTM_QUARTERS)
+                .toList();
+        if (lastQuarters.size() < TTM_QUARTERS
+                || lastQuarters.stream().anyMatch(quarter -> quarter.operatingIncome() == null)) {
+            return annualEbit;
+        }
+        LocalDate fiscalYearEnd = parseDate(lastFiscalYear.date());
+        LocalDate latestQuarterEnd = parseDate(lastQuarters.getFirst().date());
+        if (fiscalYearEnd != null && latestQuarterEnd.isBefore(fiscalYearEnd)) {
+            log.warn("Trimestres de {} antérieurs à la clôture annuelle {} ; EV/EBIT calculé sur l'exercice annuel.",
+                    ticker, lastFiscalYear.date());
+            return annualEbit;
+        }
+        return lastQuarters.stream()
+                .map(IncomeStatementRecord::operatingIncome)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /**
+     * Croissance attendue du BPA entre le dernier exercice clos et le suivant, d'après le
+     * consensus des analystes (les deux valeurs viennent du consensus, pour rester homogènes).
+     * Les estimations sont choisies par date et non par position : FMP les renvoie de la plus
+     * lointaine à la plus ancienne.
+     */
+    private BigDecimal forwardEpsGrowth(
+            String ticker, String fiscalYearEndDate, List<AnalystEstimateRecord> analystEstimates) {
+        if (analystEstimates == null || analystEstimates.isEmpty()) {
+            return null;
+        }
+        LocalDate fiscalYearEnd = parseDate(fiscalYearEndDate);
+        if (fiscalYearEnd == null) {
+            log.warn("Date de clôture non analysable pour {} : '{}' ; PEG non calculé.", ticker, fiscalYearEndDate);
+            return null;
+        }
+        LocalDate closedYearStart = fiscalYearEnd.minusDays(FISCAL_YEAR_DATE_TOLERANCE_DAYS);
+        LocalDate closedYearLimit = fiscalYearEnd.plusDays(FISCAL_YEAR_DATE_TOLERANCE_DAYS);
+
+        AnalystEstimateRecord closedYear = null;
+        AnalystEstimateRecord nextYear = null;
+        LocalDate nextYearDate = null;
+        for (AnalystEstimateRecord estimate : analystEstimates) {
+            LocalDate estimateDate = estimate == null ? null : parseDate(estimate.date());
+            if (estimateDate == null) {
+                continue;
+            }
+            if (estimateDate.isAfter(closedYearLimit)) {
+                if (nextYearDate == null || estimateDate.isBefore(nextYearDate)) {
+                    nextYear = estimate;
+                    nextYearDate = estimateDate;
+                }
+            } else if (!estimateDate.isBefore(closedYearStart)) {
+                closedYear = estimate;
+            }
+        }
+        if (closedYear == null || nextYear == null) {
+            return null;
+        }
+        return calculateGrowth(nextYear.epsAvg(), closedYear.epsAvg());
+    }
+
+    private static LocalDate parseDate(String date) {
+        if (date == null) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(date);
+        } catch (DateTimeParseException exception) {
+            return null;
         }
     }
 
