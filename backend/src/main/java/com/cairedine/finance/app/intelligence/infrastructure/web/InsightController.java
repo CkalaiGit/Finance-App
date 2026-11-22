@@ -40,7 +40,9 @@ public class InsightController {
     private final InsightWebMapper webMapper;
 
     @GetMapping("/{ticker}")
-    @Operation(summary = "Récupérer les insights d'une entreprise")
+    @Operation(summary = "Récupérer les insights d'une entreprise",
+            description = "Si les insights sont prêts, la consultation peut lancer en arrière-plan "
+                    + "une vérification de nouveaux rapports SEC, sans retarder la réponse.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Insights disponibles",
                     content = @Content(mediaType = "application/json",
@@ -61,6 +63,7 @@ public class InsightController {
         logAudit(auth, normalizedTicker);
 
         if (aiSummaryService.isReady(normalizedTicker)) {
+            aiSummaryService.requestRefresh(normalizedTicker);
             List<InsightResponse> insights = aiSummaryService.getInsights(normalizedTicker).stream()
                     .map(webMapper::toResponse)
                     .toList();

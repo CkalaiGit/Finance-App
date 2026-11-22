@@ -27,7 +27,7 @@ Modules sous `src/main/java/com/cairedine/finance/app/` :
 - `user/` : auth et synchronisation utilisateur Keycloak. `UserContext` et `UserSyncedEvent` sont publics à la racine du module.
 - `financialanalysis/` : calculs de métriques (Growth, Value, Quality), `FinancialMath` dans `domain`.
 - `watchlist/` : watchlist utilisateur, écoute l'événement de synchronisation utilisateur.
-- `intelligence/` : module présent dans le code (`domain`, `application`, `infrastructure/sec`, `infrastructure/event`, `infrastructure/web`). Son contrôleur est vide pour l'instant, vérifie son contenu avant de le modifier.
+- `intelligence/` : synthèses IA des rapports SEC. Les filings sont listés puis téléchargés depuis EDGAR (`infrastructure/sec`), synthétisés par IA, et exposés via `InsightController`. Le rafraîchissement périodique est piloté par `IngestionLauncher` : une vérification de nouveaux rapports est autorisée au plus une fois par `intelligence.ingestion.refresh-interval` (24 h par défaut ; 0 ou négatif désactive).
 - `webclient/` : client externe FMP. Le port `IMarketDataPort` est à la racine, l'implémentation est dans `internal/`.
 - `shared/` : `GlobalExceptionHandler`, exceptions de base, configuration transverse.
 
@@ -63,7 +63,7 @@ Chaque module suit la séparation `domain` (logique pure) / `application` (orche
 | `POST` | `/api/v1/watchlist/{ticker}` | `WatchlistController` | `WatchlistResponse` (201) |
 | `DELETE` | `/api/v1/watchlist/{ticker}` | `WatchlistController` | `WatchlistResponse` |
 | `GET` | `/api/v1/watchlist/{ticker}/exists` | `WatchlistController` | `TickerExistsResponse` |
-| `GET` | `/api/v1/insights/{ticker}` | `InsightController` | `List<InsightResponse>` (200), pending (202) |
+| `GET` | `/api/v1/insights/{ticker}` | `InsightController` | `List<InsightResponse>` (200), pending (202). Si les insights sont prêts, la consultation peut déclencher en arrière-plan une vérification de nouveaux rapports SEC, sans retarder la réponse. |
 | `GET` | `/api/v1/insights/{ticker}/status` | `InsightController` | `IngestionStatusResponse` (200, 404) |
 
 Les endpoints d'insights sont en lecture seule et nécessitent une authentification.

@@ -6,6 +6,7 @@ import com.cairedine.finance.app.intelligence.domain.port.IAiSummaryService;
 import com.cairedine.finance.app.intelligence.domain.port.ICompanyInsightRepository;
 import com.cairedine.finance.app.intelligence.domain.port.IDocumentSourcePort;
 import com.cairedine.finance.app.intelligence.domain.port.IIngestionTracker;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +17,7 @@ import java.util.Locale;
 import java.util.Objects;
 
 @Service
+@Slf4j
 public class AiSummaryServiceImpl implements IAiSummaryService {
 
     private final ICompanyInsightRepository insightRepository;
@@ -71,6 +73,21 @@ public class AiSummaryServiceImpl implements IAiSummaryService {
         String normalizedTicker = normalizeTicker(ticker);
         if (!ingestionTracker.isIngesting(normalizedTicker)) {
             ingestionLauncher.launchIfAllowed(normalizedTicker);
+        }
+    }
+
+    @Override
+    public void requestRefresh(String ticker) {
+        if (ticker == null || ticker.isBlank()) {
+            return;
+        }
+        String normalizedTicker = normalizeTicker(ticker);
+        try {
+            if (!ingestionTracker.isIngesting(normalizedTicker)) {
+                ingestionLauncher.refreshIfStale(normalizedTicker);
+            }
+        } catch (RuntimeException exception) {
+            log.warn("Vérification des nouveaux rapports impossible pour '{}'.", normalizedTicker, exception);
         }
     }
 

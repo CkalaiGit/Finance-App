@@ -53,4 +53,12 @@ public interface IAiSummaryService {
      * @param ticker Symbole boursier
      */
     void requestIngestion(String ticker);
+
+    /**
+     * Demande, en arrière-plan, la vérification de nouveaux rapports pour un ticker déjà
+     * analysé. Ne bloque pas et ne lève jamais d'exception.
+     *
+     * @param ticker Symbole boursier
+     */
+    void requestRefresh(String ticker);
 }
