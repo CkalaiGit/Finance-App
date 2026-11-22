@@ -15,8 +15,8 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 /**
  * Règles d'architecture ArchUnit vérifiant les conventions de packages.
  * Convention cible :
- *   &lt;module&gt;/domain/       → modèles, ports, règles métier. Java pur (aucun framework).
- *   &lt;module&gt;/application/  → services de cas d'usage. @Service autorisé ici.
+ *   &lt;module&gt;/domain/ → modèles, ports, règles métier. Java pur (aucun framework).
+ *   &lt;module&gt;/application/ → services de cas d'usage. @Service autorisé ici.
  *   &lt;module&gt;/infrastructure/ → adapters web/, persistence/, security/, event/...
  */
 @DisplayName("Architecture Rules")

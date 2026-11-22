@@ -1,9 +1,11 @@
 package com.cairedine.finance.app.intelligence.infrastructure.sec;
 
+import com.cairedine.finance.app.intelligence.domain.model.FilingReference;
 import com.cairedine.finance.app.intelligence.domain.model.SecFiling;
 import com.cairedine.finance.app.intelligence.domain.port.IDocumentSourcePort;
 import com.cairedine.finance.app.intelligence.infrastructure.sec.dto.SecFilingDocDto;
 import com.cairedine.finance.app.intelligence.infrastructure.sec.dto.SecFilingIndexDto;
+import com.cairedine.finance.app.intelligence.infrastructure.sec.dto.SecFilingsDto;
 import com.cairedine.finance.app.intelligence.infrastructure.sec.dto.SecRecentFilingsDto;
 import com.cairedine.finance.app.intelligence.infrastructure.sec.dto.SecSubmissionDto;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +17,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 
 /**
  * Adaptateur d'infrastructure pour l'extraction et le téléchargement des rapports officiels SEC EDGAR (10-K, 10-Q).
@@ -39,25 +43,13 @@ public class SecEdgarAdapter implements IDocumentSourcePort {
     @Override
     public List<SecFiling> fetchFilings(String ticker, String formType, int limit) {
         log.info("Récupération des rapports SEC type='{}' (limit={}) pour le ticker '{}'", formType, limit, ticker);
-        String cik = cikResolver.resolve(ticker);
+        String cik = resolveCik(ticker);
+        return readRecentFilings(cik)
+                .map(recent -> fetchFilings(cik, formType, limit, recent))
+                .orElseGet(Collections::emptyList);
+    }
 
-        SecSubmissionDto submission;
-        try {
-            submission = secDataRestClient.get()
-                    .uri("/submissions/CIK{cik}.json", cik)
-                    .retrieve()
-                    .body(SecSubmissionDto.class);
-        } catch (Exception e) {
-            log.error("Erreur lors de la récupération des soumissions SEC pour CIK {}: {}", cik, e.getMessage());
-            return Collections.emptyList();
-        }
-
-        if (submission == null || submission.filings() == null || submission.filings().recent() == null) {
-            log.warn("Aucune soumission récente trouvée pour CIK {}", cik);
-            return Collections.emptyList();
-        }
-
-        SecRecentFilingsDto recent = submission.filings().recent();
+    private List<SecFiling> fetchFilings(String cik, String formType, int limit, SecRecentFilingsDto recent) {
         List<String> forms = recent.form();
         List<String> accessionNumbers = recent.accessionNumber();
         List<String> filingDates = recent.filingDate();
@@ -74,8 +66,8 @@ public class SecEdgarAdapter implements IDocumentSourcePort {
             String form = forms.get(i);
             if (form != null && form.equalsIgnoreCase(formType)) {
                 String accessionNumber = accessionNumbers.get(i);
-                String filingDate = (filingDates != null && filingDates.size() > i) ? filingDates.get(i) : "UNKNOWN";
-                String primaryDoc = (primaryDocuments != null && primaryDocuments.size() > i) ? primaryDocuments.get(i) : null;
+                String filingDate = filingDateAt(filingDates, i);
+                String primaryDoc = primaryDocumentAt(primaryDocuments, i);
 
                 try {
                     String content = downloadFilingContent(cik, accessionNumber, primaryDoc);
@@ -97,6 +89,90 @@ public class SecEdgarAdapter implements IDocumentSourcePort {
         }
 
         return Collections.unmodifiableList(result);
+    }
+
+    @Override
+    public List<FilingReference> listFilings(String ticker, String formType, int limit) {
+        return readRecentFilings(resolveCik(ticker))
+                .map(recent -> toFilingReferences(recent, formType, limit))
+                .orElseGet(Collections::emptyList);
+    }
+
+    private List<FilingReference> toFilingReferences(SecRecentFilingsDto recent, String formType, int limit) {
+        List<String> forms = recent.form();
+        List<String> accessionNumbers = recent.accessionNumber();
+        if (forms == null || accessionNumbers == null) {
+            return Collections.emptyList();
+        }
+
+        List<String> filingDates = recent.filingDate();
+        List<String> primaryDocuments = recent.primaryDocument();
+        List<FilingReference> references = new ArrayList<>();
+        for (int i = 0; i < forms.size() && references.size() < limit; i++) {
+            String form = forms.get(i);
+            if (form != null && form.equalsIgnoreCase(formType)) {
+                references.add(new FilingReference(
+                        accessionNumbers.get(i),
+                        form.toUpperCase(Locale.ROOT),
+                        filingDateAt(filingDates, i),
+                        primaryDocumentAt(primaryDocuments, i)
+                ));
+            }
+        }
+        return Collections.unmodifiableList(references);
+    }
+
+    private String filingDateAt(List<String> filingDates, int index) {
+        return filingDates != null && filingDates.size() > index ? filingDates.get(index) : "UNKNOWN";
+    }
+
+    private String primaryDocumentAt(List<String> primaryDocuments, int index) {
+        return primaryDocuments != null && primaryDocuments.size() > index ? primaryDocuments.get(index) : null;
+    }
+
+    private String resolveCik(String ticker) {
+        return cikResolver.resolve(ticker);
+    }
+
+    private Optional<SecRecentFilingsDto> readRecentFilings(String cik) {
+
+        try {
+            Optional<SecRecentFilingsDto> recent = Optional.ofNullable(secDataRestClient.get()
+                            .uri("/submissions/CIK{cik}.json", cik).retrieve()
+                            .body(SecSubmissionDto.class))
+                    .map(SecSubmissionDto::filings)
+                    .map(SecFilingsDto::recent);
+
+            if (recent.isEmpty()) {
+                log.warn("Aucune soumission récente trouvée pour CIK {}", cik);
+            }
+            return recent;
+        } catch (Exception e) {
+            log.error("Erreur lors de la récupération des soumissions SEC pour CIK {}: {}", cik, e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public Optional<SecFiling> downloadFiling(String ticker, FilingReference reference) {
+        String cik = resolveCik(ticker);
+        try {
+            String content = downloadFilingContent(cik, reference.accessionNumber(), reference.primaryDocument());
+            if (content == null || content.isBlank()) {
+                return Optional.empty();
+            }
+            return Optional.of(new SecFiling(
+                    reference.accessionNumber(),
+                    reference.formType().toUpperCase(Locale.ROOT),
+                    reference.filingDate(),
+                    content,
+                    Instant.now()
+            ));
+        } catch (Exception e) {
+            log.warn("Échec du téléchargement du document SEC accession='{}': {}",
+                    reference.accessionNumber(), e.getMessage());
+            return Optional.empty();
+        }
     }
 
     @Override
