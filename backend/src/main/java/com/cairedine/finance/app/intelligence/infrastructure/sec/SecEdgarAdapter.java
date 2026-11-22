@@ -41,57 +41,6 @@ public class SecEdgarAdapter implements IDocumentSourcePort {
     }
 
     @Override
-    public List<SecFiling> fetchFilings(String ticker, String formType, int limit) {
-        log.info("Récupération des rapports SEC type='{}' (limit={}) pour le ticker '{}'", formType, limit, ticker);
-        String cik = resolveCik(ticker);
-        return readRecentFilings(cik)
-                .map(recent -> fetchFilings(cik, formType, limit, recent))
-                .orElseGet(Collections::emptyList);
-    }
-
-    private List<SecFiling> fetchFilings(String cik, String formType, int limit, SecRecentFilingsDto recent) {
-        List<String> forms = recent.form();
-        List<String> accessionNumbers = recent.accessionNumber();
-        List<String> filingDates = recent.filingDate();
-        List<String> primaryDocuments = recent.primaryDocument();
-
-        if (forms == null || accessionNumbers == null) {
-            return Collections.emptyList();
-        }
-
-        List<SecFiling> result = new ArrayList<>();
-        int count = 0;
-
-        for (int i = 0; i < forms.size() && count < limit; i++) {
-            String form = forms.get(i);
-            if (form != null && form.equalsIgnoreCase(formType)) {
-                String accessionNumber = accessionNumbers.get(i);
-                String filingDate = filingDateAt(filingDates, i);
-                String primaryDoc = primaryDocumentAt(primaryDocuments, i);
-
-                try {
-                    String content = downloadFilingContent(cik, accessionNumber, primaryDoc);
-                    if (content != null && !content.isBlank()) {
-                        result.add(new SecFiling(
-                                accessionNumber,
-                                formType.toUpperCase(),
-                                filingDate,
-                                content,
-                                Instant.now()
-                        ));
-                        count++;
-                        log.info("Document SEC téléchargé avec succès: form='{}', accession='{}', date='{}'", formType, accessionNumber, filingDate);
-                    }
-                } catch (Exception e) {
-                    log.warn("Échec du téléchargement du document SEC accession='{}': {}", accessionNumber, e.getMessage());
-                }
-            }
-        }
-
-        return Collections.unmodifiableList(result);
-    }
-
-    @Override
     public List<FilingReference> listFilings(String ticker, String formType, int limit) {
         return readRecentFilings(resolveCik(ticker))
                 .map(recent -> toFilingReferences(recent, formType, limit))

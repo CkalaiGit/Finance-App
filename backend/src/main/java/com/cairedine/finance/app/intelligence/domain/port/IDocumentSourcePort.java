@@ -11,16 +11,6 @@ import java.util.Optional;
  */
 public interface IDocumentSourcePort {
 
-    /**
-     * Récupère la liste des filings bruts pour un ticker et un type de formulaire donné.
-     *
-     * @param ticker Symbole boursier de l'entreprise (ex: AAPL)
-     * @param formType Type de formulaire SEC (ex: 10-K, 10-Q)
-     * @param limit Nombre maximal de documents à récupérer
-     * @return Liste des filings bruts récupérés
-     */
-    List<SecFiling> fetchFilings(String ticker, String formType, int limit);
-
     List<FilingReference> listFilings(String ticker, String formType, int limit);
 
     Optional<SecFiling> downloadFiling(String ticker, FilingReference reference);

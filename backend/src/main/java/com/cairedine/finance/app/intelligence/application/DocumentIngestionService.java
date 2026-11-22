@@ -2,6 +2,7 @@ package com.cairedine.finance.app.intelligence.application;
 
 import com.cairedine.finance.app.financialanalysis.domain.model.FullMetrics;
 import com.cairedine.finance.app.financialanalysis.domain.port.IFinancialAnalysisService;
+import com.cairedine.finance.app.intelligence.domain.model.FilingReference;
 import com.cairedine.finance.app.intelligence.domain.model.SecFiling;
 import com.cairedine.finance.app.intelligence.domain.port.IDocumentSourcePort;
 import com.cairedine.finance.app.intelligence.domain.port.ICompanyInsightRepository;
@@ -20,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -97,58 +99,104 @@ public class DocumentIngestionService implements IIngestionTracker {
             return;
         }
 
-        List<FullMetrics> metrics;
-        List<SecFiling> filings;
-        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            CompletableFuture<List<FullMetrics>> metricsFuture = submitSafely(
-                    executor,
-                    "calcul des métriques pour " + normalizedTicker,
-                    () -> financialAnalysisService.computeMetrics(normalizedTicker),
-                    List.of());
-            CompletableFuture<List<SecFiling>> annualFilingsFuture = submitSafely(
-                    executor,
-                    "récupération des 10-K pour " + normalizedTicker,
-                    () -> documentSource.fetchFilings(normalizedTicker, "10-K", annualFilingsLimit),
-                    List.of());
-            CompletableFuture<List<SecFiling>> quarterlyFilingsFuture = submitSafely(
-                    executor,
-                    "récupération des 10-Q pour " + normalizedTicker,
-                    () -> documentSource.fetchFilings(normalizedTicker, "10-Q", quarterlyFilingsLimit),
-                    List.of());
-
-            metrics = metricsFuture.join();
-            filings = new ArrayList<>(annualFilingsFuture.join());
-            filings.addAll(quarterlyFilingsFuture.join());
+        ReferenceScan scan = scanReferences(normalizedTicker);
+        List<FilingReference> newReferences = scan.newReferences();
+        if (newReferences.isEmpty()) {
+            log.info("Ingestion SEC pour '{}': rien de nouveau ({} ignorés, {} en échec).",
+                    normalizedTicker, scan.ignored(), scan.failed());
+            return;
         }
 
+        List<FullMetrics> metrics = computeMetricsSafely(normalizedTicker);
         int processed = 0;
-        int ignored = 0;
-        int failed = 0;
-        for (int index = 0; index < filings.size(); index++) {
-            SecFiling filing = filings.get(index);
-            try {
-                if (insightRepository.existsByAccessionNumber(filing.accessionNumber())) {
-                    ignored++;
-                } else {
-                    String cleanText = textCleaner.clean(filing.rawContent());
-                    var sections = sectionExtractor.extractSections(cleanText);
-                    List<FullMetrics> matchedMetrics = metricsForFiling(normalizedTicker, filing, metrics);
-                    var insight = insightSynthesizer.synthesize(normalizedTicker, filing, sections, matchedMetrics);
-                    insightRepository.save(normalizedTicker, insight);
-                    processed++;
-                }
-            } catch (Exception exception) {
+        int failed = scan.failed();
+        for (int index = 0; index < newReferences.size(); index++) {
+            if (processReference(normalizedTicker, newReferences.get(index), metrics)) {
+                processed++;
+            } else {
                 failed++;
-                log.warn("Échec du traitement du filing '{}' pour '{}'.",
-                        filing == null ? "inconnu" : filing.accessionNumber(), normalizedTicker, exception);
             }
-            if (index + 1 < filings.size() && !pauseBetweenFilings()) {
+            if (index + 1 < newReferences.size() && !pauseBetweenFilings()) {
                 break;
             }
         }
 
         log.info("Ingestion SEC terminée pour '{}': {} traités, {} ignorés, {} en échec.",
-                normalizedTicker, processed, ignored, failed);
+                normalizedTicker, processed, scan.ignored(), failed);
+    }
+
+    private List<FilingReference> listReferences(String ticker) {
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            CompletableFuture<List<FilingReference>> annualFuture = submitSafely(
+                    executor,
+                    "listing des 10-K pour " + ticker,
+                    () -> documentSource.listFilings(ticker, "10-K", annualFilingsLimit),
+                    List.of());
+            CompletableFuture<List<FilingReference>> quarterlyFuture = submitSafely(
+                    executor,
+                    "listing des 10-Q pour " + ticker,
+                    () -> documentSource.listFilings(ticker, "10-Q", quarterlyFilingsLimit),
+                    List.of());
+
+            List<FilingReference> references = new ArrayList<>(annualFuture.join());
+            references.addAll(quarterlyFuture.join());
+            return references;
+        }
+    }
+
+    private ReferenceScan scanReferences(String ticker) {
+        List<FilingReference> newReferences = new ArrayList<>();
+        int ignored = 0;
+        int failed = 0;
+        for (FilingReference reference : listReferences(ticker)) {
+            try {
+                if (insightRepository.existsByAccessionNumber(reference.accessionNumber())) {
+                    ignored++;
+                } else {
+                    newReferences.add(reference);
+                }
+            } catch (Exception exception) {
+                failed++;
+                log.warn("Échec de la vérification du filing '{}' pour '{}'.",
+                        reference.accessionNumber(), ticker, exception);
+            }
+        }
+        return new ReferenceScan(newReferences, ignored, failed);
+    }
+
+    /**
+     * Télécharge, analyse et sauvegarde un filing nouveau.
+     *
+     * @return true si l'insight a été sauvegardé, false en cas d'échec (téléchargement vide ou exception)
+     */
+    private boolean processReference(String ticker, FilingReference reference, List<FullMetrics> metrics) {
+        try {
+            Optional<SecFiling> downloaded = documentSource.downloadFiling(ticker, reference);
+            if (downloaded.isEmpty()) {
+                return false;
+            }
+            SecFiling filing = downloaded.get();
+            String cleanText = textCleaner.clean(filing.rawContent());
+            var sections = sectionExtractor.extractSections(cleanText);
+            List<FullMetrics> matchedMetrics = metricsForFiling(ticker, filing, metrics);
+            var insight = insightSynthesizer.synthesize(ticker, filing, sections, matchedMetrics);
+            insightRepository.save(ticker, insight);
+            return true;
+        } catch (Exception exception) {
+            log.warn("Échec du traitement du filing '{}' pour '{}'.",
+                    reference.accessionNumber(), ticker, exception);
+            return false;
+        }
+    }
+
+    private List<FullMetrics> computeMetricsSafely(String ticker) {
+        try {
+            List<FullMetrics> metrics = financialAnalysisService.computeMetrics(ticker);
+            return metrics == null ? List.of() : metrics;
+        } catch (Exception exception) {
+            log.warn("Échec du calcul des métriques pour '{}'; poursuite sans métriques.", ticker, exception);
+            return List.of();
+        }
     }
 
     private List<FullMetrics> metricsForFiling(String ticker, SecFiling filing, List<FullMetrics> metrics) {
@@ -199,6 +247,9 @@ public class DocumentIngestionService implements IIngestionTracker {
     }
 
     private record DatedMetrics(LocalDate fiscalYearEndDate, FullMetrics metrics) {
+    }
+
+    private record ReferenceScan(List<FilingReference> newReferences, int ignored, int failed) {
     }
 
     private <T> CompletableFuture<List<T>> submitSafely(

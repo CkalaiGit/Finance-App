@@ -1,5 +1,6 @@
 package com.cairedine.finance.app.intelligence.infrastructure.sec;
 
+import com.cairedine.finance.app.intelligence.domain.model.FilingReference;
 import com.cairedine.finance.app.intelligence.domain.model.SecFiling;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -36,12 +37,12 @@ class SecEdgarAdapterLiveIntTest {
         // 1. Vérification que NVDA est bien référencé dans les listings SEC
         assertThat(adapter.isAvailable("NVDA")).isTrue();
 
-        // 2. Récupération du dernier rapport annuel 10-K
-        List<SecFiling> filings = adapter.fetchFilings("NVDA", "10-K", 1);
+        // 2. Listing puis téléchargement du dernier rapport annuel 10-K
+        List<FilingReference> references = adapter.listFilings("NVDA", "10-K", 1);
+        assertThat(references).isNotEmpty();
+        SecFiling filing = adapter.downloadFiling("NVDA", references.getFirst()).orElseThrow();
 
         // 3. Assertions sur le résultat
-        assertThat(filings).isNotEmpty();
-        SecFiling filing = filings.getFirst();
 
         System.out.println("=================================================");
         System.out.println("✅ RAPPORT SEC 10-K RÉCUPÉRÉ AVEC SUCCÈS :");
