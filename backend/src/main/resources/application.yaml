@@ -137,6 +137,9 @@ intelligence:
     mode: ${INTELLIGENCE_AI_MODE:stub}
   ingestion:
     retry-cooldown: 15m
+    # Intervalle minimal entre deux vérifications automatiques de nouveaux rapports.
+    # 0 ou négatif : rafraîchissement automatique désactivé.
+    refresh-interval: ${INTELLIGENCE_INGESTION_REFRESH_INTERVAL:24h}
     # Nombre de rapports SEC synthétisés par ticker (un appel IA par rapport)
     annual-filings-limit: 1      # 10-K
     quarterly-filings-limit: 2   # 10-Q

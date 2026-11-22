@@ -22,17 +22,20 @@ public class IngestionLauncher {
     private final ObjectProvider<IngestionLauncher> launcherProxy;
     private final Clock clock;
     private final Duration retryCooldown;
+    private final Duration refreshInterval;
     private final ConcurrentMap<String, Instant> lastLaunchByTicker = new ConcurrentHashMap<>();
 
     public IngestionLauncher(
             DocumentIngestionService documentIngestionService,
             ObjectProvider<IngestionLauncher> launcherProxy,
             Clock clock,
-            @Value("${intelligence.ingestion.retry-cooldown:15m}") Duration retryCooldown) {
+            @Value("${intelligence.ingestion.retry-cooldown:15m}") Duration retryCooldown,
+            @Value("${intelligence.ingestion.refresh-interval:24h}") Duration refreshInterval) {
         this.documentIngestionService = documentIngestionService;
         this.launcherProxy = launcherProxy;
         this.clock = clock;
         this.retryCooldown = retryCooldown;
+        this.refreshInterval = refreshInterval;
     }
 
     @Async("intelligenceTaskExecutor")
@@ -49,19 +52,40 @@ public class IngestionLauncher {
             return false;
         }
         String normalizedTicker = normalizeTicker(ticker);
+        if (tryAcquire(normalizedTicker, retryCooldown)) {
+            return false;
+        }
+        launcherProxy.getObject().launch(normalizedTicker);
+        return true;
+    }
+
+    public boolean refreshIfStale(String ticker) {
+        if (ticker == null || ticker.isBlank() || refreshInterval.isZero() || refreshInterval.isNegative()) {
+            return false;
+        }
+        String normalizedTicker = normalizeTicker(ticker);
+        if (tryAcquire(normalizedTicker, refreshInterval)) {
+            return false;
+        }
+        launcherProxy.getObject().launch(normalizedTicker);
+        return true;
+    }
+
+    /**
+     * Enregistre un lancement si le délai minimal depuis le dernier lancement est écoulé.
+     * Opération atomique par ticker : un seul appelant obtient true pendant un intervalle donné.
+     */
+    private boolean tryAcquire(String normalizedTicker, Duration minimumGap) {
         Instant now = clock.instant();
         AtomicBoolean allowed = new AtomicBoolean();
         lastLaunchByTicker.compute(normalizedTicker, (key, lastLaunch) -> {
-            if (lastLaunch == null || !now.isBefore(lastLaunch.plus(retryCooldown))) {
+            if (lastLaunch == null || !now.isBefore(lastLaunch.plus(minimumGap))) {
                 allowed.set(true);
                 return now;
             }
             return lastLaunch;
         });
-        if (allowed.get()) {
-            launcherProxy.getObject().launch(normalizedTicker);
-        }
-        return allowed.get();
+        return !allowed.get();
     }
 
     private String normalizeTicker(String ticker) {
